@@ -19,7 +19,19 @@
   - [x] Independent test harness `scripts/test_rls_isolation.py` (9/9 tests pass)
   - [x] Backend database connection configuration update to `consolith_app`
 
-- [ ] **Module 3: Authentication & Role Scoping**
+- [x] **Module 3: Authentication & Role Scoping**
+  - [x] Firebase Admin SDK integration with graceful unconfigured fallback
+  - [x] Server-side ID token verification (signature, exp, aud, iss validation)
+  - [x] Secure citizen auto-provisioning function (`provision_citizen_user`) with concurrency upsert
+  - [x] Non-superuser role context mapping via transaction-local `SET LOCAL`
+  - [x] Connection-pooling safe context cleanup
+  - [x] RBAC FastAPI dependencies (`require_citizen`, `require_officer`, `require_admin`)
+  - [x] Protected API endpoints (`/auth/me`, `/auth/provision`, `/auth/health`, role-scoped test endpoints)
+  - [x] Frontend Firebase client integration (`AuthContext`, interactive test dashboard)
+  - [x] Unit test suite (`backend/tests/test_auth.py`, 10/10 passing)
+  - [x] HTTP integration test suite (`scripts/test_auth_api.py`, 8/8 passing)
+  - [x] RLS regression verification (`scripts/test_rls_isolation.py`, 9/9 passing)
+
 - [ ] **Module 4: Document Upload & OCR Pipeline**
 - [ ] **Module 5: Conflict Detection Engine**
 - [ ] **Module 6: RAG Knowledge Base & AI Assistant**

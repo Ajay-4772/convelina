@@ -26,3 +26,24 @@
   - Confirmed 22 policies active in `pg_policies`.
 - Verified via independent test suite `scripts/test_rls_isolation.py`:
   - All 9/9 isolation and security tests passed.
+
+### 4. Module 3: Authentication & Role Scoping (Completed & Verified)
+- Database Layer:
+  - Created `backend/migrations/003_auth_provisioning.sql` defining `resolve_user_by_firebase_uid()` and `provision_citizen_user()` with `SECURITY DEFINER` and atomic upsert on `users_firebase_uid_key`.
+  - Enforced default `'citizen'` role on provisioning.
+- Backend Architecture:
+  - Implemented Firebase Admin SDK initialization with multi-credential source resolution (service account JSON file, JSON env string, Application Default Credentials, or emulator).
+  - Built `backend/app/core/security.py` verifying token signatures, exp, aud, iss.
+  - Implemented transaction-local PostgreSQL RLS context mapping (`set_rls_context`) using `SET LOCAL app.current_user_id` and `SET LOCAL app.current_user_role` over `consolith_app` role.
+  - Created FastAPI dependencies in `backend/app/dependencies/auth.py` (`get_current_token`, `get_current_user`, `require_authenticated_user`, `require_role`, `require_citizen`, `require_officer`, `require_admin`).
+  - Added endpoints in `backend/app/routers/auth.py` (`/api/v1/auth/provision`, `/api/v1/auth/me`, `/api/v1/auth/health`, and role-gated routes).
+- Frontend Layer:
+  - Added `firebase` client dependency in `frontend/package.json`.
+  - Implemented `frontend/src/lib/firebase.ts` and `frontend/src/context/AuthContext.tsx`.
+  - Built an interactive live RBAC verification dashboard in `frontend/src/app/page.tsx` allowing testing of Citizen, Officer, and Admin token access against protected backend routes.
+- Verification & Test Results:
+  - `backend/tests/test_auth.py`: 10/10 pytest unit tests PASSED.
+  - `scripts/test_auth_api.py`: 8/8 HTTP integration tests PASSED.
+  - `scripts/test_rls_isolation.py`: 9/9 Module 2 RLS isolation tests re-verified & PASSED.
+  - `scripts/verify_module1.py`: 4/4 service healthchecks PASSED.
+

@@ -1,4 +1,5 @@
 import time
+from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,11 +8,20 @@ from sqlalchemy import create_engine, text
 from qdrant_client import QdrantClient
 
 from app.config import settings
+from app.core.firebase import initialize_firebase, is_firebase_configured
+from app.routers.auth import router as auth_router
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Initialize Firebase Admin SDK
+    initialize_firebase()
+    yield
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="Backend API for Consolith: AI-Powered Identity Conflict Detection & Assistance",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Configure CORS
@@ -23,6 +33,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Register routers
+app.include_router(auth_router)
+
 @app.get("/")
 def read_root():
     return {
@@ -30,6 +43,7 @@ def read_root():
         "status": "online",
         "version": "1.0.0",
         "docs": "/docs",
+        "firebase_auth_configured": is_firebase_configured(),
     }
 
 @app.get("/health")
@@ -41,10 +55,13 @@ def health_check():
             "backend": {"status": "up"},
             "postgres": {"status": "unknown"},
             "qdrant": {"status": "unknown"},
+            "firebase_auth": {
+                "status": "configured" if is_firebase_configured() else "unconfigured"
+            }
         }
     }
     
-    # 1. Check PostgreSQL
+    # 1. Check PostgreSQL (via non-superuser consolith_app connection)
     try:
         engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True)
         with engine.connect() as connection:
@@ -61,8 +78,6 @@ def health_check():
     # 2. Check Qdrant
     try:
         qdrant_url = f"http://{settings.QDRANT_HOST}:{settings.QDRANT_PORT}"
-        client = QdrantClient(host=settings.QDRANT_HOST, port=settings.QDRANT_PORT, timeout=2.0)
-        # Using REST healthz check
         with httpx.Client(timeout=2.0) as http_client:
             resp = http_client.get(f"{qdrant_url}/healthz")
             if resp.status_code == 200:

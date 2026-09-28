@@ -47,6 +47,7 @@ services:
       - DATABASE_URL=postgresql://consolith_app:consolith_secure_app_pw@postgres:5432/consolith
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
+      - TEST_MODE_ALLOW_SIMULATED_TOKENS=true
       - CORS_ORIGINS=["http://localhost:3000","http://127.0.0.1:3000","http://frontend:3000"]
     depends_on:
       postgres:

@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -6,12 +7,20 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
     
-    # Database
-    DATABASE_URL: str = "postgresql://postgres:postgres_dev_password@postgres:5432/consolith"
+    # Database - connects via dedicated non-superuser role
+    DATABASE_URL: str = "postgresql://consolith_app:consolith_secure_app_pw@postgres:5432/consolith"
     
     # Qdrant Vector DB
     QDRANT_HOST: str = "qdrant"
     QDRANT_PORT: int = 6333
+    
+    # Firebase Authentication
+    FIREBASE_PROJECT_ID: Optional[str] = "consolith-dev"
+    FIREBASE_SERVICE_ACCOUNT_PATH: Optional[str] = None
+    FIREBASE_AUTH_EMULATOR_HOST: Optional[str] = None
+    
+    # Test Mode / Isolated verification (never enable in production)
+    TEST_MODE_ALLOW_SIMULATED_TOKENS: bool = False
     
     # CORS
     CORS_ORIGINS: list[str] = [
