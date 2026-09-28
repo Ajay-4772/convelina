@@ -1,0 +1,47 @@
+# Environment and Secrets
+.env
+.env*.local
+*.pem
+*.key
+*.p12
+*.json_service_account*
+serviceAccountKey*.json
+firebase-adminsdk*.json
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Next.js
+frontend/.next/
+frontend/out/
+
+# Build artifacts & temp
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE / System
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.bak
+
+# Docker volume mounts (if local)
+data/
+qdrant_storage/
+postgres_data/
