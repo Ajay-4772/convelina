@@ -40,8 +40,11 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./scripts:/scripts
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres_dev_password@postgres:5432/consolith
+      - DATABASE_URL=postgresql://consolith_app:consolith_secure_app_pw@postgres:5432/consolith
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
       - CORS_ORIGINS=["http://localhost:3000","http://127.0.0.1:3000","http://frontend:3000"]

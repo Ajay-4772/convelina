@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://consolith_app:consolith_secure_app_pw@localhost:5432/consolith"
+      ],
+      "env": {}
+    }
+  }
+}

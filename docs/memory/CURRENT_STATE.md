@@ -1,0 +1,13 @@
+- **Current Active Module**: Module 2 Completed & Verified (Awaiting User Sign-off for Module 3: Authentication)
+- **Completed Modules**:
+  - Module 1: Foundation (Next.js + FastAPI + PostgreSQL 16 + Qdrant container stack running and verified via `scripts/verify_module1.py`)
+  - Module 2: Database Schema & Row-Level Security (RLS) (Forced RLS across all 7 user-data tables, dedicated non-superuser role `consolith_app`, 22 policies, append-only trigger, self-promotion block, pooling-safe session variables, verified via `scripts/test_rls_isolation.py`)
+- **Docker Stack**:
+  - `consolith-postgres`: PostgreSQL 16 Alpine, port 5432 (Healthy)
+  - `consolith-qdrant`: Qdrant v1.11.0, port 6333/6334 (Healthy)
+  - `consolith-backend`: FastAPI Python 3.11, port 8000 (Healthy, connects via `consolith_app`)
+  - `consolith-frontend`: Next.js 14 App Router, port 3000 (Operational)
+- **Database Status**:
+  - Superuser: `postgres` (migrations/admin only)
+  - Application role: `consolith_app` (non-superuser, least-privilege)
+  - RLS Status: Enabled and FORCED on all 7 user-data tables.
