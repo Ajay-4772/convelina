@@ -24,3 +24,12 @@
 - **Transaction-Local Identity**: All authenticated DB sessions set `app.current_user_id` and `app.current_user_role` using `SET LOCAL`. When connections return to the pool, session context is automatically cleared, preventing identity leakage across requests.
 - **Testing Isolation**: Test/simulated tokens are strictly disabled unless explicit `TEST_MODE_ALLOW_SIMULATED_TOKENS=true` is enabled in non-production environments.
 
+## 6. Document Upload & OCR Privacy Hardening (Module 4)
+- **File Validation & Magic Bytes**: Never trust client-supplied MIME types or filenames. Inspect magic bytes (`%PDF-`, `\xFF\xD8\xFF`, `\x89PNG\r\n\x1a\n`) and perform image/PDF integrity decoding before processing.
+- **Path Traversal Defense**: All filenames are sanitized, directory separators stripped, and stored using server-generated UUID filenames in a dedicated temporary storage directory outside web roots.
+- **Aadhaar Act Compliance**: Plaintext 12-digit Aadhaar numbers are NEVER stored or returned in API responses. The parser strictly masks all but the last 4 digits (`XXXX-XXXX-1234`).
+- **At-Rest Payload Encryption**: Any retained sensitive payload or raw text is encrypted using Fernet symmetric cryptography (`encrypted_data`).
+- **Ephemeral Storage Retention**: Raw temporary uploaded files are securely unlinked from disk upon OCR extraction completion (`STORAGE_RETENTION_POLICY="delete_after_ocr"`).
+- **PostgreSQL RLS Storage Scoping**: All document operations execute under transaction-local `set_rls_context(db, user.id, user.role)` via `consolith_app`. Citizens can only access, view, or delete their own documents. Cross-user IDOR access attempts return HTTP 404.
+
+

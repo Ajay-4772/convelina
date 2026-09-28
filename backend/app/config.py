@@ -22,12 +22,23 @@ class Settings(BaseSettings):
     # Test Mode / Isolated verification (never enable in production)
     TEST_MODE_ALLOW_SIMULATED_TOKENS: bool = False
     
+    # Document Storage & Upload Security (Module 4)
+    STORAGE_TEMP_DIR: str = "/tmp/consolith/temp_docs"
+    MAX_UPLOAD_SIZE_BYTES: int = 10 * 1024 * 1024  # 10 MB limit
+    ALLOWED_EXTENSIONS: list[str] = [".pdf", ".jpg", ".jpeg", ".png"]
+    ALLOWED_MIME_TYPES: list[str] = ["application/pdf", "image/jpeg", "image/png"]
+    STORAGE_RETENTION_POLICY: str = "delete_after_ocr"  # "delete_after_ocr" or "retain_temp"
+    
+    # Fernet at-rest sensitive payload encryption key (derived or configured)
+    ENCRYPTION_KEY: Optional[str] = "consolith_dev_fernet_secret_key_32_bytes_len="
+    
     # CORS
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://frontend:3000",
     ]
+
 
     model_config = SettingsConfigDict(
         env_file=".env",

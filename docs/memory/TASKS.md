@@ -32,7 +32,21 @@
   - [x] HTTP integration test suite (`scripts/test_auth_api.py`, 8/8 passing)
   - [x] RLS regression verification (`scripts/test_rls_isolation.py`, 9/9 passing)
 
-- [ ] **Module 4: Document Upload & OCR Pipeline**
+- [x] **Module 4: Document Upload & OCR Pipeline**
+  - [x] Container stack update with Tesseract OCR 5.5.0 (Eng+Hin) and Poppler
+  - [x] Content inspection: magic bytes (PDF, JPEG, PNG), file size limit, empty/corrupt file rejection
+  - [x] Path traversal prevention in filename sanitization
+  - [x] Temporary storage manager with SHA-256 deduplication and unpredictable UUID filenames
+  - [x] Pluggable OCR abstraction (`BaseOCREngine`, `TesseractOCREngine`) with image preprocessing
+  - [x] Document parsers for Tier 1 documents: Aadhaar, PAN, Passport, Class 10, Class 12, EPF records
+  - [x] Aadhaar Act privacy compliance: strict masking (`XXXX-XXXX-1234`) and Fernet at-rest payload encryption
+  - [x] Secure ephemeral retention policy: temporary files safely unlinked after OCR extraction
+  - [x] FastAPI document endpoints: `/upload`, `/documents` (list), `/documents/{id}` (get), `/documents/{id}` (delete)
+  - [x] PostgreSQL RLS enforced across all document operations using non-superuser role
+  - [x] Next.js frontend upload and library UI with document type selection, status indicators, and delete actions
+  - [x] Unit test suite (`backend/tests/test_upload_ocr.py`, 14/14 passing; total pytest: 24/24 passing)
+  - [x] HTTP integration test suite (`scripts/test_upload_ocr_api.py`, 8/8 passing)
+
 - [ ] **Module 5: Conflict Detection Engine**
 - [ ] **Module 6: RAG Knowledge Base & AI Assistant**
 - [ ] **Module 7: Correction Document Generator**

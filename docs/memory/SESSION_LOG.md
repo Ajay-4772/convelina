@@ -47,3 +47,35 @@
   - `scripts/test_rls_isolation.py`: 9/9 Module 2 RLS isolation tests re-verified & PASSED.
   - `scripts/verify_module1.py`: 4/4 service healthchecks PASSED.
 
+### 5. Module 4: Secure Document Upload & OCR Pipeline (Completed & Verified)
+- Container & OCR Engine:
+  - Upgraded `consolin-backend` container with `tesseract-ocr`, `tesseract-ocr-eng`, `tesseract-ocr-hin`, and `poppler-utils`.
+  - Added Python dependencies: `pytesseract`, `pdf2image`, `Pillow`, `pypdf`, `python-multipart`, `cryptography`.
+  - Implemented `TesseractOCREngine` with resolution upscaling, contrast adjustment, sharpening, and fallback language chains.
+- Document Validation & Temporary Storage:
+  - Built `backend/app/core/validator.py` with magic byte signatures for PDF, JPEG, PNG, empty/corrupted file checks, and path traversal sanitization.
+  - Built `backend/app/core/storage.py` storing uploads under server-generated UUID filenames with SHA-256 deduplication.
+  - Built `backend/app/core/encryption.py` with Fernet symmetric payload encryption at rest.
+  - Implemented configurable ephemeral storage policy (`delete_after_ocr`) securely unlinking temporary files post-extraction.
+- Document-Specific Parsers:
+  - Aadhaar: Masks all but last 4 digits (`XXXX-XXXX-1234`), extracts Name, DOB/YOB, Gender.
+  - PAN: Extracts PAN number with character/digit OCR disambiguation, Name, Father's Name, DOB, masked ID (`AB***1234F`).
+  - Passport: Extracts Passport No, Surname, Given Name, DOB, Expiry Date, Nationality, Gender.
+  - Class 10 & 12: Extracts Roll Number, Candidate Name, DOB, Board, Examination/Passing Year.
+  - EPF Records: Extracts UAN (12-digit), Member Name, Member ID, Establishment Name.
+- API Endpoints & RLS Integration:
+  - `POST /api/v1/documents/upload`: Authenticated upload, content validation, OCR extraction, masking, Fernet encryption, and RLS insert.
+  - `GET /api/v1/documents`: RLS-scoped document listing.
+  - `GET /api/v1/documents/{id}`: Single document retrieval (RLS-guarded).
+  - `DELETE /api/v1/documents/{id}`: Document record and file deletion (RLS-guarded).
+- Frontend Experience:
+  - Built interactive Document Upload & Library console in `frontend/src/app/page.tsx` with document type selector, file upload, live OCR status feedback, and document deletion.
+- Automated Test Results:
+  - `backend/tests/test_upload_ocr.py`: 14/14 pytest unit tests PASSED.
+  - Total pytest suite (`backend/tests/`): 24/24 unit tests PASSED.
+  - `scripts/test_upload_ocr_api.py`: 8/8 HTTP integration tests PASSED.
+  - `scripts/test_auth_api.py`: 8/8 auth integration tests PASSED.
+  - `scripts/test_rls_isolation.py`: 9/9 Module 2 RLS isolation tests re-verified & PASSED.
+  - `scripts/verify_module1.py`: 4/4 service healthchecks PASSED.
+
+

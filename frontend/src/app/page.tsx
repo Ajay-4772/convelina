@@ -16,8 +16,13 @@ import {
   UserCheck,
   KeyRound,
   ShieldAlert,
-  LogOut
+  LogOut,
+  UploadCloud,
+  Trash2,
+  Eye,
+  FileCheck
 } from "lucide-react";
+
 
 interface HealthData {
   status: string;
@@ -50,11 +55,21 @@ export default function Home() {
   const [authTestOutput, setAuthTestOutput] = useState<Record<string, { status: number; message: string }>>({});
   const [testingAuth, setTestingAuth] = useState<boolean>(false);
 
+  // Module 4: Secure Document Upload & OCR state
+  const [selectedDocType, setSelectedDocType] = useState<string>("aadhaar");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState<boolean>(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadResult, setUploadResult] = useState<any>(null);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState<boolean>(false);
+
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
   const getSimulatedToken = (role: "citizen" | "officer" | "admin") => {
     return `test_token_:ui_demo_${role}:${role}.demo@synthetic.test:${role.toUpperCase()} User`;
   };
+
 
   const checkHealth = async () => {
     setLoading(true);
@@ -122,20 +137,94 @@ export default function Home() {
         };
       }
       setAuthTestOutput(results);
+      fetchDocuments(role);
 
     } catch (e: unknown) {
       console.error("Auth test failed:", e);
     } finally {
       setTestingAuth(false);
     }
+
+  };
+
+  const fetchDocuments = async (role = activeIdentity) => {
+    setLoadingDocs(true);
+    try {
+      const token = getSimulatedToken(role);
+      const res = await fetch(`${apiUrl}/api/v1/documents`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDocuments(data.documents || []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch documents", e);
+    } finally {
+      setLoadingDocs(false);
+    }
+  };
+
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedFile) {
+      setUploadError("Please select a document file (.pdf, .jpg, .png)");
+      return;
+    }
+    setUploading(true);
+    setUploadError(null);
+    setUploadResult(null);
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+    formData.append("document_type", selectedDocType);
+
+    try {
+      const token = getSimulatedToken(activeIdentity);
+      const res = await fetch(`${apiUrl}/api/v1/documents/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setUploadError(data.detail || "Upload or OCR processing failed");
+      } else {
+        setUploadResult(data);
+        setSelectedFile(null);
+        fetchDocuments(activeIdentity);
+      }
+    } catch (err: unknown) {
+      setUploadError(err instanceof Error ? err.message : "Network error during upload");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteDocument = async (id: string) => {
+    try {
+      const token = getSimulatedToken(activeIdentity);
+      const res = await fetch(`${apiUrl}/api/v1/documents/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        fetchDocuments(activeIdentity);
+      }
+    } catch (e) {
+      console.error("Failed to delete document", e);
+    }
   };
 
   useEffect(() => {
     checkHealth();
     syncIdentityAndTestRoutes("citizen");
+    fetchDocuments("citizen");
     const interval = setInterval(checkHealth, 15000);
     return () => clearInterval(interval);
   }, []);
+
 
   const getStatusBadge = (svcStatus?: string) => {
     if (svcStatus === "up" || svcStatus === "configured") {
@@ -359,7 +448,164 @@ export default function Home() {
           )}
         </section>
 
+        {/* Module 4: Secure Document Upload & OCR Pipeline Console */}
+        <section className="mt-8 p-6 rounded-2xl bg-surface/50 border border-border backdrop-blur-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 border-b border-border/80 gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 text-xs font-semibold uppercase tracking-wider rounded bg-indigo-950 text-indigo-400 border border-indigo-800/60">
+                  Module 4
+                </span>
+                <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+                  <UploadCloud className="w-5 h-5 text-indigo-400" /> Secure Document Upload & OCR Extraction
+                </h2>
+              </div>
+              <p className="text-sm text-gray-400 mt-1">
+                Upload Indian identity documents with content validation, Tesseract OCR extraction, Aadhaar masking, and RLS enforcement.
+              </p>
+            </div>
+            <button
+              onClick={() => fetchDocuments(activeIdentity)}
+              disabled={loadingDocs}
+              className="px-3 py-1.5 rounded-lg border border-border text-xs text-gray-300 hover:text-white flex items-center gap-1.5 hover:bg-surface transition"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loadingDocs ? "animate-spin" : ""}`} /> Refresh Library
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            {/* Upload Form Card */}
+            <div className="p-5 rounded-xl bg-surface/80 border border-border flex flex-col justify-between">
+              <form onSubmit={handleUpload} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Document Type</label>
+                  <select
+                    value={selectedDocType}
+                    onChange={(e) => setSelectedDocType(e.target.value)}
+                    className="w-full bg-slate-900 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="aadhaar">Aadhaar Card (UIDAI)</option>
+                    <option value="pan">PAN Card (Income Tax)</option>
+                    <option value="passport">Indian Passport</option>
+                    <option value="education_10th">Class 10 Certificate</option>
+                    <option value="education_12th">Class 12 Certificate</option>
+                    <option value="epf_record">EPFO / UAN Record</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Document File (PDF, JPEG, PNG - Max 10MB)</label>
+                  <input
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                    className="w-full text-xs text-gray-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer"
+                  />
+                  {selectedFile && (
+                    <p className="text-xs text-indigo-300 mt-1.5 flex items-center gap-1">
+                      <FileCheck className="w-3.5 h-3.5" /> {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
+                    </p>
+                  )}
+                </div>
+
+                {uploadError && (
+                  <div className="p-3 rounded-lg bg-rose-950/50 border border-rose-800/60 text-xs text-rose-300 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                    <span>{uploadError}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={uploading || !selectedFile}
+                  className="w-full py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-medium text-sm transition flex items-center justify-center gap-2"
+                >
+                  {uploading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" /> Processing OCR...
+                    </>
+                  ) : (
+                    <>
+                      <UploadCloud className="w-4 h-4" /> Upload & Run OCR
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {uploadResult && (
+                <div className="mt-4 p-3 rounded-lg bg-emerald-950/40 border border-emerald-800/50 text-xs text-emerald-300">
+                  <div className="flex items-center gap-1.5 font-medium">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" /> OCR {uploadResult.ocr_status.toUpperCase()}
+                  </div>
+                  <p className="mt-1 font-mono text-[11px] text-gray-300">Masked ID: {uploadResult.masked_id || "N/A"}</p>
+                  <p className="text-[11px] text-emerald-400/80 mt-0.5">Temp file securely unlinked per privacy policy.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Document Library Table (RLS scoped) */}
+            <div className="lg:col-span-2 p-5 rounded-xl bg-surface/80 border border-border flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <Database className="w-4 h-4 text-indigo-400" /> Document Repository ({documents.length})
+                  </h3>
+                  <span className="text-[11px] font-mono text-gray-400">Scoped to: {activeIdentity}</span>
+                </div>
+
+                {documents.length === 0 ? (
+                  <div className="py-10 text-center text-sm text-gray-500 border border-dashed border-border rounded-xl">
+                    No documents uploaded for this identity yet.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-border/80 text-gray-400">
+                          <th className="pb-2">Type</th>
+                          <th className="pb-2">Identifier</th>
+                          <th className="pb-2">Status</th>
+                          <th className="pb-2">Extracted Fields</th>
+                          <th className="pb-2 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/40 text-gray-300">
+                        {documents.map((doc) => (
+                          <tr key={doc.id} className="hover:bg-slate-900/40">
+                            <td className="py-2.5 font-medium uppercase text-white">{doc.document_type}</td>
+                            <td className="py-2.5 font-mono text-indigo-300">{doc.masked_id || "—"}</td>
+                            <td className="py-2.5">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                                doc.ocr_status === "completed" ? "bg-emerald-950 text-emerald-400 border border-emerald-800" : "bg-amber-950 text-amber-400 border border-amber-800"
+                              }`}>
+                                {doc.ocr_status}
+                              </span>
+                            </td>
+                            <td className="py-2.5 max-w-[200px] truncate text-gray-400 font-mono text-[11px]">
+                              {JSON.stringify(doc.extracted_fields)}
+                            </td>
+                            <td className="py-2.5 text-right">
+                              <button
+                                onClick={() => handleDeleteDocument(doc.id)}
+                                className="p-1 rounded hover:bg-rose-950/60 text-gray-400 hover:text-rose-400 transition"
+                                title="Delete document"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Foundation Overview & Scope Cards */}
+
         <section className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="p-6 rounded-xl bg-surface/40 border border-border">
             <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-3">
