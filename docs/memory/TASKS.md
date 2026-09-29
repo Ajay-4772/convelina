@@ -103,5 +103,16 @@
   - [x] Backend test suite: `backend/tests/test_officer_workflow.py` (6/6 passing; total backend pytest: 67/67 passing)
   - [x] Live API & RLS integration test harness: `scripts/test_module8_officer_api.py` (11/11 passing)
   - [x] Full regression verification: Module 6 RAG API (8/8 passing), Module 7 Drafts API (11/11 passing), RLS Isolation Suite passing
-- [ ] **Module 9: Document Authenticity & Ed25519 PKI/CA**
+- [x] **Module 9: Document Authenticity & Ed25519 PKI**
+  - [x] Cryptographic core: RFC 8785 canonical JSON serializer, SHA-256 document fingerprinter, Ed25519 keypair generation, signing, and verification (`app/core/crypto.py`)
+  - [x] Dev signing key provider with deterministic seed-based key generation; clear abstraction for HSM / Cloud KMS production integration
+  - [x] Database migration `008_document_authenticity.sql`: `signing_keys`, `document_attestations`, `attestation_verifications` with FORCED PostgreSQL RLS and least-privilege grants to `consolith_app`
+  - [x] SQLAlchemy models (`app/models/pki.py`) and Pydantic v2 schemas (`app/schemas/pki.py`)
+  - [x] PKI service (`app/services/pki_service.py`): Key lifecycle management (register, rotate, revoke), canonical attestation signing, multi-check verification returning structured statuses (`VALID`, `DOCUMENT_TAMPERED`, `INVALID_SIGNATURE`, `REVOKED_KEY`, `EXPIRED`, `UNTRUSTED_KEY`, `UNSUPPORTED_VERSION`)
+  - [x] Tamper-evident append-only audit trail logging with SHA-256 hash chaining on all signing and verification actions
+  - [x] FastAPI PKI and Attestation endpoints (`app/routers/pki.py`): stats, keys, rotate, revoke, attestations, verify, history
+  - [x] Next.js frontend UI: Document Authenticity Dashboard, Keystore status, Attestations directory, live Cryptographic Verification Lab with tamper simulation, admin key management, and recent verification audit trail
+  - [x] Unit test suite: `backend/tests/test_pki_crypto.py` (8/8 passing; total backend pytest: 75/75 passing)
+  - [x] Live API & RLS integration test harness: `scripts/test_module9_pki_api.py` (12/12 passing)
+  - [x] Visual demonstration: Captured live screenshots (`module9_dashboard.png`, `module9_verification_valid.png`, `module9_verification_tampered.png`, `module9_key_management.png`)
 - [ ] **Module 10: Security Hardening Pass**

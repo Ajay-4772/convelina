@@ -83,6 +83,66 @@ interface ConflictItem {
   updated_at: string;
 }
 
+interface SigningKeyItem {
+  id: string;
+  key_id: string;
+  public_key: string;
+  fingerprint: string;
+  algorithm: string;
+  purpose: string;
+  status: string;
+  valid_from: string;
+  valid_until?: string | null;
+  revoked_at?: string | null;
+  revocation_reason?: string | null;
+  created_at: string;
+}
+
+interface DocumentAttestationItem {
+  id: string;
+  document_id?: string | null;
+  case_id?: string | null;
+  correction_draft_id?: string | null;
+  citizen_id: string;
+  officer_id: string;
+  document_type: string;
+  document_fingerprint: string;
+  signing_key_id: string;
+  key_id: string;
+  canonical_payload: any;
+  signature: string;
+  algorithm: string;
+  status: string;
+  expires_at?: string | null;
+  created_at: string;
+}
+
+interface VerificationResultItem {
+  verification_status: string;
+  is_valid: boolean;
+  human_readable_summary: string;
+  signature_valid: boolean;
+  document_integrity_valid: boolean;
+  key_trusted: boolean;
+  key_status: string;
+  attestation_id?: string | null;
+  key_id: string;
+  fingerprint?: string | null;
+  details: Record<string, any>;
+  verified_at: string;
+}
+
+interface PKIStatsItem {
+  total_attestations: number;
+  valid_attestations: number;
+  revoked_attestations: number;
+  total_verifications: number;
+  valid_verifications: number;
+  tampered_detections: number;
+  active_keys: number;
+  revoked_keys: number;
+}
+
 export default function Home() {
   const [health, setHealth] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -153,6 +213,23 @@ export default function Home() {
   const [citizenClarificationText, setCitizenClarificationText] = useState<string>("");
   const [submittingClarification, setSubmittingClarification] = useState<boolean>(false);
   const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
+
+  // Module 9: Ed25519 PKI & Document Authenticity State
+  const [pkiStats, setPkiStats] = useState<PKIStatsItem | null>(null);
+  const [signingKeys, setSigningKeys] = useState<SigningKeyItem[]>([]);
+  const [attestations, setAttestations] = useState<DocumentAttestationItem[]>([]);
+  const [recentVerifications, setRecentVerifications] = useState<any[]>([]);
+  const [loadingPKI, setLoadingPKI] = useState<boolean>(false);
+  const [selectedAttestation, setSelectedAttestation] = useState<DocumentAttestationItem | null>(null);
+  const [verificationResult, setVerificationResult] = useState<VerificationResultItem | null>(null);
+  const [verifyingAttestation, setVerifyingAttestation] = useState<boolean>(false);
+  const [pkiSuccessMsg, setPkiSuccessMsg] = useState<string | null>(null);
+  const [pkiErrorMsg, setPkiErrorMsg] = useState<string | null>(null);
+  const [attestingDoc, setAttestingDoc] = useState<boolean>(false);
+  const [newKeyIdInput, setNewKeyIdInput] = useState<string>("");
+  const [rotatingKey, setRotatingKey] = useState<boolean>(false);
+  const [revokingKeyId, setRevokingKeyId] = useState<string | null>(null);
+  const [revokeReasonInput, setRevokeReasonInput] = useState<string>("");
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -233,6 +310,7 @@ export default function Home() {
       if (role === "citizen") fetchCitizenCases();
       if (role === "officer") fetchOfficerCasesList();
       if (role === "admin") fetchAdminWorkload();
+      fetchPKIData(role);
 
     } catch (e: unknown) {
       console.error("Auth test failed:", e);
@@ -888,6 +966,156 @@ export default function Home() {
     }
   };
 
+  // Module 9: Ed25519 PKI & Verification Handlers
+  const fetchPKIData = async (role = activeIdentity) => {
+    setLoadingPKI(true);
+    try {
+      const token = getSimulatedToken(role);
+      const [statsRes, keysRes, attRes, verRes] = await Promise.all([
+        fetch(`${apiUrl}/api/v1/pki/stats`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${apiUrl}/api/v1/pki/keys`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${apiUrl}/api/v1/attestations`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${apiUrl}/api/v1/verifications/recent`, { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+
+      if (statsRes.ok) setPkiStats(await statsRes.json());
+      if (keysRes.ok) setSigningKeys(await keysRes.json());
+      if (attRes.ok) {
+        const attList = await attRes.json();
+        setAttestations(attList);
+        if (attList.length > 0 && !selectedAttestation) {
+          setSelectedAttestation(attList[0]);
+        }
+      }
+      if (verRes.ok) setRecentVerifications(await verRes.json());
+    } catch (e) {
+      console.error("Failed to fetch PKI data", e);
+    } finally {
+      setLoadingPKI(false);
+    }
+  };
+
+  const handleVerifyAttestation = async (attestationId: string, simulateTamper: boolean) => {
+    setVerifyingAttestation(true);
+    setPkiSuccessMsg(null);
+    setPkiErrorMsg(null);
+    try {
+      const token = getSimulatedToken(activeIdentity);
+      const res = await fetch(`${apiUrl}/api/v1/attestations/${attestationId}/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ simulate_tamper: simulateTamper })
+      });
+      if (res.ok) {
+        const result = await res.json();
+        setVerificationResult(result);
+        if (result.is_valid) {
+          setPkiSuccessMsg("Cryptographic verification PASSED: Ed25519 signature is mathematically valid, key is trusted, and document hash is intact.");
+        } else {
+          setPkiErrorMsg(`Verification Alert: ${result.verification_status} — ${result.human_readable_summary}`);
+        }
+        fetchPKIData(activeIdentity);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setPkiErrorMsg(err.detail || "Verification request failed.");
+      }
+    } catch (e) {
+      setPkiErrorMsg("Network error during verification.");
+    } finally {
+      setVerifyingAttestation(false);
+    }
+  };
+
+  const handleOfficerAttestDocument = async (docId?: string) => {
+    setAttestingDoc(true);
+    setPkiSuccessMsg(null);
+    setPkiErrorMsg(null);
+    try {
+      const targetDoc = documents.find(d => d.id === docId) || documents[0];
+      if (!targetDoc) {
+        setPkiErrorMsg("No uploaded document available to attest. Please upload a document in Module 4 first.");
+        return;
+      }
+      const token = getSimulatedToken("officer");
+      const res = await fetch(`${apiUrl}/api/v1/attestations?citizen_id=${targetDoc.user_id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          document_id: targetDoc.id,
+          document_type: targetDoc.document_type,
+          document_fingerprint: targetDoc.file_hash,
+          signing_purpose: "officer_verification_attestation",
+          expires_in_days: 365
+        })
+      });
+      if (res.ok) {
+        const newAtt = await res.json();
+        setPkiSuccessMsg(`Document attested successfully! Ed25519 signature generated with Key ${newAtt.key_id}.`);
+        setSelectedAttestation(newAtt);
+        fetchPKIData(activeIdentity);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setPkiErrorMsg(err.detail || "Failed to attest document.");
+      }
+    } catch (e) {
+      setPkiErrorMsg("Network error during attestation.");
+    } finally {
+      setAttestingDoc(false);
+    }
+  };
+
+  const handleRotateKey = async (oldKeyId: string) => {
+    if (!newKeyIdInput.trim()) return;
+    setRotatingKey(true);
+    setPkiSuccessMsg(null);
+    setPkiErrorMsg(null);
+    try {
+      const token = getSimulatedToken("admin");
+      const res = await fetch(`${apiUrl}/api/v1/pki/keys/${oldKeyId}/rotate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ new_key_id: newKeyIdInput.trim(), purpose: "officer_attestation" })
+      });
+      if (res.ok) {
+        setPkiSuccessMsg(`Key ${oldKeyId} rotated to ${newKeyIdInput.trim()} successfully.`);
+        setNewKeyIdInput("");
+        fetchPKIData(activeIdentity);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setPkiErrorMsg(err.detail || "Key rotation failed.");
+      }
+    } catch (e) {
+      setPkiErrorMsg("Network error rotating key.");
+    } finally {
+      setRotatingKey(false);
+    }
+  };
+
+  const handleRevokeKey = async (keyId: string) => {
+    if (!revokeReasonInput.trim()) return;
+    setPkiSuccessMsg(null);
+    setPkiErrorMsg(null);
+    try {
+      const token = getSimulatedToken("admin");
+      const res = await fetch(`${apiUrl}/api/v1/pki/keys/${keyId}/revoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ reason: revokeReasonInput.trim() })
+      });
+      if (res.ok) {
+        setPkiSuccessMsg(`Key ${keyId} revoked successfully.`);
+        setRevokingKeyId(null);
+        setRevokeReasonInput("");
+        fetchPKIData(activeIdentity);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setPkiErrorMsg(err.detail || "Key revocation failed.");
+      }
+    } catch (e) {
+      setPkiErrorMsg("Network error revoking key.");
+    }
+  };
+
   useEffect(() => {
     checkHealth();
     syncIdentityAndTestRoutes("citizen");
@@ -897,6 +1125,7 @@ export default function Home() {
     fetchCitizenCases();
     fetchOfficerCasesList();
     fetchAdminWorkload();
+    fetchPKIData("citizen");
     const interval = setInterval(checkHealth, 15000);
     return () => clearInterval(interval);
   }, []);
@@ -2502,6 +2731,472 @@ export default function Home() {
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* ========================================================================= */}
+        {/* MODULE 9: DOCUMENT AUTHENTICITY, Ed25519 PKI & VERIFICATION CONSOLE */}
+        {/* ========================================================================= */}
+        <section className="mt-8 p-6 rounded-2xl bg-surface/60 border border-border backdrop-blur-md shadow-xl relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border/60">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                  MODULE 9 ACTIVE • Ed25519 PKI
+                </span>
+                <span className="text-xs text-gray-400">Cryptographic Document Authenticity & Tamper Detection</span>
+              </div>
+              <h2 className="text-xl font-bold text-white mt-1 flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-cyan-400" /> Document Authenticity & Digital Signatures
+              </h2>
+              <p className="text-xs text-gray-400 mt-1 max-w-3xl">
+                Deterministic SHA-256 fingerprinting, canonical JSON attestations, mathematical Ed25519 verification, and tamper detection with hash-chained audit logging.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 text-xs">
+              <button
+                onClick={() => fetchPKIData(activeIdentity)}
+                disabled={loadingPKI}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-200 bg-surface border border-border rounded-lg hover:bg-surface-card transition"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingPKI ? "animate-spin text-cyan-400" : ""}`} />
+                Refresh PKI Keystore
+              </button>
+            </div>
+          </div>
+
+          {/* Statutory Authority Disclaimer Notice */}
+          <div className="mt-4 p-3 rounded-lg bg-blue-950/40 border border-blue-800/60 text-blue-300 text-xs flex items-center gap-2">
+            <Info className="w-4 h-4 shrink-0 text-blue-400" />
+            <span>
+              <strong>Cryptographic Trust Model Notice:</strong> A valid Ed25519 digital signature establishes that the signed document payload has not been modified since signing and corresponds to a registered public key. It does not constitute statutory government authorization or official certification by UIDAI, NSDL, MEA, EPFO, or CBSE.
+            </span>
+          </div>
+
+          {/* Action alerts */}
+          {pkiSuccessMsg && (
+            <div className="mt-4 p-3 rounded-lg bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>{pkiSuccessMsg}</span>
+            </div>
+          )}
+          {pkiErrorMsg && (
+            <div className="mt-4 p-3 rounded-lg bg-rose-950/60 border border-rose-800 text-rose-300 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{pkiErrorMsg}</span>
+            </div>
+          )}
+
+          {/* PKI Metrics Dashboard Grid */}
+          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-4 rounded-xl bg-slate-950/60 border border-border">
+              <div className="flex items-center justify-between text-gray-400 text-xs mb-1">
+                <span>Total Attestations</span>
+                <FileCheck className="w-4 h-4 text-cyan-400" />
+              </div>
+              <div className="text-2xl font-bold text-white">{pkiStats?.total_attestations ?? 0}</div>
+              <div className="text-[10px] text-emerald-400 mt-1">{pkiStats?.valid_attestations ?? 0} Valid in Keystore</div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-950/60 border border-border">
+              <div className="flex items-center justify-between text-gray-400 text-xs mb-1">
+                <span>Verifications Performed</span>
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              </div>
+              <div className="text-2xl font-bold text-white">{pkiStats?.total_verifications ?? 0}</div>
+              <div className="text-[10px] text-gray-400 mt-1">{pkiStats?.valid_verifications ?? 0} Mathematical Checks Passed</div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-950/60 border border-rose-900/40">
+              <div className="flex items-center justify-between text-gray-400 text-xs mb-1">
+                <span>Tampering Detected</span>
+                <ShieldAlert className="w-4 h-4 text-rose-400" />
+              </div>
+              <div className="text-2xl font-bold text-rose-400">{pkiStats?.tampered_detections ?? 0}</div>
+              <div className="text-[10px] text-rose-400/80 mt-1">SHA-256 Digest Mismatches Blocked</div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-950/60 border border-border">
+              <div className="flex items-center justify-between text-gray-400 text-xs mb-1">
+                <span>Active Signing Keys</span>
+                <KeyRound className="w-4 h-4 text-amber-400" />
+              </div>
+              <div className="text-2xl font-bold text-white">{pkiStats?.active_keys ?? 0}</div>
+              <div className="text-[10px] text-gray-400 mt-1">{pkiStats?.revoked_keys ?? 0} Revoked / Decommissioned</div>
+            </div>
+          </div>
+
+          {/* Main Workspace (Attestations Directory & Verification Lab) */}
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left Column: Attestations List & Officer Sign Action (5 cols) */}
+            <div className="lg:col-span-5 space-y-4">
+              <div className="p-4 rounded-xl bg-slate-950/60 border border-border space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-semibold text-gray-200 flex items-center gap-1.5">
+                    <FileCheck className="w-4 h-4 text-cyan-400" />
+                    <span>Signed Attestations Directory</span>
+                  </h4>
+                  <span className="text-[10px] text-gray-400">{attestations.length} signed records</span>
+                </div>
+
+                {attestations.length === 0 ? (
+                  <div className="p-6 rounded-lg bg-surface/30 border border-border/60 text-center text-xs text-gray-500">
+                    No signed attestations found. Upload documents and sign an attestation below.
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                    {attestations.map((att) => {
+                      const isSelected = selectedAttestation?.id === att.id;
+                      return (
+                        <div
+                          key={att.id}
+                          onClick={() => {
+                            setSelectedAttestation(att);
+                            setVerificationResult(null);
+                          }}
+                          className={`p-3 rounded-lg border text-xs cursor-pointer transition flex flex-col gap-1.5 ${
+                            isSelected
+                              ? "bg-cyan-950/40 border-cyan-500 text-white shadow-sm shadow-cyan-500/20"
+                              : "bg-surface/40 border-border text-gray-300 hover:border-border/80"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold uppercase tracking-wider text-[11px] text-cyan-300">
+                              {att.document_type} Attestation
+                            </span>
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-mono ${
+                              att.status === "valid" ? "bg-emerald-950 text-emerald-400 border border-emerald-800" :
+                              "bg-rose-950 text-rose-400 border border-rose-800"
+                            }`}>
+                              {att.status}
+                            </span>
+                          </div>
+
+                          <div className="font-mono text-[10px] text-gray-400 truncate">
+                            SHA-256: {att.document_fingerprint.slice(0, 24)}...
+                          </div>
+
+                          <div className="flex items-center justify-between text-[10px] text-gray-500 mt-1">
+                            <span>Key: {att.key_id}</span>
+                            <span>{new Date(att.created_at).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Officer Quick Attest Box */}
+                {(activeIdentity === "officer" || activeIdentity === "admin") && documents.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-border/60">
+                    <span className="text-xs font-semibold text-white mb-2 block">Officer Document Signing Action</span>
+                    <p className="text-[11px] text-gray-400 mb-3">
+                      Sign an official Ed25519 attestation over a verified document representation.
+                    </p>
+                    <button
+                      onClick={() => handleOfficerAttestDocument()}
+                      disabled={attestingDoc}
+                      className="w-full py-2 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-xs transition flex items-center justify-center gap-2"
+                    >
+                      <KeyRound className={`w-3.5 h-3.5 ${attestingDoc ? "animate-spin" : ""}`} />
+                      {attestingDoc ? "Generating Ed25519 Signature..." : "Sign Document Attestation"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Column: Verification Dossier & Real-time Verification Lab (7 cols) */}
+            <div className="lg:col-span-7 space-y-4">
+              <div className="p-4 rounded-xl bg-slate-950/60 border border-border flex flex-col h-full">
+                <div className="flex items-center justify-between pb-3 border-b border-border">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-cyan-400" />
+                    <span className="text-xs font-semibold text-white">Cryptographic Verification Laboratory</span>
+                  </div>
+                  {selectedAttestation && (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">
+                      Attestation ID: {selectedAttestation.id.slice(0, 8)}
+                    </span>
+                  )}
+                </div>
+
+                {selectedAttestation ? (
+                  <div className="mt-4 space-y-4">
+                    {/* Attestation Metadata & Canonical Payload */}
+                    <div className="p-3 rounded-lg bg-surface/30 border border-border text-xs space-y-2">
+                      <div className="grid grid-cols-2 gap-2 text-[11px]">
+                        <div>
+                          <span className="text-gray-400">Document Type:</span>{" "}
+                          <span className="text-white font-semibold uppercase">{selectedAttestation.document_type}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Algorithm:</span>{" "}
+                          <span className="text-cyan-400 font-mono font-bold">{selectedAttestation.algorithm}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Signing Key ID:</span>{" "}
+                          <span className="text-white font-mono">{selectedAttestation.key_id}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Issued Timestamp:</span>{" "}
+                          <span className="text-gray-300">{new Date(selectedAttestation.created_at).toLocaleString()}</span>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-border/40">
+                        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">
+                          Document SHA-256 Fingerprint
+                        </span>
+                        <div className="p-2 rounded bg-black/50 border border-border font-mono text-[11px] text-cyan-300 break-all select-all">
+                          {selectedAttestation.document_fingerprint}
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-border/40">
+                        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">
+                          Ed25519 Digital Signature
+                        </span>
+                        <div className="p-2 rounded bg-black/50 border border-border font-mono text-[10px] text-gray-400 break-all select-all">
+                          {selectedAttestation.signature}
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-border/40">
+                        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">
+                          RFC 8785 Canonical JSON Payload
+                        </span>
+                        <pre className="p-2.5 rounded bg-black/60 border border-border font-mono text-[10px] text-gray-300 overflow-x-auto max-h-36">
+                          {JSON.stringify(selectedAttestation.canonical_payload, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+
+                    {/* Verification Action Buttons */}
+                    <div className="p-3 rounded-lg bg-surface/50 border border-border space-y-2">
+                      <span className="text-xs font-semibold text-white block">Test Signature & Tamper Detection</span>
+                      <p className="text-[11px] text-gray-400">
+                        Execute live cryptographic verification to validate mathematical signature correctness and document integrity.
+                      </p>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                        <button
+                          onClick={() => handleVerifyAttestation(selectedAttestation.id, false)}
+                          disabled={verifyingAttestation}
+                          className="py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs transition flex items-center justify-center gap-1.5"
+                        >
+                          <ShieldCheck className={`w-3.5 h-3.5 ${verifyingAttestation ? "animate-spin" : ""}`} />
+                          Verify Authenticity (Intact Document)
+                        </button>
+
+                        <button
+                          onClick={() => handleVerifyAttestation(selectedAttestation.id, true)}
+                          disabled={verifyingAttestation}
+                          className="py-2 px-3 rounded-lg bg-rose-950/80 hover:bg-rose-900 border border-rose-800 text-rose-300 font-medium text-xs transition flex items-center justify-center gap-1.5"
+                        >
+                          <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
+                          Simulate Tampering (Test Rejection)
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Live Verification Result Banner */}
+                    {verificationResult && (
+                      <div className={`p-4 rounded-xl border text-xs space-y-3 ${
+                        verificationResult.is_valid
+                          ? "bg-emerald-950/40 border-emerald-700 text-emerald-200"
+                          : "bg-rose-950/50 border-rose-700 text-rose-200"
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {verificationResult.is_valid ? (
+                              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                            ) : (
+                              <XCircle className="w-5 h-5 text-rose-400 shrink-0" />
+                            )}
+                            <div>
+                              <div className="font-bold uppercase tracking-wider text-sm">
+                                {verificationResult.verification_status}
+                              </div>
+                              <div className="text-[11px] text-gray-300 mt-0.5">
+                                {verificationResult.human_readable_summary}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-mono text-gray-400">
+                            {new Date(verificationResult.verified_at).toLocaleTimeString()}
+                          </span>
+                        </div>
+
+                        {/* Multi-Factor Cryptographic Checks Table */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-border/40 text-[10px]">
+                          <div className="p-2 rounded bg-black/40 border border-border/50">
+                            <span className="text-gray-400 block">Ed25519 Math</span>
+                            <span className={`font-bold font-mono ${verificationResult.signature_valid ? "text-emerald-400" : "text-rose-400"}`}>
+                              {verificationResult.signature_valid ? "VALID SIGNATURE" : "FAILED"}
+                            </span>
+                          </div>
+
+                          <div className="p-2 rounded bg-black/40 border border-border/50">
+                            <span className="text-gray-400 block">Document Hash</span>
+                            <span className={`font-bold font-mono ${verificationResult.document_integrity_valid ? "text-emerald-400" : "text-rose-400"}`}>
+                              {verificationResult.document_integrity_valid ? "MATCHED" : "TAMPERED"}
+                            </span>
+                          </div>
+
+                          <div className="p-2 rounded bg-black/40 border border-border/50">
+                            <span className="text-gray-400 block">Keystore Trust</span>
+                            <span className={`font-bold font-mono ${verificationResult.key_trusted ? "text-emerald-400" : "text-amber-400"}`}>
+                              {verificationResult.key_trusted ? "TRUSTED KEY" : "UNTRUSTED"}
+                            </span>
+                          </div>
+
+                          <div className="p-2 rounded bg-black/40 border border-border/50">
+                            <span className="text-gray-400 block">Key Status</span>
+                            <span className="font-bold font-mono text-gray-200 uppercase">
+                              {verificationResult.key_status}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="py-20 text-center text-xs text-gray-500">
+                    Select an attestation from the left panel to inspect canonical payload and verify authenticity.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Admin PKI Key Management Section */}
+          <div className="mt-8 pt-6 border-t border-border/60">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                  <KeyRound className="w-4 h-4 text-cyan-400" /> PKI Key Management & Lifecycle Keystore
+                </h3>
+                <p className="text-xs text-gray-400">
+                  Inspect registered Ed25519 public keys, rotate active keys, or revoke compromised key identifiers.
+                </p>
+              </div>
+
+              {activeIdentity === "admin" && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="New Key ID..."
+                    value={newKeyIdInput}
+                    onChange={(e) => setNewKeyIdInput(e.target.value)}
+                    className="px-2.5 py-1 text-xs rounded bg-surface border border-border text-white focus:outline-none"
+                  />
+                  <button
+                    onClick={() => handleRotateKey(signingKeys[0]?.key_id || "consolith-officer-key-2026-v1")}
+                    disabled={rotatingKey || !newKeyIdInput.trim()}
+                    className="px-3 py-1 text-xs font-medium rounded bg-cyan-600 hover:bg-cyan-500 text-white disabled:opacity-50 transition"
+                  >
+                    Rotate Key
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 rounded-xl bg-surface/40 border border-border">
+              {signingKeys.length === 0 ? (
+                <div className="text-xs text-gray-500 text-center py-4">No signing keys found in keystore.</div>
+              ) : (
+                <div className="space-y-3">
+                  {signingKeys.map((k) => (
+                    <div key={k.id} className="p-3 rounded-lg bg-background/60 border border-border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-white font-mono">{k.key_id}</span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                            k.status === "active" ? "bg-emerald-950 text-emerald-400 border border-emerald-800" :
+                            k.status === "revoked" ? "bg-rose-950 text-rose-400 border border-rose-800" :
+                            "bg-surface border border-border text-gray-400"
+                          }`}>
+                            {k.status}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-gray-400 font-mono mt-1">
+                          Fingerprint: {k.fingerprint}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {activeIdentity === "admin" && k.status === "active" && (
+                          <div className="flex items-center gap-1.5">
+                            {revokingKeyId === k.key_id ? (
+                              <div className="flex items-center gap-1">
+                                <input
+                                  type="text"
+                                  placeholder="Reason for revocation..."
+                                  value={revokeReasonInput}
+                                  onChange={(e) => setRevokeReasonInput(e.target.value)}
+                                  className="px-2 py-0.5 text-[11px] rounded bg-surface border border-border text-white focus:outline-none"
+                                />
+                                <button
+                                  onClick={() => handleRevokeKey(k.key_id)}
+                                  className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-semibold"
+                                >
+                                  Confirm Revoke
+                                </button>
+                                <button
+                                  onClick={() => setRevokingKeyId(null)}
+                                  className="px-2 py-0.5 rounded bg-surface border border-border text-gray-400 text-[11px]"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setRevokingKeyId(k.key_id);
+                                  setRevokeReasonInput("");
+                                }}
+                                className="px-2.5 py-1 rounded bg-rose-950/80 hover:bg-rose-900 border border-rose-800 text-rose-300 text-xs font-medium transition"
+                              >
+                                Revoke Key
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Verification Audit Trail Log */}
+          {recentVerifications.length > 0 && (
+            <div className="mt-6 pt-4 border-t border-border/40">
+              <span className="text-xs font-semibold text-white mb-2 block flex items-center gap-1.5">
+                <History className="w-3.5 h-3.5 text-cyan-400" /> Recent Verification Audit Trail
+              </span>
+              <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                {recentVerifications.map((v) => (
+                  <div key={v.id} className="p-2 rounded bg-surface/30 border border-border/40 text-[11px] flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold font-mono ${
+                        v.verification_status === "VALID" ? "bg-emerald-950 text-emerald-400 border border-emerald-800" :
+                        "bg-rose-950 text-rose-400 border border-rose-800"
+                      }`}>
+                        {v.verification_status}
+                      </span>
+                      <span className="text-gray-300 truncate max-w-xs">{v.details?.summary || "Verification performed"}</span>
+                    </div>
+                    <span className="text-[10px] text-gray-500 font-mono">
+                      {new Date(v.verified_at).toLocaleTimeString()}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           )}

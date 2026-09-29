@@ -1,4 +1,4 @@
-- **Current Active Module**: Module 8 Completed & Verified (Awaiting User Sign-off before Module 9: Document Authenticity & Ed25519 PKI/CA)
+- **Current Active Module**: Module 9 Completed & Verified (Awaiting User Sign-off before Module 10: Security Hardening & Penetration Testing)
 - **Completed Modules**:
   - Module 1: Foundation (Next.js + FastAPI + PostgreSQL 16 + Qdrant container stack running and verified via `scripts/verify_module1.py`)
   - Module 2: Database Schema & Row-Level Security (RLS) (Forced RLS across all 7 user-data tables, dedicated non-superuser role `consolith_app`, 22 policies, append-only trigger, self-promotion block, pooling-safe session variables, verified via `scripts/test_rls_isolation.py`)
@@ -8,15 +8,16 @@
   - Module 6: Advanced Context-Aware RAG & AI Resolution Assistant (Official government procedure & circular ingestion for UIDAI, NSDL, MEA, EPFO, CBSE; verified downloadable forms catalog; 1024-dim Qdrant hybrid dense + lexical retriever with >= 0.55 relevance floor; zero-hallucination citation validator; Google Gemini ONLY architecture audited and enforced; exact service unavailable message "Assistant service is not currently available. Please try again later." on failures; 53/53 pytest tests and 8/8 end-to-end API integration tests passing)
   - Module 7: Correction Document Generator (Case-aware official correction request drafts grounded in Module 6 verified guidelines and forms; Google Gemini ONLY generation; DocumentValidator with placeholder scanning and draft notice; ReportLab PDF and python-docx DOCX exports; database migration 006 with forced PostgreSQL RLS on `correction_drafts` and `correction_draft_versions`; draft version tracking; Next.js Correction Document Workspace; 61/61 backend pytest tests passing, 11/11 live API & RLS integration tests passing)
   - Module 8: Officer Verification Workflow (Secure, auditable verification and assistance workflow; 8-state validated workflow state machine; migration 007 with forced PostgreSQL RLS on `cases`, `case_evidence`, and `case_review_requests`; cryptographic SHA-256 hash-chained append-only audit trail with `get_latest_audit_hash()` security definer function; dedicated non-superuser `consolith_app` enforcement; citizen clarification dialogue; officer case dossier & action workspace; admin officer fleet workload & reassignment console; 67/67 backend pytest tests passing, 11/11 live API & RLS integration tests passing)
+  - Module 9: Document Authenticity & Ed25519 PKI (Cryptographic document authenticity and verification; SHA-256 document fingerprinting without sensitive PII leakage; RFC 8785 canonical JSON serialization; Ed25519 digital signatures; structured verification results VALID, INVALID_SIGNATURE, DOCUMENT_TAMPERED, EXPIRED, REVOKED_KEY, UNTRUSTED_KEY; PKI key lifecycle with rotation, revocation, and historical signature validity; migration 008 with forced PostgreSQL RLS on `signing_keys`, `document_attestations`, and `attestation_verifications`; tamper-evident SHA-256 audit trail chaining; Next.js Document Authenticity & Cryptographic Verification Lab; 75/75 backend pytest tests passing, 12/12 live API & RLS integration tests passing)
 - **Docker Stack**:
-  - `consolith-postgres`: PostgreSQL 16 Alpine, port 5432 (Healthy, migrations 001-007 applied)
+  - `consolith-postgres`: PostgreSQL 16 Alpine, port 5432 (Healthy, migrations 001-008 applied)
   - `consolith-qdrant`: Qdrant v1.11.0, port 6333/6334 (Healthy)
-  - `consolith-backend`: FastAPI Python 3.11 with Tesseract 5.5.0 + Poppler + Qdrant client + Google Gemini SDK + ReportLab + python-docx, port 8000 (Healthy, connects via non-superuser `consolith_app`)
-  - `consolith-frontend`: Next.js 14 App Router, port 3000 (Operational, Document Upload, OCR, RBAC, Conflict Review, AI Assistant, Correction Document Workspace, and Officer Verification Console active)
+  - `consolith-backend`: FastAPI Python 3.11 with cryptography Ed25519 + Tesseract 5.5.0 + Poppler + Qdrant client + Google Gemini SDK + ReportLab + python-docx, port 8000 (Healthy, connects via non-superuser `consolith_app`)
+  - `consolith-frontend`: Next.js 14 App Router, port 3000 (Operational, Document Upload, OCR, RBAC, Conflict Review, AI Assistant, Correction Workspace, Officer Verification Console, and Ed25519 PKI Verification Lab active)
 - **Database Status**:
   - Superuser: `postgres` (migrations/admin only)
   - Application role: `consolith_app` (non-superuser, least-privilege)
-  - RLS Status: Enabled and FORCED on all user-data tables (`knowledge_sources`, `official_forms`, `assistant_conversations`, `assistant_messages`, `conflicts`, `correction_drafts`, `correction_draft_versions`, etc.)
+  - RLS Status: Enabled and FORCED on all user-data tables (`signing_keys`, `document_attestations`, `attestation_verifications`, `cases`, `case_evidence`, `case_review_requests`, `correction_drafts`, `correction_draft_versions`, `conflicts`, `documents`, `users`, `audit_log`)
   - Collections in Qdrant: `consolith_knowledge` (25 chunks indexed), `consolith_forms` (6 forms indexed)
 
 

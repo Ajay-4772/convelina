@@ -7,6 +7,7 @@ from app.models.assistant import AssistantConversation, AssistantMessage
 from app.models.correction_draft import CorrectionDraft, CorrectionDraftVersion
 from app.models.case import Case, CaseEvidence, CaseReviewRequest
 from app.models.audit_log import AuditLog
+from app.models.pki import SigningKey, DocumentAttestation, AttestationVerification
 
 __all__ = [
     "User",
@@ -22,4 +23,7 @@ __all__ = [
     "CaseEvidence",
     "CaseReviewRequest",
     "AuditLog",
+    "SigningKey",
+    "DocumentAttestation",
+    "AttestationVerification",
 ]
