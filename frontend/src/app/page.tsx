@@ -25,7 +25,12 @@ import {
   AlertTriangle,
   Info,
   Sliders,
-  Check
+  Check,
+  Bot,
+  Sparkles,
+  BookOpen,
+  ExternalLink,
+  Send
 } from "lucide-react";
 
 
@@ -93,6 +98,15 @@ export default function Home() {
   const [detectingConflicts, setDetectingConflicts] = useState<boolean>(false);
   const [detectionMessage, setDetectionMessage] = useState<string | null>(null);
   const [activeConflictDetail, setActiveConflictDetail] = useState<ConflictItem | null>(null);
+
+  // Module 6: RAG Resolution Assistant state
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatInput, setChatInput] = useState<string>("");
+  const [sendingChat, setSendingChat] = useState<boolean>(false);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [activeAssistantConflict, setActiveAssistantConflict] = useState<ConflictItem | null>(null);
+  const [officialForms, setOfficialForms] = useState<any[]>([]);
+  const [loadingForms, setLoadingForms] = useState<boolean>(false);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -234,6 +248,145 @@ export default function Home() {
       setDetectionMessage("Network error during conflict detection.");
     } finally {
       setDetectingConflicts(false);
+    }
+  };
+
+  const fetchOfficialForms = async () => {
+    setLoadingForms(true);
+    try {
+      const token = getSimulatedToken(activeIdentity);
+      const res = await fetch(`${apiUrl}/api/v1/knowledge/forms`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setOfficialForms(data.forms || []);
+      }
+    } catch (e) {
+      console.error("Failed to load official forms", e);
+    } finally {
+      setLoadingForms(false);
+    }
+  };
+
+  const handleExplainConflict = async (conflict: ConflictItem) => {
+    setActiveAssistantConflict(conflict);
+    setSendingChat(true);
+    const token = getSimulatedToken(activeIdentity);
+    try {
+      const res = await fetch(`${apiUrl}/api/v1/assistant/explain-conflict/${conflict.id}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentConversationId(data.conversation_id);
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            role: "user",
+            content: `Explain discrepancy in ${conflict.field_name} (${conflict.value_a} vs ${conflict.value_b})`
+          },
+          {
+            role: "assistant",
+            content: data.response.answer,
+            response: data.response
+          }
+        ]);
+      }
+    } catch (e) {
+      console.error("Error explaining conflict", e);
+    } finally {
+      setSendingChat(false);
+    }
+  };
+
+  const handleResolveConflict = async (conflict: ConflictItem) => {
+    setActiveAssistantConflict(conflict);
+    setSendingChat(true);
+    const token = getSimulatedToken(activeIdentity);
+    try {
+      const res = await fetch(`${apiUrl}/api/v1/assistant/resolve-conflict/${conflict.id}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentConversationId(data.conversation_id);
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            role: "user",
+            content: `How do I resolve the inconsistency in my ${conflict.field_name}?`
+          },
+          {
+            role: "assistant",
+            content: data.response.answer,
+            response: data.response
+          }
+        ]);
+      }
+    } catch (e) {
+      console.error("Error resolving conflict", e);
+    } finally {
+      setSendingChat(false);
+    }
+  };
+
+  const handleSendChatMessage = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!chatInput.trim() || sendingChat) return;
+
+    const messageText = chatInput.trim();
+    setChatInput("");
+    setChatMessages((prev) => [...prev, { role: "user", content: messageText }]);
+    setSendingChat(true);
+
+    try {
+      const token = getSimulatedToken(activeIdentity);
+      const res = await fetch(`${apiUrl}/api/v1/assistant/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          message: messageText,
+          conversation_id: currentConversationId,
+          conflict_id: activeAssistantConflict?.id || null
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentConversationId(data.conversation_id);
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: data.response.answer,
+            response: data.response
+          }
+        ]);
+      } else {
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: "Unable to process inquiry. Please verify the request or consult jurisdictional authority."
+          }
+        ]);
+      }
+    } catch (err) {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Network error communicating with AI resolution assistant."
+        }
+      ]);
+    } finally {
+      setSendingChat(false);
     }
   };
 
@@ -946,7 +1099,29 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="mt-5 pt-3 border-t border-border flex justify-end">
+                <div className="mt-5 pt-3 border-t border-border flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        const c = activeConflictDetail;
+                        setActiveConflictDetail(null);
+                        handleExplainConflict(c);
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/50 text-xs text-indigo-300 flex items-center gap-1.5 transition"
+                    >
+                      <Bot className="w-3.5 h-3.5" /> Explain with AI
+                    </button>
+                    <button
+                      onClick={() => {
+                        const c = activeConflictDetail;
+                        setActiveConflictDetail(null);
+                        handleResolveConflict(c);
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500/50 text-xs text-emerald-300 flex items-center gap-1.5 transition"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" /> Step-by-Step Resolution
+                    </button>
+                  </div>
                   <button
                     onClick={() => setActiveConflictDetail(null)}
                     className="px-4 py-1.5 rounded-lg bg-surface hover:bg-slate-800 border border-border text-xs text-white transition"
@@ -957,6 +1132,242 @@ export default function Home() {
               </div>
             </div>
           )}
+        </section>
+
+        {/* Module 6: Advanced Context-Aware RAG & AI Resolution Assistant */}
+        <section className="mt-8 p-6 rounded-2xl bg-surface/30 border border-border">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border/60">
+            <div>
+              <span className="text-[11px] font-mono uppercase tracking-wider text-indigo-400 font-semibold flex items-center gap-1.5">
+                <Bot className="w-3.5 h-3.5" /> Module 6 — Active
+              </span>
+              <h2 className="text-xl font-bold text-white mt-1">Context-Aware AI Resolution Assistant & RAG</h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Multi-category hybrid retrieval (Qdrant 1024-dim dense + lexical boost) grounded in official UIDAI, NSDL, MEA, and EPFO procedures.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={fetchOfficialForms}
+                disabled={loadingForms}
+                className="px-3.5 py-2 rounded-xl bg-surface hover:bg-slate-800 border border-border text-xs font-medium text-gray-200 flex items-center gap-2 transition"
+              >
+                <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
+                {loadingForms ? "Loading Forms..." : "Official Forms Catalog"}
+              </button>
+            </div>
+          </div>
+
+          {/* Active Context Banner */}
+          {activeAssistantConflict && (
+            <div className="mt-4 p-3 rounded-xl bg-indigo-950/40 border border-indigo-500/30 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+                <span className="text-gray-300">
+                  Active Discrepancy Context: <strong className="text-white">{activeAssistantConflict.field_name}</strong> ({activeAssistantConflict.value_a} vs {activeAssistantConflict.value_b})
+                </span>
+              </div>
+              <button
+                onClick={() => setActiveAssistantConflict(null)}
+                className="text-gray-400 hover:text-white underline text-[11px]"
+              >
+                Clear Context
+              </button>
+            </div>
+          )}
+
+          {/* Assistant Chat Console */}
+          <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 flex flex-col h-[520px] rounded-xl bg-slate-950/60 border border-border overflow-hidden">
+              {/* Messages viewport */}
+              <div className="flex-1 p-4 overflow-y-auto space-y-4 text-xs">
+                {chatMessages.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-400">
+                    <Bot className="w-10 h-10 text-indigo-400 mb-2 opacity-60" />
+                    <p className="font-medium text-sm text-gray-300">AI Document Correction Assistant</p>
+                    <p className="text-xs text-gray-500 max-w-sm mt-1">
+                      Ask about document discrepancies, official UIDAI / NSDL / Passport / EPF update procedures, forms, or potential future verification risks.
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-4 justify-center">
+                      {[
+                        "How do I correct my name in PAN card?",
+                        "What is Aadhaar update lifetime limit?",
+                        "What is Joint Declaration for EPFO?",
+                        "What documents are needed for minor name change in Passport?"
+                      ].map((promptText, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            setChatInput(promptText);
+                          }}
+                          className="px-2.5 py-1 rounded-full bg-surface hover:bg-slate-800 border border-border text-[11px] text-gray-300 transition"
+                        >
+                          {promptText}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  chatMessages.map((msg, idx) => (
+                    <div
+                      key={idx}
+                      className={`flex flex-col ${
+                        msg.role === "user" ? "items-end" : "items-start"
+                      }`}
+                    >
+                      <div
+                        className={`max-w-[88%] p-3.5 rounded-2xl ${
+                          msg.role === "user"
+                            ? "bg-indigo-600 text-white rounded-br-none"
+                            : "bg-surface/80 border border-border text-gray-200 rounded-bl-none"
+                        }`}
+                      >
+                        <p className="whitespace-pre-line leading-relaxed">{msg.content}</p>
+
+                        {/* Structured Output Components (Resolution steps, forms, citations) */}
+                        {msg.response && (
+                          <div className="mt-3 pt-3 border-t border-border/40 space-y-3">
+                            {/* Resolution Steps */}
+                            {msg.response.resolution_steps && msg.response.resolution_steps.length > 0 && (
+                              <div>
+                                <span className="font-semibold text-emerald-400 text-[11px] block mb-1.5 flex items-center gap-1">
+                                  <Sparkles className="w-3 h-3" /> Grounded Resolution Steps:
+                                </span>
+                                <ol className="space-y-1.5 pl-4 list-decimal text-[11px] text-gray-300">
+                                  {msg.response.resolution_steps.map((st: any, sIdx: number) => (
+                                    <li key={sIdx}>
+                                      <strong>{st.title}:</strong> {st.description}
+                                      {st.required_documents && st.required_documents.length > 0 && (
+                                        <div className="text-[10px] text-gray-400 mt-0.5">
+                                          Docs: {st.required_documents.join(", ")}
+                                        </div>
+                                      )}
+                                    </li>
+                                  ))}
+                                </ol>
+                              </div>
+                            )}
+
+                            {/* Relevant Forms */}
+                            {msg.response.relevant_forms && msg.response.relevant_forms.length > 0 && (
+                              <div>
+                                <span className="font-semibold text-blue-400 text-[11px] block mb-1">
+                                  Official Government Form:
+                                </span>
+                                <div className="space-y-1">
+                                  {msg.response.relevant_forms.map((f: any, fIdx: number) => (
+                                    <a
+                                      key={fIdx}
+                                      href={f.official_download_url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-blue-950/60 border border-blue-500/40 text-blue-300 hover:text-white text-[10px] transition"
+                                    >
+                                      <FileText className="w-3 h-3" />
+                                      {f.form_name}
+                                      <ExternalLink className="w-2.5 h-2.5" />
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Traceable Citations */}
+                            {msg.response.citations && msg.response.citations.length > 0 && (
+                              <div className="pt-1">
+                                <span className="text-[10px] uppercase font-mono text-gray-400 block mb-1">
+                                  Official Citations:
+                                </span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {msg.response.citations.map((c: any, cIdx: number) => (
+                                    <a
+                                      key={cIdx}
+                                      href={c.source_url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="px-2 py-0.5 rounded bg-slate-900 border border-border text-gray-300 hover:text-indigo-300 text-[10px] flex items-center gap-1 transition"
+                                    >
+                                      <span>{c.issuing_authority}</span>
+                                      <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+                {sendingChat && (
+                  <div className="flex items-center gap-2 text-indigo-400 text-xs">
+                    <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
+                    Searching verified government knowledge and formulating grounded response...
+                  </div>
+                )}
+              </div>
+
+              {/* Chat Input form */}
+              <form onSubmit={handleSendChatMessage} className="p-3 bg-surface/60 border-t border-border flex items-center gap-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Ask the AI Resolution Assistant..."
+                  disabled={sendingChat}
+                  className="flex-1 bg-slate-950 border border-border rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                />
+                <button
+                  type="submit"
+                  disabled={sendingChat || !chatInput.trim()}
+                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-medium text-xs flex items-center gap-1.5 transition"
+                >
+                  <Send className="w-3.5 h-3.5" /> Send
+                </button>
+              </form>
+            </div>
+
+            {/* Official Forms & Guidelines Sidebar */}
+            <div className="p-4 rounded-xl bg-slate-950/60 border border-border flex flex-col h-[520px] overflow-hidden">
+              <h4 className="text-xs font-semibold text-gray-300 flex items-center gap-1.5 pb-2 border-b border-border">
+                <BookOpen className="w-3.5 h-3.5 text-blue-400" /> Official Government Forms
+              </h4>
+              <div className="flex-1 overflow-y-auto mt-3 space-y-2.5 text-xs pr-1">
+                {officialForms.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500">
+                    Click &ldquo;Official Forms Catalog&rdquo; above to load verified downloadable forms.
+                  </div>
+                ) : (
+                  officialForms.map((frm) => (
+                    <div key={frm.form_id} className="p-2.5 rounded-lg bg-surface/50 border border-border flex flex-col gap-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-900">
+                          {frm.document_category}
+                        </span>
+                        <span className="text-[10px] text-emerald-400 flex items-center gap-1">
+                          <CheckCircle2 className="w-2.5 h-2.5" /> verified
+                        </span>
+                      </div>
+                      <p className="font-medium text-white text-[11px] mt-0.5">{frm.form_name}</p>
+                      <p className="text-[10px] text-gray-400 line-clamp-2">{frm.purpose}</p>
+                      <div className="mt-1 flex items-center justify-between pt-1 border-t border-border/40">
+                        <span className="text-[9px] text-gray-500">{frm.issuing_authority}</span>
+                        <a
+                          href={frm.official_download_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[10px] text-indigo-400 hover:text-white flex items-center gap-1"
+                        >
+                          Download <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* Foundation Overview & Scope Cards */}

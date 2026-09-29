@@ -39,6 +39,17 @@ class Settings(BaseSettings):
         "http://frontend:3000",
     ]
 
+    # Module 6: RAG Knowledge Base & AI Assistant
+    ANTHROPIC_API_KEY: Optional[str] = None
+    ANTHROPIC_MODEL: str = "claude-3-5-sonnet-20241022"
+    EMBEDDING_MODEL: str = "BAAI/bge-m3"
+    QDRANT_KNOWLEDGE_COLLECTION: str = "consolith_knowledge"
+    QDRANT_FORMS_COLLECTION: str = "consolith_forms"
+    RAG_TOP_K: int = 5
+    RAG_MIN_RELEVANCE: float = 0.55  # Minimum similarity score floor per project rule
+    RAG_MAX_CONTEXT_TOKENS: int = 4000
+    RAG_SOURCE_MAX_AGE_DAYS: int = 365
+
 
     model_config = SettingsConfigDict(
         env_file=".env",

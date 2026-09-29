@@ -59,8 +59,23 @@
   - [x] Frontend Next.js integration in `page.tsx`: Conflict detection console, discrepancy table, severity badges, review status updater, inspection modal
   - [x] Pytest suite `backend/tests/test_conflicts.py` (25/25 passing; total backend tests: 49/49 passing)
   - [x] Standalone integration test `scripts/test_conflicts_engine.py` (10/10 passing)
-  - [x] RLS regression test `scripts/test_rls_isolation.py` (9/9 passing)
-- [ ] **Module 6: RAG Knowledge Base & AI Assistant**
+- [x] **Module 6: RAG Knowledge Base & AI Assistant**
+  - [x] Dependencies installed: `anthropic`, `langchain`, `langchain-core`, `langchain-community`
+  - [x] Database migration `005_rag_and_assistant.sql`: `knowledge_sources`, `official_forms`, `assistant_conversations`, `assistant_messages` tables with FORCED RLS
+  - [x] ORM models: `KnowledgeSource`, `OfficialForm`, `AssistantConversation`, `AssistantMessage`
+  - [x] Official government knowledge ingestion pipeline: UIDAI Aadhaar SOP, NSDL PAN guidelines, MEA Passport Seva manual, EPFO Joint Declaration SOP, CBSE Rule 69 bye-laws
+  - [x] Official forms catalog: verified download URLs for PAN CSF Form, Aadhaar Update Form, Passport Re-issue & Annexure E, EPFO Joint Declaration, CBSE form
+  - [x] Document chunker preserving hierarchical Markdown headings and source provenance
+  - [x] Hybrid dense vector retrieval via Qdrant (1024-dim BGE-M3 standard) + lexical keyword boost
+  - [x] Mandatory relevance score floor enforcement (>= 0.55) to prevent out-of-domain hallucinations
+  - [x] Prompt-injection defense: XML boundary tags (`<user_question>`, `<retrieved_official_evidence>`), untrusted data rules
+  - [x] Output validator ensuring zero fabricated citations and strict provenance matching
+  - [x] Context-aware RAG orchestrator linking citizen RLS conflict records to official procedures
+  - [x] Persisted conversational turns with multi-turn continuity under forced PostgreSQL RLS
+  - [x] FastAPI routers: `/api/v1/knowledge/*` (sources, forms, ingestion) and `/api/v1/assistant/*` (chat, conversations, explain-conflict, resolve-conflict)
+  - [x] Frontend Next.js UI integration: AI Assistant chat console, "Explain with AI" and "Step-by-Step Resolution" conflict triggers, official form cards, citation badges
+  - [x] Pytest test suite: `backend/tests/test_rag.py` (4/4 passing; total backend pytest: 53/53 passing)
+  - [x] Integration test script: `scripts/test_module6_rag_api.py` (8/8 passing)
 - [ ] **Module 7: Correction Document Generator**
 - [ ] **Module 8: Officer Verification Workflow**
 - [ ] **Module 9: Document Authenticity & Ed25519 PKI/CA**

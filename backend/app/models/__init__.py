@@ -1,5 +1,16 @@
 from app.models.user import User
 from app.models.document import Document
 from app.models.conflict import Conflict
+from app.models.knowledge_source import KnowledgeSource
+from app.models.official_form import OfficialForm
+from app.models.assistant import AssistantConversation, AssistantMessage
 
-__all__ = ["User", "Document", "Conflict"]
+__all__ = [
+    "User",
+    "Document",
+    "Conflict",
+    "KnowledgeSource",
+    "OfficialForm",
+    "AssistantConversation",
+    "AssistantMessage",
+]
