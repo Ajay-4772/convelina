@@ -34,7 +34,15 @@ import {
   Download,
   FileEdit,
   Printer,
-  FileDown
+  FileDown,
+  ClipboardCheck,
+  UserCheck2,
+  HelpCircle,
+  CheckSquare,
+  XCircle,
+  ArrowRightLeft,
+  MessageSquare,
+  History
 } from "lucide-react";
 
 
@@ -127,6 +135,25 @@ export default function Home() {
   const [savingEdit, setSavingEdit] = useState<boolean>(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
 
+  // Module 8: Officer Verification Workflow state
+  const [citizenCases, setCitizenCases] = useState<any[]>([]);
+  const [loadingCases, setLoadingCases] = useState<boolean>(false);
+  const [officerCases, setOfficerCases] = useState<any[]>([]);
+  const [activeDossier, setActiveDossier] = useState<any | null>(null);
+  const [loadingDossier, setLoadingDossier] = useState<boolean>(false);
+  const [adminOfficers, setAdminOfficers] = useState<any[]>([]);
+  const [adminCases, setAdminCases] = useState<any[]>([]);
+  const [loadingAdminView, setLoadingAdminView] = useState<boolean>(false);
+  const [selectedCaseToAssign, setSelectedCaseToAssign] = useState<string | null>(null);
+  const [selectedOfficerForAssign, setSelectedOfficerForAssign] = useState<string>("");
+  const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
+  const [actionErrorMsg, setActionErrorMsg] = useState<string | null>(null);
+  const [reviewActionNote, setReviewActionNote] = useState<string>("");
+  const [infoRequestReason, setInfoRequestReason] = useState<string>("");
+  const [citizenClarificationText, setCitizenClarificationText] = useState<string>("");
+  const [submittingClarification, setSubmittingClarification] = useState<boolean>(false);
+  const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
+
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
   const getSimulatedToken = (role: "citizen" | "officer" | "admin") => {
@@ -202,6 +229,10 @@ export default function Home() {
       setAuthTestOutput(results);
       fetchDocuments(role);
       fetchConflicts(role);
+      fetchDrafts(role);
+      if (role === "citizen") fetchCitizenCases();
+      if (role === "officer") fetchOfficerCasesList();
+      if (role === "admin") fetchAdminWorkload();
 
     } catch (e: unknown) {
       console.error("Auth test failed:", e);
@@ -625,12 +656,247 @@ export default function Home() {
     }
   };
 
+  // Module 8: Officer Verification Workflow API Handlers
+  const fetchCitizenCases = async () => {
+    setLoadingCases(true);
+    try {
+      const token = getSimulatedToken("citizen");
+      const res = await fetch(`${apiUrl}/api/v1/cases/my-cases`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCitizenCases(data.items || []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch citizen cases", e);
+    } finally {
+      setLoadingCases(false);
+    }
+  };
+
+  const fetchOfficerCasesList = async () => {
+    setLoadingCases(true);
+    try {
+      const token = getSimulatedToken("officer");
+      const res = await fetch(`${apiUrl}/api/v1/officer/cases`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setOfficerCases(data.items || []);
+        if (data.items?.length > 0 && !activeDossier) {
+          fetchDossier(data.items[0].id);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch officer cases", e);
+    } finally {
+      setLoadingCases(false);
+    }
+  };
+
+  const fetchDossier = async (caseId: string) => {
+    setLoadingDossier(true);
+    setActionSuccessMsg(null);
+    setActionErrorMsg(null);
+    try {
+      const token = getSimulatedToken("officer");
+      const res = await fetch(`${apiUrl}/api/v1/officer/cases/${caseId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setActiveDossier(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch dossier", e);
+    } finally {
+      setLoadingDossier(false);
+    }
+  };
+
+  const fetchAdminWorkload = async () => {
+    setLoadingAdminView(true);
+    try {
+      const token = getSimulatedToken("admin");
+      const [offRes, caseRes] = await Promise.all([
+        fetch(`${apiUrl}/api/v1/admin/officers`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${apiUrl}/api/v1/admin/cases`, { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+      if (offRes.ok) {
+        const offs = await offRes.json();
+        setAdminOfficers(offs);
+        if (offs.length > 0 && !selectedOfficerForAssign) {
+          setSelectedOfficerForAssign(offs[0].officer_id);
+        }
+      }
+      if (caseRes.ok) {
+        const cs = await caseRes.json();
+        setAdminCases(cs.items || []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch admin workload", e);
+    } finally {
+      setLoadingAdminView(false);
+    }
+  };
+
+  const handleStartReview = async (caseId: string) => {
+    setActionSuccessMsg(null);
+    setActionErrorMsg(null);
+    try {
+      const token = getSimulatedToken("officer");
+      const res = await fetch(`${apiUrl}/api/v1/officer/cases/${caseId}/start-review`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setActionSuccessMsg("Review started. Case marked 'under_review'.");
+        fetchDossier(caseId);
+        fetchOfficerCasesList();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setActionErrorMsg(err.detail || "Failed to start review.");
+      }
+    } catch (e) {
+      setActionErrorMsg("Network error.");
+    }
+  };
+
+  const handleRequestInfo = async (caseId: string) => {
+    if (!infoRequestReason.trim() || !reviewActionNote.trim()) {
+      setActionErrorMsg("Please specify both Request Reason and Explanation Details.");
+      return;
+    }
+    setActionSuccessMsg(null);
+    setActionErrorMsg(null);
+    try {
+      const token = getSimulatedToken("officer");
+      const res = await fetch(`${apiUrl}/api/v1/officer/cases/${caseId}/request-information`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          request_reason: infoRequestReason,
+          request_details: reviewActionNote
+        })
+      });
+      if (res.ok) {
+        setActionSuccessMsg("Clarification requested from citizen.");
+        setInfoRequestReason("");
+        setReviewActionNote("");
+        fetchDossier(caseId);
+        fetchOfficerCasesList();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setActionErrorMsg(err.detail || "Failed to request clarification.");
+      }
+    } catch (e) {
+      setActionErrorMsg("Network error.");
+    }
+  };
+
+  const handleOfficerDecision = async (caseId: string, decision: "approve" | "reject") => {
+    if (!reviewActionNote.trim()) {
+      setActionErrorMsg("A recorded justification reason is mandatory.");
+      return;
+    }
+    setActionSuccessMsg(null);
+    setActionErrorMsg(null);
+    try {
+      const token = getSimulatedToken("officer");
+      const res = await fetch(`${apiUrl}/api/v1/officer/cases/${caseId}/${decision}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          decision_reason: reviewActionNote,
+          officer_notes: `Application verification review outcome: ${decision.toUpperCase()}`
+        })
+      });
+      if (res.ok) {
+        setActionSuccessMsg(`Case successfully marked as ${decision.toUpperCase()}. Audited immutably.`);
+        setReviewActionNote("");
+        fetchDossier(caseId);
+        fetchOfficerCasesList();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setActionErrorMsg(err.detail || `Failed to record ${decision}.`);
+      }
+    } catch (e) {
+      setActionErrorMsg("Network error.");
+    }
+  };
+
+  const handleCitizenSubmitCase = async (title: string, conflictId?: string, draftId?: string) => {
+    try {
+      const token = getSimulatedToken("citizen");
+      const res = await fetch(`${apiUrl}/api/v1/cases`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          title: title || "Identity Discrepancy Correction Case",
+          conflict_id: conflictId || null,
+          correction_draft_id: draftId || null,
+          evidence_notes: "Submitted by citizen for officer verification review."
+        })
+      });
+      if (res.ok) {
+        fetchCitizenCases();
+      }
+    } catch (e) {
+      console.error("Submit case failed", e);
+    }
+  };
+
+  const handleCitizenRespondClarification = async (caseId: string, requestId: string) => {
+    if (!citizenClarificationText.trim()) return;
+    setSubmittingClarification(true);
+    try {
+      const token = getSimulatedToken("citizen");
+      const res = await fetch(`${apiUrl}/api/v1/cases/${caseId}/review-requests/${requestId}/respond`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ citizen_response: citizenClarificationText })
+      });
+      if (res.ok) {
+        setCitizenClarificationText("");
+        setActiveRequestId(null);
+        fetchCitizenCases();
+      }
+    } catch (e) {
+      console.error("Respond clarification failed", e);
+    } finally {
+      setSubmittingClarification(false);
+    }
+  };
+
+  const handleAdminAssign = async (caseId: string) => {
+    if (!selectedOfficerForAssign) return;
+    try {
+      const token = getSimulatedToken("admin");
+      const res = await fetch(`${apiUrl}/api/v1/admin/cases/${caseId}/assign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ officer_id: selectedOfficerForAssign })
+      });
+      if (res.ok) {
+        setSelectedCaseToAssign(null);
+        fetchAdminWorkload();
+      }
+    } catch (e) {
+      console.error("Admin assign failed", e);
+    }
+  };
+
   useEffect(() => {
     checkHealth();
     syncIdentityAndTestRoutes("citizen");
     fetchDocuments("citizen");
     fetchConflicts("citizen");
     fetchDrafts("citizen");
+    fetchCitizenCases();
+    fetchOfficerCasesList();
+    fetchAdminWorkload();
     const interval = setInterval(checkHealth, 15000);
     return () => clearInterval(interval);
   }, []);
@@ -1809,6 +2075,436 @@ export default function Home() {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* ========================================================================= */}
+        {/* MODULE 8: OFFICER VERIFICATION WORKFLOW CONSOLE */}
+        {/* ========================================================================= */}
+        <section className="mt-8 p-6 rounded-2xl bg-surface/60 border border-border backdrop-blur-md shadow-xl relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border/60">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  MODULE 8 VERIFIED
+                </span>
+                <span className="text-xs text-gray-400">Assigned Case Verification & Immutable Audit Trail</span>
+              </div>
+              <h2 className="text-xl font-bold text-white mt-1 flex items-center gap-2">
+                <ClipboardCheck className="w-5 h-5 text-emerald-400" /> Officer Verification Workspace
+              </h2>
+            </div>
+
+            {/* Role-adaptive tab indicator */}
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-gray-400">Active Console View:</span>
+              <span className="px-3 py-1 rounded-full bg-surface border border-border font-mono text-emerald-400 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                {activeIdentity.toUpperCase()} PERSPECTIVE
+              </span>
+            </div>
+          </div>
+
+          {/* Action alerts */}
+          {actionSuccessMsg && (
+            <div className="mt-4 p-3 rounded-lg bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>{actionSuccessMsg}</span>
+            </div>
+          )}
+          {actionErrorMsg && (
+            <div className="mt-4 p-3 rounded-lg bg-rose-950/60 border border-rose-800 text-rose-300 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{actionErrorMsg}</span>
+            </div>
+          )}
+
+          {/* 1. CITIZEN VIEW: My Submitted Cases & Review Requests */}
+          {activeIdentity === "citizen" && (
+            <div className="mt-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-white">My Submitted Verification Cases</h3>
+                  <p className="text-xs text-gray-400">Track verification status, review decisions, and reply to officer requests.</p>
+                </div>
+                <div className="flex gap-2">
+                  {draftList.length > 0 && (
+                    <button
+                      onClick={() => handleCitizenSubmitCase(`Verification for Draft: ${draftList[0].title}`, draftList[0].conflict_id, draftList[0].id)}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition flex items-center gap-1.5 shadow"
+                    >
+                      <Send className="w-3.5 h-3.5" /> Submit Latest Draft for Review
+                    </button>
+                  )}
+                  <button
+                    onClick={fetchCitizenCases}
+                    className="p-1.5 rounded-lg bg-surface border border-border text-gray-400 hover:text-white transition"
+                    title="Refresh cases"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${loadingCases ? "animate-spin" : ""}`} />
+                  </button>
+                </div>
+              </div>
+
+              {citizenCases.length === 0 ? (
+                <div className="p-8 rounded-xl border border-dashed border-border text-center text-gray-400 text-xs">
+                  <FileSearch className="w-8 h-8 text-gray-500 mx-auto mb-2 opacity-60" />
+                  No verification cases submitted yet. Generate a correction draft above and click &quot;Submit Latest Draft for Review&quot;.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {citizenCases.map((cs) => (
+                    <div key={cs.id} className="p-4 rounded-xl bg-surface/50 border border-border/80">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-white text-sm">{cs.title}</span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-surface border border-border text-gray-300">
+                            ID: {cs.id.slice(0, 8)}
+                          </span>
+                        </div>
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          cs.status === "approved" ? "bg-emerald-950 text-emerald-400 border border-emerald-800" :
+                          cs.status === "rejected" ? "bg-rose-950 text-rose-400 border border-rose-800" :
+                          cs.status === "additional_information_requested" ? "bg-amber-950 text-amber-400 border border-amber-800 animate-pulse" :
+                          "bg-blue-950 text-blue-400 border border-blue-800"
+                        }`}>
+                          {cs.status.replace(/_/g, " ").toUpperCase()}
+                        </span>
+                      </div>
+
+                      {cs.evidence_notes && (
+                        <p className="text-xs text-gray-400 mb-2">Citizen Note: {cs.evidence_notes}</p>
+                      )}
+
+                      {/* Decision Details if finalized */}
+                      {cs.decision && (
+                        <div className="mt-3 p-3 rounded-lg bg-surface/80 border border-border text-xs">
+                          <div className="font-semibold text-white flex items-center gap-1.5 mb-1">
+                            {cs.decision === "approved" ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <XCircle className="w-3.5 h-3.5 text-rose-400" />}
+                            Officer Review Outcome: {cs.decision.toUpperCase()}
+                          </div>
+                          <p className="text-gray-300">{cs.decision_reason}</p>
+                          <p className="text-[10px] text-gray-500 mt-1 italic">
+                            *Note: This is an application verification outcome assisting your government submission, not an official statutory decree.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Clarification prompt if requested */}
+                      {cs.status === "additional_information_requested" && (
+                        <div className="mt-3 p-3 rounded-lg bg-amber-950/40 border border-amber-800/80">
+                          <div className="flex items-center gap-1.5 text-amber-400 text-xs font-semibold mb-2">
+                            <HelpCircle className="w-4 h-4" /> Officer Clarification Requested
+                          </div>
+                          <div className="space-y-2">
+                            <textarea
+                              value={citizenClarificationText}
+                              onChange={(e) => setCitizenClarificationText(e.target.value)}
+                              placeholder="Provide clarification explanation or reference additional documents..."
+                              rows={2}
+                              className="w-full px-3 py-2 rounded-lg bg-background border border-border text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-500"
+                            />
+                            <button
+                              onClick={() => handleCitizenRespondClarification(cs.id, cs.review_requests?.[0]?.id || "active")}
+                              disabled={submittingClarification || !citizenClarificationText.trim()}
+                              className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium transition disabled:opacity-50"
+                            >
+                              {submittingClarification ? "Submitting..." : "Send Response to Officer"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 2. OFFICER VIEW: Assigned Cases & Case Dossier Workspace */}
+          {activeIdentity === "officer" && (
+            <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left Column: Assigned Case Queue */}
+              <div className="lg:col-span-4 space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-border">
+                  <span className="text-xs font-semibold text-white">Assigned Queue ({officerCases.length})</span>
+                  <button
+                    onClick={fetchOfficerCasesList}
+                    className="p-1 rounded bg-surface border border-border text-gray-400 hover:text-white"
+                    title="Refresh queue"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${loadingCases ? "animate-spin" : ""}`} />
+                  </button>
+                </div>
+
+                {officerCases.length === 0 ? (
+                  <div className="p-6 rounded-xl border border-dashed border-border text-center text-xs text-gray-500">
+                    No cases assigned to your officer account. Switch to Admin simulator to assign pending cases.
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                    {officerCases.map((c) => (
+                      <div
+                        key={c.id}
+                        onClick={() => fetchDossier(c.id)}
+                        className={`p-3 rounded-xl border transition cursor-pointer text-xs ${
+                          activeDossier?.case?.id === c.id
+                            ? "bg-emerald-950/40 border-emerald-700/80 text-white"
+                            : "bg-surface/40 border-border text-gray-300 hover:bg-surface"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium truncate max-w-[160px]">{c.title}</span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface border border-border">
+                            {c.status.slice(0, 10)}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-gray-500">Updated: {new Date(c.updated_at).toLocaleTimeString()}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column: Active Case Dossier Workspace */}
+              <div className="lg:col-span-8 p-5 rounded-xl bg-background/50 border border-border space-y-4">
+                {loadingDossier ? (
+                  <div className="p-12 text-center text-gray-400 text-xs">
+                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-emerald-400" />
+                    Loading assigned case dossier under Row-Level Security...
+                  </div>
+                ) : !activeDossier ? (
+                  <div className="p-12 text-center text-gray-500 text-xs">
+                    Select a case from the queue on the left to begin verification review.
+                  </div>
+                ) : (
+                  <>
+                    {/* Dossier Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border">
+                      <div>
+                        <h4 className="text-sm font-bold text-white">{activeDossier.case.title}</h4>
+                        <span className="text-[11px] font-mono text-gray-400">Case ID: {activeDossier.case.id}</span>
+                      </div>
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold uppercase bg-surface border border-border text-emerald-400">
+                        {activeDossier.case.status.replace(/_/g, " ")}
+                      </span>
+                    </div>
+
+                    {/* Discrepancy Evidence & OCR vs Confirmed Comparison */}
+                    {activeDossier.conflict ? (
+                      <div className="p-4 rounded-xl bg-surface/40 border border-border text-xs space-y-2">
+                        <div className="font-semibold text-amber-400 flex items-center gap-1.5">
+                          <AlertTriangle className="w-3.5 h-3.5" /> Discrepancy Evidence Under Review
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 text-gray-300">
+                          <div>
+                            <span className="text-gray-500">Category:</span> {activeDossier.conflict.conflict_type}
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Severity:</span> {activeDossier.conflict.severity}
+                          </div>
+                          <div className="col-span-2">
+                            <span className="text-gray-500">Explanation:</span> {activeDossier.conflict.explanation}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 rounded-lg bg-surface/20 border border-border text-xs text-gray-400">
+                        No direct conflict linked. Reviewing custom verification submission.
+                      </div>
+                    )}
+
+                    {/* Correction Draft Content Preview */}
+                    {activeDossier.correction_draft && (
+                      <div className="p-4 rounded-xl bg-surface/40 border border-border text-xs space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-indigo-400 flex items-center gap-1.5">
+                            <FileEdit className="w-3.5 h-3.5" /> Correction Draft v{activeDossier.correction_draft.version}
+                          </span>
+                          <span className="text-[10px] text-gray-400">Status: {activeDossier.correction_draft.status}</span>
+                        </div>
+                        <div className="p-3 rounded-lg bg-background/80 font-mono text-[11px] text-gray-300 max-h-36 overflow-y-auto whitespace-pre-wrap border border-border">
+                          {activeDossier.correction_draft.content}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Officer Actions Bar */}
+                    <div className="p-4 rounded-xl bg-surface/50 border border-border space-y-3">
+                      <span className="text-xs font-semibold text-white">Record Verification Action</span>
+
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          value={infoRequestReason}
+                          onChange={(e) => setInfoRequestReason(e.target.value)}
+                          placeholder="Action reason / Missing document query (e.g., Unclear Class 10 certificate scan)..."
+                          className="w-full px-3 py-1.5 rounded-lg bg-background border border-border text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                        />
+                        <textarea
+                          value={reviewActionNote}
+                          onChange={(e) => setReviewActionNote(e.target.value)}
+                          placeholder="Officer justification notes (Mandatory for approvals, rejections, or requests)..."
+                          rows={2}
+                          className="w-full px-3 py-2 rounded-lg bg-background border border-border text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        {activeDossier.case.status === "assigned" && (
+                          <button
+                            onClick={() => handleStartReview(activeDossier.case.id)}
+                            className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition"
+                          >
+                            Start Review
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleRequestInfo(activeDossier.case.id)}
+                          className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium transition flex items-center gap-1"
+                        >
+                          <HelpCircle className="w-3.5 h-3.5" /> Request Clarification
+                        </button>
+                        <button
+                          onClick={() => handleOfficerDecision(activeDossier.case.id, "approve")}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition flex items-center gap-1"
+                        >
+                          <CheckSquare className="w-3.5 h-3.5" /> Approve Draft
+                        </button>
+                        <button
+                          onClick={() => handleOfficerDecision(activeDossier.case.id, "reject")}
+                          className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium transition flex items-center gap-1"
+                        >
+                          <XCircle className="w-3.5 h-3.5" /> Reject Draft
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Immutable Audit Log Trail for this Case */}
+                    {activeDossier.audit_events && activeDossier.audit_events.length > 0 && (
+                      <div className="p-4 rounded-xl bg-surface/30 border border-border text-xs space-y-2">
+                        <div className="font-semibold text-gray-300 flex items-center gap-1.5">
+                          <History className="w-3.5 h-3.5 text-blue-400" /> Tamper-Evident SHA-256 Audit Trail ({activeDossier.audit_events.length} Events)
+                        </div>
+                        <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                          {activeDossier.audit_events.map((ev: any) => (
+                            <div key={ev.id} className="p-2 rounded bg-background/50 border border-border text-[11px] font-mono flex items-center justify-between text-gray-300">
+                              <div>
+                                <span className="text-emerald-400 font-bold">{ev.action}</span> by {ev.user_id ? ev.user_id.slice(0, 8) : "system"}
+                              </div>
+                              <span className="text-[10px] text-gray-500 truncate max-w-[140px]" title={ev.current_hash}>
+                                #{ev.current_hash.slice(0, 12)}...
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 3. ADMIN VIEW: Officer Workload & Case Assignment */}
+          {activeIdentity === "admin" && (
+            <div className="mt-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Case Assignment & Officer Workload Management</h3>
+                  <p className="text-xs text-gray-400">Inspect pending cases across all citizens, monitor officer queues, and assign cases.</p>
+                </div>
+                <button
+                  onClick={fetchAdminWorkload}
+                  className="p-1.5 rounded-lg bg-surface border border-border text-gray-400 hover:text-white"
+                  title="Refresh workload"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loadingAdminView ? "animate-spin" : ""}`} />
+                </button>
+              </div>
+
+              {/* Officer Workload Overview Table */}
+              <div className="p-4 rounded-xl bg-surface/40 border border-border">
+                <span className="text-xs font-semibold text-white mb-3 block">Officer Fleet Workload</span>
+                {adminOfficers.length === 0 ? (
+                  <div className="text-xs text-gray-500 py-3">No active verification officers found.</div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {adminOfficers.map((off) => (
+                      <div key={off.officer_id} className="p-3 rounded-lg bg-background/60 border border-border text-xs flex items-center justify-between">
+                        <div>
+                          <div className="font-semibold text-white">{off.full_name}</div>
+                          <div className="text-[10px] text-gray-400">{off.email}</div>
+                        </div>
+                        <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-950 text-indigo-300 border border-indigo-800">
+                          {off.assigned_count} Active
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Cases Management Table */}
+              <div className="p-4 rounded-xl bg-surface/40 border border-border">
+                <span className="text-xs font-semibold text-white mb-3 block">All Discrepancy Verification Cases</span>
+                {adminCases.length === 0 ? (
+                  <div className="text-xs text-gray-500 py-3 text-center">No cases found in system.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {adminCases.map((cs) => (
+                      <div key={cs.id} className="p-3 rounded-lg bg-background/60 border border-border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <div className="font-semibold text-white">{cs.title}</div>
+                          <div className="text-[10px] text-gray-400 flex items-center gap-2 mt-0.5">
+                            <span>Case: {cs.id.slice(0, 8)}</span>
+                            <span>•</span>
+                            <span>Citizen: {cs.citizen_id.slice(0, 8)}</span>
+                            <span>•</span>
+                            <span>Assigned Officer: {cs.assigned_officer_id ? cs.assigned_officer_id.slice(0, 8) : "Unassigned"}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-semibold ${
+                            cs.status === "approved" ? "bg-emerald-950 text-emerald-400 border border-emerald-800" :
+                            cs.status === "pending_assignment" ? "bg-amber-950 text-amber-400 border border-amber-800" :
+                            "bg-surface border border-border text-gray-300"
+                          }`}>
+                            {cs.status.replace(/_/g, " ")}
+                          </span>
+
+                          {/* Assignment Select */}
+                          <div className="flex items-center gap-1.5">
+                            <select
+                              value={selectedCaseToAssign === cs.id ? selectedOfficerForAssign : ""}
+                              onChange={(e) => {
+                                setSelectedCaseToAssign(cs.id);
+                                setSelectedOfficerForAssign(e.target.value);
+                              }}
+                              className="px-2 py-1 rounded bg-surface border border-border text-xs text-white focus:outline-none"
+                            >
+                              <option value="">Select Officer...</option>
+                              {adminOfficers.map((o) => (
+                                <option key={o.officer_id} value={o.officer_id}>{o.full_name}</option>
+                              ))}
+                            </select>
+                            {selectedCaseToAssign === cs.id && selectedOfficerForAssign && (
+                              <button
+                                onClick={() => handleAdminAssign(cs.id)}
+                                className="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition"
+                              >
+                                Assign
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Foundation Overview & Scope Cards */}

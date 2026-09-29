@@ -90,7 +90,18 @@
   - [x] Next.js frontend UI: Interactive Correction Document Generator Workspace with discrepancy selection, field confirmation, editor, and download buttons
   - [x] Automated unit test suite (`backend/tests/test_correction_drafts.py`, 8/8 passed)
   - [x] Live API & RLS integration test harness (`scripts/test_module7_drafts_api.py`, 11/11 passed)
-  - [x] Full regression test suite (61/61 backend pytest tests passed)
-- [ ] **Module 8: Officer Verification Workflow**
+- [x] **Module 8: Officer Verification Workflow**
+  - [x] Database migration `007_officer_verification.sql`: updated `cases` schema (8-state CHECK constraint, conflict/draft foreign keys, review timestamps), created `case_review_requests` table with FORCED RLS
+  - [x] RLS policies for `case_review_requests`: `p_review_req_admin`, `p_review_req_officer`, `p_review_req_citizen`
+  - [x] PostgreSQL SECURITY DEFINER function `public.get_latest_audit_hash()` with least-privilege execute granted to `consolith_app` for cross-tenant tamper-evident hash chaining
+  - [x] Case workflow state machine validator (`CaseWorkflowManager`) enforcing strict legal state transitions (`pending_assignment`, `assigned`, `under_review`, `additional_information_requested`, `information_submitted`, `approved`, `rejected`, `closed`)
+  - [x] Append-only tamper-evident audit service (`AuditService.log_event`) linking events cryptographically via SHA-256
+  - [x] Citizen review endpoints (`routers/cases.py`): create case, view review status, list clarification requests, respond to clarification
+  - [x] Officer review workspace endpoints (`routers/officer.py`): view assigned queue, view dossier, start review, request additional info, approve draft, reject draft
+  - [x] Admin assignment endpoints (`routers/admin.py`): list active officers and workload, list all cases, assign case to officer, reassign case
+  - [x] Multi-perspective Next.js frontend UI: Citizen Tracking, Officer Workspace with Evidence & Draft Viewer, Admin Fleet Assignment Console
+  - [x] Backend test suite: `backend/tests/test_officer_workflow.py` (6/6 passing; total backend pytest: 67/67 passing)
+  - [x] Live API & RLS integration test harness: `scripts/test_module8_officer_api.py` (11/11 passing)
+  - [x] Full regression verification: Module 6 RAG API (8/8 passing), Module 7 Drafts API (11/11 passing), RLS Isolation Suite passing
 - [ ] **Module 9: Document Authenticity & Ed25519 PKI/CA**
 - [ ] **Module 10: Security Hardening Pass**

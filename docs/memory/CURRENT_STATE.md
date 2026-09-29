@@ -1,4 +1,4 @@
-- **Current Active Module**: Module 7 Completed & Verified (Awaiting User Sign-off before Module 8: Officer Verification Workflow)
+- **Current Active Module**: Module 8 Completed & Verified (Awaiting User Sign-off before Module 9: Document Authenticity & Ed25519 PKI/CA)
 - **Completed Modules**:
   - Module 1: Foundation (Next.js + FastAPI + PostgreSQL 16 + Qdrant container stack running and verified via `scripts/verify_module1.py`)
   - Module 2: Database Schema & Row-Level Security (RLS) (Forced RLS across all 7 user-data tables, dedicated non-superuser role `consolith_app`, 22 policies, append-only trigger, self-promotion block, pooling-safe session variables, verified via `scripts/test_rls_isolation.py`)
@@ -7,11 +7,12 @@
   - Module 5: Conflict Detection Engine (Deterministic cross-document comparison across Aadhaar, PAN, Passport, Class 10/12, and EPF records; multi-layered name matching using RapidFuzz & Jellyfish phonetic Metaphone; calendar date parsing with compatible year-only handling; idempotent DB persistence with canonical pair ordering; non-superuser RLS enforcement on conflicts; Next.js discrepancy review UI; 49/49 backend pytest tests, 10/10 engine integration tests, 9/9 RLS isolation tests passing)
   - Module 6: Advanced Context-Aware RAG & AI Resolution Assistant (Official government procedure & circular ingestion for UIDAI, NSDL, MEA, EPFO, CBSE; verified downloadable forms catalog; 1024-dim Qdrant hybrid dense + lexical retriever with >= 0.55 relevance floor; zero-hallucination citation validator; Google Gemini ONLY architecture audited and enforced; exact service unavailable message "Assistant service is not currently available. Please try again later." on failures; 53/53 pytest tests and 8/8 end-to-end API integration tests passing)
   - Module 7: Correction Document Generator (Case-aware official correction request drafts grounded in Module 6 verified guidelines and forms; Google Gemini ONLY generation; DocumentValidator with placeholder scanning and draft notice; ReportLab PDF and python-docx DOCX exports; database migration 006 with forced PostgreSQL RLS on `correction_drafts` and `correction_draft_versions`; draft version tracking; Next.js Correction Document Workspace; 61/61 backend pytest tests passing, 11/11 live API & RLS integration tests passing)
+  - Module 8: Officer Verification Workflow (Secure, auditable verification and assistance workflow; 8-state validated workflow state machine; migration 007 with forced PostgreSQL RLS on `cases`, `case_evidence`, and `case_review_requests`; cryptographic SHA-256 hash-chained append-only audit trail with `get_latest_audit_hash()` security definer function; dedicated non-superuser `consolith_app` enforcement; citizen clarification dialogue; officer case dossier & action workspace; admin officer fleet workload & reassignment console; 67/67 backend pytest tests passing, 11/11 live API & RLS integration tests passing)
 - **Docker Stack**:
-  - `consolith-postgres`: PostgreSQL 16 Alpine, port 5432 (Healthy)
+  - `consolith-postgres`: PostgreSQL 16 Alpine, port 5432 (Healthy, migrations 001-007 applied)
   - `consolith-qdrant`: Qdrant v1.11.0, port 6333/6334 (Healthy)
   - `consolith-backend`: FastAPI Python 3.11 with Tesseract 5.5.0 + Poppler + Qdrant client + Google Gemini SDK + ReportLab + python-docx, port 8000 (Healthy, connects via non-superuser `consolith_app`)
-  - `consolith-frontend`: Next.js 14 App Router, port 3000 (Operational, Document Upload, OCR, RBAC, Conflict Review, AI Assistant, and Correction Document Workspace active)
+  - `consolith-frontend`: Next.js 14 App Router, port 3000 (Operational, Document Upload, OCR, RBAC, Conflict Review, AI Assistant, Correction Document Workspace, and Officer Verification Console active)
 - **Database Status**:
   - Superuser: `postgres` (migrations/admin only)
   - Application role: `consolith_app` (non-superuser, least-privilege)

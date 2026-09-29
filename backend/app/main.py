@@ -15,6 +15,9 @@ from app.routers.conflicts import router as conflicts_router
 from app.routers.assistant import router as assistant_router
 from app.routers.knowledge import router as knowledge_router
 from app.routers.correction_drafts import router as correction_drafts_router
+from app.routers.cases import router as cases_router
+from app.routers.officer import router as officer_router
+from app.routers.admin import router as admin_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -45,6 +48,9 @@ app.include_router(conflicts_router)
 app.include_router(assistant_router)
 app.include_router(knowledge_router)
 app.include_router(correction_drafts_router)
+app.include_router(cases_router)
+app.include_router(officer_router)
+app.include_router(admin_router)
 
 
 @app.get("/")
