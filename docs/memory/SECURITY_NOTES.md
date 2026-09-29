@@ -32,4 +32,12 @@
 - **Ephemeral Storage Retention**: Raw temporary uploaded files are securely unlinked from disk upon OCR extraction completion (`STORAGE_RETENTION_POLICY="delete_after_ocr"`).
 - **PostgreSQL RLS Storage Scoping**: All document operations execute under transaction-local `set_rls_context(db, user.id, user.role)` via `consolith_app`. Citizens can only access, view, or delete their own documents. Cross-user IDOR access attempts return HTTP 404.
 
+## 7. Conflict Detection Engine Security & Privacy Controls (Module 5)
+- **Zero Fraud Presumption**: Discrepancies are treated strictly as technical or administrative inconsistencies between records, never as fraud assertions or determinations of guilt.
+- **Explainable Metrics**: All similarity comparisons report their comparison method (`exact`, `rapidfuzz_token_phonetic`, `date_normalization`, etc.) and numeric similarity metric without black-box hallucination.
+- **Strict Pairwise Canonical Ordering & Idempotency**: Document pairs are evaluated in canonical order (`doc_a_id < doc_b_id`) with database-level uniqueness constraint `uq_conflicts_pair_field (user_id, doc_a_id, doc_b_id, field_name)` ensuring idempotent analysis with zero duplicate conflict insertion.
+- **Aadhaar Act Defense-in-Depth**: Conflict values, explanations, and logs pass through regex masking to guarantee no 12-digit Aadhaar identifier is ever persisted or rendered in conflict records.
+- **Non-Superuser RLS Isolation on Conflicts**: The `conflicts` table has forced RLS enabled (`p_conflicts_citizen`, `p_conflicts_admin`, `p_conflicts_officer_select`). Citizens cannot view or review conflicts belonging to other citizens. All queries use the least-privilege role `consolith_app`.
+
+
 

@@ -11,6 +11,7 @@ from app.config import settings
 from app.core.firebase import initialize_firebase, is_firebase_configured
 from app.routers.auth import router as auth_router
 from app.routers.documents import router as documents_router
+from app.routers.conflicts import router as conflicts_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -37,6 +38,7 @@ app.add_middleware(
 # Register routers
 app.include_router(auth_router)
 app.include_router(documents_router)
+app.include_router(conflicts_router)
 
 
 @app.get("/")

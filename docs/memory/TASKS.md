@@ -47,7 +47,19 @@
   - [x] Unit test suite (`backend/tests/test_upload_ocr.py`, 14/14 passing; total pytest: 24/24 passing)
   - [x] HTTP integration test suite (`scripts/test_upload_ocr_api.py`, 8/8 passing)
 
-- [ ] **Module 5: Conflict Detection Engine**
+- [x] **Module 5: Conflict Detection Engine**
+  - [x] Dependencies installed: `rapidfuzz==3.9.7`, `jellyfish==1.1.0`
+  - [x] Database migration `004_conflicts_enhancement.sql`: `comparison_method`, `similarity_score`, unique constraint `uq_conflicts_pair_field` for idempotent persistence, permissions to `consolith_app`
+  - [x] ORM model `Conflict` in `backend/app/models/conflict.py` with foreign keys and relationships
+  - [x] Normalizer `normalizer.py`: Name titles stripping, punctuation and case normalization, date parser (`YYYY-MM-DD`, `DD/MM/YYYY`, `YEAR_ONLY`), gender normalization
+  - [x] Multi-layered matcher `matcher.py`: Exact match, token permutation, initials expansion, RapidFuzz fuzzy token sort similarity, Jellyfish phonetic Metaphone analysis, date compatibility
+  - [x] Domain rules `rules.py`: Pairwise cross-document evaluation for mutual fields (`full_name`, `date_of_birth`, `gender`, `father_name`, duplicate identifiers)
+  - [x] Conflict detection engine `engine.py`: Canonical pair ordering (`doc_a_id < doc_b_id`), defense-in-depth Aadhaar regex masking, idempotent upsert
+  - [x] FastAPI router `routers/conflicts.py`: `POST /api/v1/conflicts/detect`, `GET /api/v1/conflicts`, `GET /api/v1/conflicts/{id}`, `PATCH /api/v1/conflicts/{id}/review`
+  - [x] Frontend Next.js integration in `page.tsx`: Conflict detection console, discrepancy table, severity badges, review status updater, inspection modal
+  - [x] Pytest suite `backend/tests/test_conflicts.py` (25/25 passing; total backend tests: 49/49 passing)
+  - [x] Standalone integration test `scripts/test_conflicts_engine.py` (10/10 passing)
+  - [x] RLS regression test `scripts/test_rls_isolation.py` (9/9 passing)
 - [ ] **Module 6: RAG Knowledge Base & AI Assistant**
 - [ ] **Module 7: Correction Document Generator**
 - [ ] **Module 8: Officer Verification Workflow**

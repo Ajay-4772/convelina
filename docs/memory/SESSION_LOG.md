@@ -78,4 +78,29 @@
   - `scripts/test_rls_isolation.py`: 9/9 Module 2 RLS isolation tests re-verified & PASSED.
   - `scripts/verify_module1.py`: 4/4 service healthchecks PASSED.
 
+### 6. Module 5: Conflict Detection Engine (Completed & Verified)
+- Database Layer:
+  - Created and applied `backend/migrations/004_conflicts_enhancement.sql`: added `comparison_method`, `similarity_score`, unique constraint `uq_conflicts_pair_field` for idempotent cross-document analysis, and granted full permissions to `consolith_app`.
+  - Created SQLAlchemy ORM model `Conflict` in `backend/app/models/conflict.py` and exported via `backend/app/models/__init__.py`.
+- Conflict Engine Architecture (`backend/app/conflicts/`):
+  - `normalizer.py`: Strip Indian honorific titles, whitespace collapse, punctuation handling, calendar date parsing (`YYYY-MM-DD`, `DD/MM/YYYY`, `YEAR_ONLY`), and Hindi/English gender normalization.
+  - `matcher.py`: Multi-layered name matching (exact normalized match, token permutation, initials expansion, RapidFuzz `token_sort_ratio`, Jellyfish phonetic Metaphone analysis) and date compatibility (full date matching, year-only compatible handling, date conflict reporting).
+  - `rules.py`: Domain comparison rules evaluating only mutually applicable fields (`full_name`, `date_of_birth`, `gender`, `father_name`, duplicate identifiers) without cross-comparing incompatible fields.
+  - `engine.py`: Canonical pair ordering (`doc_a_id < doc_b_id`) preventing symmetric duplicates, defense-in-depth regex masking for Aadhaar numbers, and idempotent upsert into `conflicts`.
+  - `schemas.py`: Pydantic V2 schemas for detection request/response, listings, and review status updates.
+- API Endpoints & RLS Integration:
+  - `POST /api/v1/conflicts/detect`: Triggers pairwise conflict detection under transaction-local citizen RLS scope.
+  - `GET /api/v1/conflicts`: Lists conflicts scoped to authenticated citizen (or officer/admin).
+  - `GET /api/v1/conflicts/{id}`: Retrieves single conflict with ownership validation.
+  - `PATCH /api/v1/conflicts/{id}/review`: Updates review status (`detected`, `in_review`, `resolved`, `ignored`).
+- Frontend Dashboard Integration:
+  - Added Conflict Detection Console to `frontend/src/app/page.tsx` with "Run Conflict Detection" trigger, discrepancies table, severity badges (`critical`, `high`, `medium`, `low`), review status updater, and inspection modal.
+- Automated Test Results:
+  - `backend/tests/test_conflicts.py`: 25/25 unit and integration tests PASSED.
+  - Full backend pytest suite (`backend/tests/`): 49/49 tests PASSED.
+  - `scripts/test_conflicts_engine.py`: 10/10 end-to-end integration tests PASSED.
+  - `scripts/test_rls_isolation.py`: 9/9 Module 2 RLS isolation tests re-verified & PASSED.
+  - `scripts/verify_module1.py`: 4/4 service healthchecks PASSED.
+
+
 

@@ -20,7 +20,12 @@ import {
   UploadCloud,
   Trash2,
   Eye,
-  FileCheck
+  FileCheck,
+  GitCompare,
+  AlertTriangle,
+  Info,
+  Sliders,
+  Check
 } from "lucide-react";
 
 
@@ -43,6 +48,24 @@ interface UserProfile {
   role: string;
 }
 
+interface ConflictItem {
+  id: string;
+  user_id: string;
+  doc_a_id: string;
+  doc_b_id: string;
+  conflict_type: string;
+  severity: string;
+  field_name: string;
+  value_a: string;
+  value_b: string;
+  description: string;
+  status: string;
+  comparison_method?: string;
+  similarity_score?: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function Home() {
   const [health, setHealth] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -63,6 +86,13 @@ export default function Home() {
   const [uploadResult, setUploadResult] = useState<any>(null);
   const [documents, setDocuments] = useState<any[]>([]);
   const [loadingDocs, setLoadingDocs] = useState<boolean>(false);
+
+  // Module 5: Conflict Detection Engine state
+  const [conflicts, setConflicts] = useState<ConflictItem[]>([]);
+  const [loadingConflicts, setLoadingConflicts] = useState<boolean>(false);
+  const [detectingConflicts, setDetectingConflicts] = useState<boolean>(false);
+  const [detectionMessage, setDetectionMessage] = useState<string | null>(null);
+  const [activeConflictDetail, setActiveConflictDetail] = useState<ConflictItem | null>(null);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -138,6 +168,7 @@ export default function Home() {
       }
       setAuthTestOutput(results);
       fetchDocuments(role);
+      fetchConflicts(role);
 
     } catch (e: unknown) {
       console.error("Auth test failed:", e);
@@ -162,6 +193,72 @@ export default function Home() {
       console.error("Failed to fetch documents", e);
     } finally {
       setLoadingDocs(false);
+    }
+  };
+
+  const fetchConflicts = async (role = activeIdentity) => {
+    setLoadingConflicts(true);
+    try {
+      const token = getSimulatedToken(role);
+      const res = await fetch(`${apiUrl}/api/v1/conflicts`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setConflicts(data.conflicts || []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch conflicts", e);
+    } finally {
+      setLoadingConflicts(false);
+    }
+  };
+
+  const handleRunDetection = async () => {
+    setDetectingConflicts(true);
+    setDetectionMessage(null);
+    try {
+      const token = getSimulatedToken(activeIdentity);
+      const res = await fetch(`${apiUrl}/api/v1/conflicts/detect`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDetectionMessage(data.message || `Detection complete. Discrepancies: ${data.total_conflicts_detected}`);
+        setConflicts(data.conflicts || []);
+      } else {
+        setDetectionMessage(data.detail || "Conflict detection execution failed.");
+      }
+    } catch (e) {
+      setDetectionMessage("Network error during conflict detection.");
+    } finally {
+      setDetectingConflicts(false);
+    }
+  };
+
+  const handleUpdateReviewStatus = async (conflictId: string, newStatus: string) => {
+    try {
+      const token = getSimulatedToken(activeIdentity);
+      const res = await fetch(`${apiUrl}/api/v1/conflicts/${conflictId}/review`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setConflicts((prev) =>
+          prev.map((c) => (c.id === conflictId ? { ...c, status: updated.status } : c))
+        );
+        if (activeConflictDetail && activeConflictDetail.id === conflictId) {
+          setActiveConflictDetail((prev) => prev ? { ...prev, status: updated.status } : null);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to update conflict status", e);
     }
   };
 
@@ -211,6 +308,7 @@ export default function Home() {
       });
       if (res.ok) {
         fetchDocuments(activeIdentity);
+        fetchConflicts(activeIdentity);
       }
     } catch (e) {
       console.error("Failed to delete document", e);
@@ -221,6 +319,7 @@ export default function Home() {
     checkHealth();
     syncIdentityAndTestRoutes("citizen");
     fetchDocuments("citizen");
+    fetchConflicts("citizen");
     const interval = setInterval(checkHealth, 15000);
     return () => clearInterval(interval);
   }, []);
@@ -602,6 +701,262 @@ export default function Home() {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* Module 5: Deterministic Conflict Detection Engine Console */}
+        <section id="module-5-conflicts" className="mt-8 p-6 rounded-2xl bg-surface/50 border border-border backdrop-blur-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 border-b border-border/80 gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 text-xs font-semibold uppercase tracking-wider rounded bg-amber-950 text-amber-400 border border-amber-800/60">
+                  Module 5
+                </span>
+                <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+                  <GitCompare className="w-5 h-5 text-amber-400" /> Deterministic Conflict Detection Engine
+                </h2>
+              </div>
+              <p className="text-sm text-gray-400 mt-1">
+                Cross-document verification using RapidFuzz fuzzy matching, Jellyfish phonetic analysis, and deterministic calendar comparison under forced RLS.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => fetchConflicts(activeIdentity)}
+                disabled={loadingConflicts}
+                className="px-3 py-1.5 rounded-lg border border-border text-xs text-gray-300 hover:text-white flex items-center gap-1.5 hover:bg-surface transition"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingConflicts ? "animate-spin" : ""}`} /> Refresh
+              </button>
+              <button
+                onClick={handleRunDetection}
+                disabled={detectingConflicts || documents.length < 2}
+                className="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-medium text-xs transition flex items-center gap-1.5 shadow-sm"
+              >
+                {detectingConflicts ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Analyzing Records...
+                  </>
+                ) : (
+                  <>
+                    <Sliders className="w-3.5 h-3.5" /> Run Conflict Detection
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {detectionMessage && (
+            <div className="mt-4 p-3 rounded-lg bg-amber-950/40 border border-amber-800/50 text-xs text-amber-300 flex items-center gap-2">
+              <Info className="w-4 h-4 shrink-0 text-amber-400" />
+              <span>{detectionMessage}</span>
+            </div>
+          )}
+
+          {/* Conflicts List */}
+          <div className="mt-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-400" /> Detected Discrepancies ({conflicts.length})
+              </h3>
+              <span className="text-[11px] font-mono text-gray-400">Identity scope: {activeIdentity}</span>
+            </div>
+
+            {conflicts.length === 0 ? (
+              <div className="py-12 text-center text-sm text-gray-400 border border-dashed border-border rounded-xl bg-surface/30">
+                <GitCompare className="w-8 h-8 text-gray-500 mx-auto mb-2 opacity-50" />
+                <p className="font-medium text-gray-300">No Discrepancies Found</p>
+                <p className="text-xs text-gray-500 mt-1 max-w-md mx-auto">
+                  {documents.length < 2
+                    ? "Upload at least 2 completed documents in Module 4 above to execute pairwise cross-document verification."
+                    : "No conflicts detected across your uploaded documents. All mutually comparable fields match or are compatible."}
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-border bg-surface/80">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-border/80 bg-slate-900/60 text-gray-400">
+                      <th className="py-3 px-4">Severity & Field</th>
+                      <th className="py-3 px-4">Discrepancy (Value A vs Value B)</th>
+                      <th className="py-3 px-4">Method & Score</th>
+                      <th className="py-3 px-4">Explanation</th>
+                      <th className="py-3 px-4">Review Status</th>
+                      <th className="py-3 px-4 text-right">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/40 text-gray-300">
+                    {conflicts.map((conf) => {
+                      const sevClass =
+                        conf.severity === "critical"
+                          ? "bg-rose-950/80 text-rose-400 border-rose-800/60"
+                          : conf.severity === "high"
+                          ? "bg-orange-950/80 text-orange-400 border-orange-800/60"
+                          : conf.severity === "medium"
+                          ? "bg-amber-950/80 text-amber-400 border-amber-800/60"
+                          : "bg-blue-950/80 text-blue-400 border-blue-800/60";
+
+                      return (
+                        <tr key={conf.id} className="hover:bg-slate-900/40 transition">
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <div className="flex flex-col gap-1">
+                              <span className={`inline-block w-fit px-2 py-0.5 rounded text-[10px] font-semibold border ${sevClass}`}>
+                                {conf.severity.toUpperCase()}
+                              </span>
+                              <span className="font-mono text-gray-200 font-semibold">{conf.field_name}</span>
+                              <span className="text-[10px] text-gray-400 font-mono">Type: {conf.conflict_type}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex flex-col gap-1 text-xs">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-mono text-gray-400 uppercase">Doc A:</span>
+                                <span className="font-medium text-white">{conf.value_a}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-mono text-gray-400 uppercase">Doc B:</span>
+                                <span className="font-medium text-amber-300">{conf.value_b}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-gray-300 font-medium">{conf.comparison_method || "deterministic"}</span>
+                              <span className="text-[11px] font-mono text-indigo-400">
+                                {conf.similarity_score !== null && conf.similarity_score !== undefined
+                                  ? `Score: ${conf.similarity_score}%`
+                                  : "Score: N/A"}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 max-w-xs text-gray-300 text-xs">
+                            <p className="line-clamp-2" title={conf.description}>{conf.description}</p>
+                          </td>
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <select
+                              value={conf.status}
+                              onChange={(e) => handleUpdateReviewStatus(conf.id, e.target.value)}
+                              className="bg-slate-900 border border-border text-gray-200 text-xs rounded-lg px-2.5 py-1 focus:outline-none focus:border-amber-500 cursor-pointer"
+                            >
+                              <option value="detected">Detected</option>
+                              <option value="in_review">In Review</option>
+                              <option value="resolved">Resolved</option>
+                              <option value="ignored">Ignored</option>
+                            </select>
+                          </td>
+                          <td className="py-3 px-4 text-right whitespace-nowrap">
+                            <button
+                              onClick={() => setActiveConflictDetail(conf)}
+                              className="px-2.5 py-1 rounded bg-surface hover:bg-slate-800 border border-border text-gray-300 hover:text-white transition text-xs inline-flex items-center gap-1"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-indigo-400" /> View
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Conflict Inspection Detail Modal */}
+          {activeConflictDetail && (
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-slate-900 border border-border rounded-2xl max-w-lg w-full p-6 shadow-2xl relative text-left">
+                <div className="flex items-start justify-between pb-4 border-b border-border">
+                  <div>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-800/60">
+                      Discrepancy Inspection
+                    </span>
+                    <h3 className="text-lg font-semibold text-white mt-1.5 flex items-center gap-2">
+                      <GitCompare className="w-4 h-4 text-amber-400" /> Field: {activeConflictDetail.field_name}
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => setActiveConflictDetail(null)}
+                    className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-surface transition"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="mt-4 space-y-3 text-xs">
+                  <div className="p-3 rounded-lg bg-surface/80 border border-border space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Severity:</span>
+                      <span className="font-semibold uppercase text-rose-400">{activeConflictDetail.severity}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Classification:</span>
+                      <span className="font-mono text-gray-300">{activeConflictDetail.conflict_type}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Comparison Engine:</span>
+                      <span className="font-medium text-gray-300">{activeConflictDetail.comparison_method}</span>
+                    </div>
+                    {activeConflictDetail.similarity_score !== null && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Similarity Metric:</span>
+                        <span className="font-mono text-indigo-400">{activeConflictDetail.similarity_score}%</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 rounded-lg bg-slate-950/80 border border-border">
+                      <span className="text-[10px] uppercase font-mono text-gray-400">Document A Value</span>
+                      <p className="font-semibold text-white mt-1 break-words">{activeConflictDetail.value_a}</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-slate-950/80 border border-border">
+                      <span className="text-[10px] uppercase font-mono text-gray-400">Document B Value</span>
+                      <p className="font-semibold text-amber-300 mt-1 break-words">{activeConflictDetail.value_b}</p>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-slate-950/80 border border-border">
+                    <span className="text-[10px] uppercase font-mono text-gray-400">Explainable Analysis</span>
+                    <p className="text-gray-300 mt-1 leading-relaxed">{activeConflictDetail.description}</p>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-surface/60 border border-border flex items-center justify-between">
+                    <div>
+                      <span className="text-gray-400 block text-[10px]">Review Status</span>
+                      <span className="font-medium text-white capitalize">{activeConflictDetail.status}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {["detected", "in_review", "resolved", "ignored"].map((st) => (
+                        <button
+                          key={st}
+                          onClick={() => handleUpdateReviewStatus(activeConflictDetail.id, st)}
+                          className={`px-2 py-1 rounded text-[10px] font-medium transition ${
+                            activeConflictDetail.status === st
+                              ? "bg-amber-600 text-white"
+                              : "bg-surface hover:bg-slate-800 text-gray-400 border border-border"
+                          }`}
+                        >
+                          {st.replace("_", " ")}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="text-[10px] text-gray-500 pt-1">
+                    Conflict Record ID: <span className="font-mono text-gray-400">{activeConflictDetail.id}</span>
+                  </div>
+                </div>
+
+                <div className="mt-5 pt-3 border-t border-border flex justify-end">
+                  <button
+                    onClick={() => setActiveConflictDetail(null)}
+                    className="px-4 py-1.5 rounded-lg bg-surface hover:bg-slate-800 border border-border text-xs text-white transition"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Foundation Overview & Scope Cards */}
