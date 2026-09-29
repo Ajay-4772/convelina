@@ -4,6 +4,7 @@ from app.models.conflict import Conflict
 from app.models.knowledge_source import KnowledgeSource
 from app.models.official_form import OfficialForm
 from app.models.assistant import AssistantConversation, AssistantMessage
+from app.models.correction_draft import CorrectionDraft, CorrectionDraftVersion
 
 __all__ = [
     "User",
@@ -13,4 +14,6 @@ __all__ = [
     "OfficialForm",
     "AssistantConversation",
     "AssistantMessage",
+    "CorrectionDraft",
+    "CorrectionDraftVersion",
 ]

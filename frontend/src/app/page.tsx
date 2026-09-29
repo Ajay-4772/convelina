@@ -30,7 +30,11 @@ import {
   Sparkles,
   BookOpen,
   ExternalLink,
-  Send
+  Send,
+  Download,
+  FileEdit,
+  Printer,
+  FileDown
 } from "lucide-react";
 
 
@@ -107,6 +111,21 @@ export default function Home() {
   const [activeAssistantConflict, setActiveAssistantConflict] = useState<ConflictItem | null>(null);
   const [officialForms, setOfficialForms] = useState<any[]>([]);
   const [loadingForms, setLoadingForms] = useState<boolean>(false);
+
+  // Module 7: Correction Document Generator state
+  const [selectedConflictForDraft, setSelectedConflictForDraft] = useState<ConflictItem | null>(null);
+  const [draftDocType, setDraftDocType] = useState<string>("correction_request_letter");
+  const [confirmedApplicantName, setConfirmedApplicantName] = useState<string>("");
+  const [confirmedRequestedValue, setConfirmedRequestedValue] = useState<string>("");
+  const [userDraftExplanation, setUserDraftExplanation] = useState<string>("");
+  const [generatingDraft, setGeneratingDraft] = useState<boolean>(false);
+  const [draftError, setDraftError] = useState<string | null>(null);
+  const [activeDraft, setActiveDraft] = useState<any | null>(null);
+  const [draftList, setDraftList] = useState<any[]>([]);
+  const [loadingDrafts, setLoadingDrafts] = useState<boolean>(false);
+  const [editingContent, setEditingContent] = useState<string>("");
+  const [savingEdit, setSavingEdit] = useState<boolean>(false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -468,11 +487,150 @@ export default function Home() {
     }
   };
 
+  const fetchDrafts = async (role: "citizen" | "officer" | "admin" = activeIdentity) => {
+    setLoadingDrafts(true);
+    try {
+      const token = getSimulatedToken(role);
+      const res = await fetch(`${apiUrl}/api/v1/correction-drafts`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDraftList(data.items || []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch drafts", e);
+    } finally {
+      setLoadingDrafts(false);
+    }
+  };
+
+  const handleGenerateDraft = async () => {
+    if (!selectedConflictForDraft) {
+      setDraftError("Please select an identified conflict first.");
+      return;
+    }
+    setGeneratingDraft(true);
+    setDraftError(null);
+    setSaveSuccessMsg(null);
+
+    const targetCategory = selectedConflictForDraft.field_name.toLowerCase().includes("pan")
+      ? "pan"
+      : selectedConflictForDraft.field_name.toLowerCase().includes("passport")
+      ? "passport"
+      : "pan";
+
+    const payload = {
+      conflict_id: selectedConflictForDraft.id,
+      document_type: draftDocType,
+      document_category: targetCategory,
+      confirmed_fields: {
+        applicant_name: confirmedApplicantName || "Applicant",
+        requested_value: confirmedRequestedValue || selectedConflictForDraft.value_a,
+        current_recorded_value: selectedConflictForDraft.value_b,
+        reason_for_discrepancy: userDraftExplanation || "Typographical clerical discrepancy."
+      }
+    };
+
+    try {
+      const token = getSimulatedToken(activeIdentity);
+      const res = await fetch(`${apiUrl}/api/v1/correction-drafts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setDraftError(data.detail || "Assistant service is not currently available. Please try again later.");
+      } else {
+        setActiveDraft(data);
+        setEditingContent(data.content);
+        fetchDrafts(activeIdentity);
+      }
+    } catch (err: unknown) {
+      setDraftError(err instanceof Error ? err.message : "Assistant service is not currently available. Please try again later.");
+    } finally {
+      setGeneratingDraft(false);
+    }
+  };
+
+  const handleSaveDraftEdit = async () => {
+    if (!activeDraft) return;
+    setSavingEdit(true);
+    setSaveSuccessMsg(null);
+    try {
+      const token = getSimulatedToken(activeIdentity);
+      const res = await fetch(`${apiUrl}/api/v1/correction-drafts/${activeDraft.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ content: editingContent, status: "user_edited" })
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setActiveDraft(updated);
+        setSaveSuccessMsg("Draft edits saved as a new version.");
+        fetchDrafts(activeIdentity);
+      }
+    } catch (e) {
+      console.error("Failed to save draft edits", e);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDeleteDraft = async (draftId: string) => {
+    try {
+      const token = getSimulatedToken(activeIdentity);
+      const res = await fetch(`${apiUrl}/api/v1/correction-drafts/${draftId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        if (activeDraft?.id === draftId) {
+          setActiveDraft(null);
+          setEditingContent("");
+        }
+        fetchDrafts(activeIdentity);
+      }
+    } catch (e) {
+      console.error("Failed to delete draft", e);
+    }
+  };
+
+  const handleDownloadDraft = async (draftId: string, format: "pdf" | "docx") => {
+    try {
+      const token = getSimulatedToken(activeIdentity);
+      const res = await fetch(`${apiUrl}/api/v1/correction-drafts/${draftId}/download?format=${format}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `correction_draft_${draftId.slice(0, 8)}.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      }
+    } catch (e) {
+      console.error("Download failed", e);
+    }
+  };
+
   useEffect(() => {
     checkHealth();
     syncIdentityAndTestRoutes("citizen");
     fetchDocuments("citizen");
     fetchConflicts("citizen");
+    fetchDrafts("citizen");
     const interval = setInterval(checkHealth, 15000);
     return () => clearInterval(interval);
   }, []);
@@ -506,7 +664,7 @@ export default function Home() {
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold tracking-tight text-white">Consolith</h1>
                 <span className="text-xs px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono">
-                  Module 3: Authentication & Role Scoping
+                  Module 7: Correction Document Generator
                 </span>
               </div>
               <p className="text-sm text-gray-400 mt-0.5">
@@ -1364,6 +1522,289 @@ export default function Home() {
                       </div>
                     </div>
                   ))
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Module 7: Correction Document Generator Workspace */}
+        <section className="mt-8 p-6 rounded-2xl bg-surface/80 border border-border backdrop-blur-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border/60">
+            <div>
+              <div className="flex items-center gap-2">
+                <FileEdit className="w-5 h-5 text-indigo-400" />
+                <h2 className="text-base font-semibold text-white">Module 7: Correction Document Generator Workspace</h2>
+                <span className="text-xs px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono">
+                  Gemini-Only
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                Prepare official correction request letters, checklists, and declaration drafts grounded in verified government circulars with forced Row-Level Security.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => fetchDrafts(activeIdentity)}
+                disabled={loadingDrafts}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-200 bg-surface border border-border rounded-lg hover:bg-surface-card transition"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingDrafts ? "animate-spin text-indigo-400" : ""}`} />
+                Refresh Saved Drafts
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Step 1 & 2: Conflict Selection & Case Confirmation (5 cols) */}
+            <div className="lg:col-span-5 space-y-4">
+              <div className="p-4 rounded-xl bg-slate-950/60 border border-border space-y-3">
+                <h4 className="text-xs font-semibold text-gray-200 flex items-center justify-between">
+                  <span>1. Select Discrepancy Case</span>
+                  <span className="text-[10px] text-gray-400">{conflicts.length} detected</span>
+                </h4>
+
+                {conflicts.length === 0 ? (
+                  <div className="p-4 rounded-lg bg-surface/30 border border-border/60 text-center text-xs text-gray-500">
+                    No discrepancies detected yet. Upload documents in Module 4 to analyze.
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {conflicts.map((c) => {
+                      const isSelected = selectedConflictForDraft?.id === c.id;
+                      return (
+                        <div
+                          key={c.id}
+                          onClick={() => {
+                            setSelectedConflictForDraft(c);
+                            setConfirmedRequestedValue(c.value_a);
+                          }}
+                          className={`p-3 rounded-lg border text-xs cursor-pointer transition flex flex-col gap-1 ${
+                            isSelected
+                              ? "bg-indigo-950/40 border-indigo-500 text-white shadow-sm shadow-indigo-500/20"
+                              : "bg-surface/50 border-border text-gray-300 hover:bg-surface-card"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold capitalize text-indigo-300">
+                              {c.field_name.replace("_", " ")} Mismatch
+                            </span>
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface border border-border text-gray-400 uppercase">
+                              {c.severity}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-gray-400 flex items-center justify-between mt-1">
+                            <span>Doc A: <strong className="text-gray-200">{c.value_a}</strong></span>
+                            <span>Doc B: <strong className="text-rose-300">{c.value_b}</strong></span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Step 2: Information Confirmation Form */}
+              <div className="p-4 rounded-xl bg-slate-950/60 border border-border space-y-3">
+                <h4 className="text-xs font-semibold text-gray-200">2. Case & Document Specifications</h4>
+
+                <div>
+                  <label className="text-[11px] text-gray-400 block mb-1">Target Document Type:</label>
+                  <select
+                    value={draftDocType}
+                    onChange={(e) => setDraftDocType(e.target.value)}
+                    className="w-full text-xs p-2 rounded-lg bg-surface border border-border text-gray-200 focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="correction_request_letter">Formal Correction Request Letter</option>
+                    <option value="supporting_document_checklist">Supporting Document Checklist & Guide</option>
+                    <option value="declaration_draft">Self-Declaration / Affidavit Format</option>
+                    <option value="general_correction_application">General Rectification Application</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] text-gray-400 block mb-1">Applicant Full Name (Confirmed):</label>
+                  <input
+                    type="text"
+                    value={confirmedApplicantName}
+                    onChange={(e) => setConfirmedApplicantName(e.target.value)}
+                    placeholder="e.g. RAJESH KUMAR SHARMA"
+                    className="w-full text-xs p-2 rounded-lg bg-surface border border-border text-gray-200 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] text-gray-400 block mb-1">Requested Correct Value:</label>
+                  <input
+                    type="text"
+                    value={confirmedRequestedValue}
+                    onChange={(e) => setConfirmedRequestedValue(e.target.value)}
+                    placeholder="Enter the accurate, user-verified value"
+                    className="w-full text-xs p-2 rounded-lg bg-surface border border-border text-gray-200 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] text-gray-400 block mb-1">Context / Explanation for Authority:</label>
+                  <textarea
+                    rows={2}
+                    value={userDraftExplanation}
+                    onChange={(e) => setUserDraftExplanation(e.target.value)}
+                    placeholder="Brief explanation (e.g. Typographical error during initial card issuance)"
+                    className="w-full text-xs p-2 rounded-lg bg-surface border border-border text-gray-200 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                {draftError && (
+                  <div className="p-3 rounded-lg bg-rose-950/60 border border-rose-800 text-xs text-rose-300 flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
+                    <span>{draftError}</span>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleGenerateDraft}
+                  disabled={generatingDraft || !selectedConflictForDraft}
+                  className="w-full py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center justify-center gap-2 transition disabled:opacity-50 shadow-md shadow-indigo-600/20"
+                >
+                  <Sparkles className={`w-4 h-4 ${generatingDraft ? "animate-spin" : ""}`} />
+                  {generatingDraft ? "Generating Draft via Gemini..." : "Generate Grounded Correction Draft"}
+                </button>
+              </div>
+
+              {/* Saved Drafts List */}
+              <div className="p-4 rounded-xl bg-slate-950/60 border border-border">
+                <h4 className="text-xs font-semibold text-gray-200 mb-2">Saved Citizen Drafts ({draftList.length})</h4>
+                {draftList.length === 0 ? (
+                  <p className="text-xs text-gray-500 italic">No drafts generated yet.</p>
+                ) : (
+                  <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                    {draftList.map((d) => (
+                      <div
+                        key={d.id}
+                        className={`p-2.5 rounded-lg border text-xs flex items-center justify-between ${
+                          activeDraft?.id === d.id
+                            ? "bg-indigo-950/40 border-indigo-500 text-white"
+                            : "bg-surface/40 border-border text-gray-300"
+                        }`}
+                      >
+                        <div
+                          className="flex-1 cursor-pointer truncate mr-2"
+                          onClick={() => {
+                            setActiveDraft(d);
+                            setEditingContent(d.content);
+                          }}
+                        >
+                          <p className="font-medium truncate">{d.title}</p>
+                          <span className="text-[10px] text-gray-400 font-mono">v{d.version} • {d.status}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            title="Download PDF"
+                            onClick={() => handleDownloadDraft(d.id, "pdf")}
+                            className="p-1 rounded bg-surface hover:bg-indigo-600/20 text-gray-300 hover:text-indigo-300"
+                          >
+                            <FileDown className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            title="Delete Draft"
+                            onClick={() => handleDeleteDraft(d.id)}
+                            className="p-1 rounded bg-surface hover:bg-rose-950 text-gray-400 hover:text-rose-400"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Step 3: Draft Editor & Download Actions (7 cols) */}
+            <div className="lg:col-span-7 flex flex-col h-full space-y-4">
+              <div className="p-4 rounded-xl bg-slate-950/60 border border-border flex flex-col flex-1 h-[620px]">
+                <div className="flex items-center justify-between pb-3 border-b border-border">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-indigo-400" />
+                    <span className="text-xs font-semibold text-white">
+                      {activeDraft ? activeDraft.title : "Draft Document Preview & Editor"}
+                    </span>
+                    {activeDraft && (
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-indigo-950 text-indigo-400 border border-indigo-900">
+                        Version {activeDraft.version}
+                      </span>
+                    )}
+                  </div>
+
+                  {activeDraft && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleDownloadDraft(activeDraft.id, "pdf")}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600 hover:text-white transition"
+                      >
+                        <Download className="w-3.5 h-3.5" /> PDF
+                      </button>
+                      <button
+                        onClick={() => handleDownloadDraft(activeDraft.id, "docx")}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg bg-blue-600/20 text-blue-300 border border-blue-500/30 hover:bg-blue-600 hover:text-white transition"
+                      >
+                        <Download className="w-3.5 h-3.5" /> DOCX
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Validation Warnings Banner */}
+                {activeDraft?.validation_status?.warnings && activeDraft.validation_status.warnings.length > 0 && (
+                  <div className="mt-3 p-2.5 rounded-lg bg-amber-950/30 border border-amber-800/40 text-xs text-amber-300 space-y-1">
+                    <div className="font-semibold flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-400" /> Validation Notice:
+                    </div>
+                    <ul className="list-disc list-inside text-[11px] text-amber-200/80">
+                      {activeDraft.validation_status.warnings.map((w: string, idx: number) => (
+                        <li key={idx}>{w}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Textarea Editor */}
+                <div className="flex-1 mt-3 flex flex-col">
+                  {activeDraft ? (
+                    <textarea
+                      value={editingContent}
+                      onChange={(e) => setEditingContent(e.target.value)}
+                      className="w-full flex-1 p-3 rounded-lg bg-surface border border-border text-gray-200 font-mono text-xs leading-relaxed focus:outline-none focus:border-indigo-500 resize-none"
+                    />
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-gray-500 text-xs">
+                      <FileEdit className="w-8 h-8 text-gray-600 mb-2" />
+                      <p>Select a conflict and click &ldquo;Generate Grounded Correction Draft&rdquo;.</p>
+                      <p className="text-[11px] text-gray-600 mt-1">Generated drafts can be edited, versioned, and exported to PDF/DOCX.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer Controls */}
+                {activeDraft && (
+                  <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+                    <div className="text-[11px] text-emerald-400 flex items-center gap-1">
+                      {saveSuccessMsg && (
+                        <>
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>{saveSuccessMsg}</span>
+                        </>
+                      )}
+                    </div>
+                    <button
+                      onClick={handleSaveDraftEdit}
+                      disabled={savingEdit}
+                      className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition disabled:opacity-50"
+                    >
+                      {savingEdit ? "Saving Version..." : "Save Edits as New Version"}
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

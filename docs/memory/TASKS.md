@@ -76,7 +76,21 @@
   - [x] Frontend Next.js UI integration: AI Assistant chat console, "Explain with AI" and "Step-by-Step Resolution" conflict triggers, official form cards, citation badges
   - [x] Pytest test suite: `backend/tests/test_rag.py` (4/4 passing; total backend pytest: 53/53 passing)
   - [x] Integration test script: `scripts/test_module6_rag_api.py` (8/8 passing)
-- [ ] **Module 7: Correction Document Generator**
+- [x] **Module 7: Correction Document Generator**
+  - [x] Module 6 compliance audit: Google Gemini ONLY architecture strictly enforced
+  - [x] Removed Anthropic Claude provider and rule-based fallback generator
+  - [x] Exact user-facing failure message: `"Assistant service is not currently available. Please try again later."`
+  - [x] Installed `google-generativeai`, `reportlab`, `python-docx` dependencies in `backend/requirements.txt`
+  - [x] Database migration `006_correction_drafts.sql`: `correction_drafts`, `correction_draft_versions` with forced RLS and role policies
+  - [x] ORM models `CorrectionDraft`, `CorrectionDraftVersion` and Pydantic v2 schemas
+  - [x] Document generator service (`document_generator.py`) grounded in Module 6 RAG knowledge and official forms
+  - [x] Document validator (`DocumentValidator`) scanning for unresolved placeholders and required draft notice
+  - [x] Professional document exporter (`document_exporter.py`): PDF (ReportLab) and DOCX (python-docx) exports
+  - [x] FastAPI router (`routers/correction_drafts.py`): generate, list, get, patch, regenerate, delete, download
+  - [x] Next.js frontend UI: Interactive Correction Document Generator Workspace with discrepancy selection, field confirmation, editor, and download buttons
+  - [x] Automated unit test suite (`backend/tests/test_correction_drafts.py`, 8/8 passed)
+  - [x] Live API & RLS integration test harness (`scripts/test_module7_drafts_api.py`, 11/11 passed)
+  - [x] Full regression test suite (61/61 backend pytest tests passed)
 - [ ] **Module 8: Officer Verification Workflow**
 - [ ] **Module 9: Document Authenticity & Ed25519 PKI/CA**
 - [ ] **Module 10: Security Hardening Pass**

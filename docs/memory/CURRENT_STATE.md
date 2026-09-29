@@ -1,20 +1,21 @@
-- **Current Active Module**: Module 6 Completed & Verified (Awaiting User Sign-off before Module 7: Correction Document Generator)
+- **Current Active Module**: Module 7 Completed & Verified (Awaiting User Sign-off before Module 8: Officer Verification Workflow)
 - **Completed Modules**:
   - Module 1: Foundation (Next.js + FastAPI + PostgreSQL 16 + Qdrant container stack running and verified via `scripts/verify_module1.py`)
   - Module 2: Database Schema & Row-Level Security (RLS) (Forced RLS across all 7 user-data tables, dedicated non-superuser role `consolith_app`, 22 policies, append-only trigger, self-promotion block, pooling-safe session variables, verified via `scripts/test_rls_isolation.py`)
   - Module 3: Authentication & Role Scoping (Firebase Admin SDK ID token verification, citizen auto-provisioning via PostgreSQL security definer upsert function, transaction-local RLS context mapping, RBAC dependencies `require_citizen`, `require_officer`, `require_admin`, Next.js Firebase AuthContext with RBAC verification dashboard, 10/10 unit tests, 8/8 API integration tests, 9/9 RLS regression tests passing)
   - Module 4: Secure Document Upload & OCR Pipeline (Tesseract OCR 5.5.0 with Eng+Hin packs, Poppler PDF rasterization, magic-byte & size validation, Aadhaar privacy masking XXXX-XXXX-1234, Fernet at-rest payload encryption, temporary file unlinking per retention policy, RLS-enforced storage & deletion, Next.js interactive upload & library dashboard, 24/24 unit tests, 8/8 integration tests passing)
   - Module 5: Conflict Detection Engine (Deterministic cross-document comparison across Aadhaar, PAN, Passport, Class 10/12, and EPF records; multi-layered name matching using RapidFuzz & Jellyfish phonetic Metaphone; calendar date parsing with compatible year-only handling; idempotent DB persistence with canonical pair ordering; non-superuser RLS enforcement on conflicts; Next.js discrepancy review UI; 49/49 backend pytest tests, 10/10 engine integration tests, 9/9 RLS isolation tests passing)
-  - Module 6: Advanced Context-Aware RAG & AI Resolution Assistant (Official government procedure & circular ingestion for UIDAI, NSDL, MEA, EPFO, CBSE; verified downloadable forms catalog; 1024-dim Qdrant hybrid dense + lexical retriever with >= 0.55 relevance floor; zero-hallucination citation validator; Anthropic Claude & fallback deterministic provider; conversational continuity; RLS-isolated conversations; Next.js AI Assistant console with "Explain with AI" and "Step-by-Step Resolution" conflict triggers; 53/53 pytest tests and 8/8 end-to-end API integration tests passing)
+  - Module 6: Advanced Context-Aware RAG & AI Resolution Assistant (Official government procedure & circular ingestion for UIDAI, NSDL, MEA, EPFO, CBSE; verified downloadable forms catalog; 1024-dim Qdrant hybrid dense + lexical retriever with >= 0.55 relevance floor; zero-hallucination citation validator; Google Gemini ONLY architecture audited and enforced; exact service unavailable message "Assistant service is not currently available. Please try again later." on failures; 53/53 pytest tests and 8/8 end-to-end API integration tests passing)
+  - Module 7: Correction Document Generator (Case-aware official correction request drafts grounded in Module 6 verified guidelines and forms; Google Gemini ONLY generation; DocumentValidator with placeholder scanning and draft notice; ReportLab PDF and python-docx DOCX exports; database migration 006 with forced PostgreSQL RLS on `correction_drafts` and `correction_draft_versions`; draft version tracking; Next.js Correction Document Workspace; 61/61 backend pytest tests passing, 11/11 live API & RLS integration tests passing)
 - **Docker Stack**:
   - `consolith-postgres`: PostgreSQL 16 Alpine, port 5432 (Healthy)
   - `consolith-qdrant`: Qdrant v1.11.0, port 6333/6334 (Healthy)
-  - `consolith-backend`: FastAPI Python 3.11 with Tesseract 5.5.0 + Poppler + Qdrant client + Anthropic + LangChain, port 8000 (Healthy, connects via `consolith_app`)
-  - `consolith-frontend`: Next.js 14 App Router, port 3000 (Operational, Document Upload, OCR, RBAC, Conflict Review, and AI Resolution Assistant active)
+  - `consolith-backend`: FastAPI Python 3.11 with Tesseract 5.5.0 + Poppler + Qdrant client + Google Gemini SDK + ReportLab + python-docx, port 8000 (Healthy, connects via non-superuser `consolith_app`)
+  - `consolith-frontend`: Next.js 14 App Router, port 3000 (Operational, Document Upload, OCR, RBAC, Conflict Review, AI Assistant, and Correction Document Workspace active)
 - **Database Status**:
   - Superuser: `postgres` (migrations/admin only)
   - Application role: `consolith_app` (non-superuser, least-privilege)
-  - RLS Status: Enabled and FORCED on all user-data tables (`knowledge_sources`, `official_forms`, `assistant_conversations`, `assistant_messages`, `conflicts`, etc.)
+  - RLS Status: Enabled and FORCED on all user-data tables (`knowledge_sources`, `official_forms`, `assistant_conversations`, `assistant_messages`, `conflicts`, `correction_drafts`, `correction_draft_versions`, etc.)
   - Collections in Qdrant: `consolith_knowledge` (25 chunks indexed), `consolith_forms` (6 forms indexed)
 
 

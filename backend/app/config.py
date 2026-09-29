@@ -39,9 +39,9 @@ class Settings(BaseSettings):
         "http://frontend:3000",
     ]
 
-    # Module 6: RAG Knowledge Base & AI Assistant
-    ANTHROPIC_API_KEY: Optional[str] = None
-    ANTHROPIC_MODEL: str = "claude-3-5-sonnet-20241022"
+    # Module 6 & 7: Google Gemini LLM & RAG Knowledge Base
+    GEMINI_API_KEY: Optional[str] = None
+    GEMINI_MODEL: str = "gemini-1.5-flash"
     EMBEDDING_MODEL: str = "BAAI/bge-m3"
     QDRANT_KNOWLEDGE_COLLECTION: str = "consolith_knowledge"
     QDRANT_FORMS_COLLECTION: str = "consolith_forms"
