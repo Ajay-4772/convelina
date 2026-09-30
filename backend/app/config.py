@@ -18,9 +18,12 @@ class Settings(BaseSettings):
     FIREBASE_PROJECT_ID: Optional[str] = "consolith-dev"
     FIREBASE_SERVICE_ACCOUNT_PATH: Optional[str] = None
     FIREBASE_AUTH_EMULATOR_HOST: Optional[str] = None
-    
+    # Administrator Configuration
+    ADMIN_GMAIL: Optional[str] = "admin.demo@gmail.com"
+
     # Test Mode / Isolated verification (never enable in production)
     TEST_MODE_ALLOW_SIMULATED_TOKENS: bool = False
+
     
     # Document Storage & Upload Security (Module 4)
     STORAGE_TEMP_DIR: str = "/tmp/consolith/temp_docs"

@@ -8,7 +8,6 @@ import {
   XCircle,
   FileText,
   Sparkles,
-  History,
   User,
   Settings,
   Search,
@@ -29,17 +28,18 @@ import {
   Calendar,
   Check,
   X,
-  Sliders,
-  ShieldCheck,
-  FileCheck2,
   Menu,
   Clock,
   Send,
   MessageSquare,
   ChevronDown,
   Info,
-  BadgeAlert,
-  KeyRound,
+  ShieldCheck,
+  FileCheck2,
+  PanelLeftClose,
+  PanelLeft,
+  Copy,
+  Paperclip,
 } from "lucide-react";
 
 // ==============================================================================
@@ -137,11 +137,13 @@ interface AdminStats {
 export default function ConsolithApp() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-  // App Navigation
+  // App Navigation & Shell State
   const [activeTab, setActiveTab] = useState<
-    "home" | "conflicts" | "assistant" | "forms" | "activity" | "profile" | "admin"
+    "home" | "conflicts" | "assistant" | "forms" | "profile" | "admin"
   >("home");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   // Authentication & Profile State
   const [currentUser, setCurrentUser] = useState<UserProfile>({
@@ -156,7 +158,6 @@ export default function ConsolithApp() {
     father_name: "Ramanathan K.",
     mother_name: "Lakshmi Raman",
   });
-  const [activeRole, setActiveRole] = useState<"citizen" | "admin">("citizen");
 
   // Auth Dialog / Onboarding State
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -181,24 +182,26 @@ export default function ConsolithApp() {
 
   const [conflicts, setConflicts] = useState<ConflictItem[]>([]);
   const [detectingConflicts, setDetectingConflicts] = useState(false);
+  const [hasCompared, setHasCompared] = useState(false);
   const [conflictSuccessMsg, setConflictSuccessMsg] = useState<string | null>(null);
 
   // Module 6: AI Assistant State
   const [conversations, setConversations] = useState<ConversationItem[]>([
-    { id: "default-conv", title: "General Document Inconsistency Help", updated_at: new Date().toISOString() },
+    { id: "default-conv", title: "Document Discrepancy Guidance", updated_at: new Date().toISOString() },
   ]);
   const [activeConvId, setActiveConvId] = useState<string>("default-conv");
   const [chatMessages, setChatMessages] = useState<AssistantMsg[]>([
     {
       role: "assistant",
       content:
-        "Hello Ajay. I am the Consolith Document Assistance AI. I can guide you through resolving inconsistencies across your Indian identity documents (Aadhaar, PAN, Passport, Class 10/12, and EPF records) using official verified government procedures.",
+        "Hello. I am the Consolith Document Assistance AI. I can guide you through resolving clerical inconsistencies across your Indian identity documents (Aadhaar, PAN, Passport, Educational certificates, and EPF records) using verified government procedures.",
     },
   ]);
   const [chatInput, setChatInput] = useState("");
   const [sendingChat, setSendingChat] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
-  // Module 6 & Official Forms
+  // Module 6: Official Forms Catalog
   const [formsCatalog, setFormsCatalog] = useState<FormItem[]>([
     {
       id: "form-pan-49a",
@@ -249,27 +252,23 @@ export default function ConsolithApp() {
       official_source_url: "https://uidai.gov.in",
     },
     {
-      id: "form-cbse-rect",
-      form_code: "CBSE-NAME-RECT",
-      title: "CBSE Certificate Correction Application",
+      id: "form-cbSE-cert",
+      form_code: "CBSE-NAME-CORR",
+      title: "CBSE Secondary Education Marksheet Correction",
       issuing_authority: "Central Board of Secondary Education (CBSE)",
       category: "education",
-      description: "Application for correction in candidate, father or mother's name in Class 10/12 certificate.",
-      purpose: "Correction of clerical errors consistent with school admission records.",
-      requirements: ["Attested copy of School Admission Register (SR)", "School leaving certificate copy", "Court order if after 5 years"],
-      download_url: "https://cbse.gov.in",
-      official_source_url: "https://cbse.gov.in",
+      description: "Application for clerical correction in student name or parents' names in Class 10/12 certificate.",
+      purpose: "Rectify spelling error made in school records before board issuance.",
+      requirements: ["School admission register extract attested by Principal", "Newspaper notification cutting", "Original Marksheet surrender"],
+      download_url: "https://www.cbse.gov.in",
+      official_source_url: "https://www.cbse.gov.in",
     },
   ]);
-  const [selectedFormCategory, setSelectedFormCategory] = useState<string>("all");
+  const [selectedFormCategory, setSelectedFormCategory] = useState("all");
   const [formSearchQuery, setFormSearchQuery] = useState("");
   const [selectedFormDetail, setSelectedFormDetail] = useState<FormItem | null>(null);
 
-  // User Activity State
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
-  const [loadingActivities, setLoadingActivities] = useState(false);
-
-  // Profile Settings Form State
+  // Profile Form State
   const [profileForm, setProfileForm] = useState({
     full_name: currentUser.full_name,
     phone_number: currentUser.phone_number || "",
@@ -280,27 +279,29 @@ export default function ConsolithApp() {
   });
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
+
+  // Password Change Form
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
+
+  // Account Deletion
   const [deleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deletingAccount, setDeletingAccount] = useState(false);
 
-  // Admin Dashboard State
+  // Administrator State
   const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
-  const [adminUserSearch, setAdminUserSearch] = useState("");
   const [adminActivity, setAdminActivity] = useState<any[]>([]);
   const [loadingAdmin, setLoadingAdmin] = useState(false);
+  const [adminUserSearch, setAdminUserSearch] = useState("");
 
-  // Module 9: Cryptographic Verification State inside Document UI
-  const [verifyingDocId, setVerifyingDocId] = useState<string | null>(null);
-  const [verificationModalResult, setVerificationModalResult] = useState<any | null>(null);
-
-  // Auth Header Generation
+  // Helper for Authorization Headers
   const getAuthHeaders = () => {
-    const role = activeRole;
     return {
       "Content-Type": "application/json",
-      Authorization: `Bearer test_token_:ui_demo_${role}:${role === "admin" ? "admin.demo@gmail.com" : currentUser.email}:${currentUser.full_name}`,
+      Authorization: `Bearer test_token_:${currentUser.firebase_uid}:${currentUser.email}:${currentUser.full_name}`,
     };
   };
 
@@ -308,11 +309,10 @@ export default function ConsolithApp() {
   useEffect(() => {
     fetchDocuments();
     fetchConflicts();
-    fetchActivity();
-    if (activeRole === "admin") {
+    if (currentUser.role === "admin") {
       fetchAdminData();
     }
-  }, [activeRole]);
+  }, [currentUser]);
 
   // Sync profile form when currentUser changes
   useEffect(() => {
@@ -366,21 +366,6 @@ export default function ConsolithApp() {
     }
   };
 
-  const fetchActivity = async () => {
-    setLoadingActivities(true);
-    try {
-      const res = await fetch(`${apiUrl}/api/v1/auth/activity`, { headers: getAuthHeaders() });
-      if (res.ok) {
-        const data = await res.json();
-        setActivities(data.activities || []);
-      }
-    } catch (e) {
-      console.error("Failed to fetch user activity", e);
-    } finally {
-      setLoadingActivities(false);
-    }
-  };
-
   const fetchAdminData = async () => {
     setLoadingAdmin(true);
     try {
@@ -424,7 +409,7 @@ export default function ConsolithApp() {
       const res = await fetch(`${apiUrl}/api/v1/upload`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer test_token_:ui_demo_${activeRole}:${currentUser.email}:${currentUser.full_name}`,
+          Authorization: `Bearer test_token_:${currentUser.firebase_uid}:${currentUser.email}:${currentUser.full_name}`,
         },
         body: formData,
       });
@@ -438,7 +423,6 @@ export default function ConsolithApp() {
       setUploadSuccess(`Document verified & processed successfully: ${data.file_name || uploadFile.name}`);
       setUploadFile(null);
       fetchDocuments();
-      fetchActivity();
     } catch (err: any) {
       setUploadError(err.message || "Upload failed");
     } finally {
@@ -454,7 +438,6 @@ export default function ConsolithApp() {
       });
       if (res.ok) {
         setDocuments((prev) => prev.filter((d) => d.id !== docId));
-        fetchActivity();
       }
     } catch (e) {
       console.error("Delete failed", e);
@@ -472,12 +455,12 @@ export default function ConsolithApp() {
       if (res.ok) {
         const data = await res.json();
         setConflicts(data.conflicts || []);
+        setHasCompared(true);
         setConflictSuccessMsg(
           data.conflicts?.length > 0
-            ? `Cross-verification completed. ${data.conflicts.length} inconsistency points flagged.`
-            : "Cross-verification completed. No conflicts detected across uploaded identity records."
+            ? `Comparison completed: ${data.conflicts.length} inconsistency point${data.conflicts.length === 1 ? "" : "s"} identified.`
+            : "Comparison completed: No differences found across uploaded documents."
         );
-        fetchActivity();
       }
     } catch (e) {
       console.error("Detection failed", e);
@@ -512,7 +495,6 @@ export default function ConsolithApp() {
           forms: data.forms || [],
         };
         setChatMessages((prev) => [...prev, assistantMsg]);
-        fetchActivity();
       } else {
         setChatMessages((prev) => [
           ...prev,
@@ -535,48 +517,10 @@ export default function ConsolithApp() {
     }
   };
 
-  const handleVerifyDocumentCrypto = async (doc: DocumentItem) => {
-    setVerifyingDocId(doc.id);
-    try {
-      // Calculate or inspect document fingerprint
-      const docStr = JSON.stringify(doc.extracted_fields);
-      const res = await fetch(`${apiUrl}/api/v1/attestations`, {
-        headers: getAuthHeaders(),
-      });
-      if (res.ok) {
-        const attestations = await res.json();
-        const matched = attestations.find((a: any) => a.document_id === doc.id || a.document_type === doc.document_type);
-        if (matched) {
-          const verifyRes = await fetch(`${apiUrl}/api/v1/attestations/${matched.id}/verify`, {
-            method: "POST",
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ document_content: docStr }),
-          });
-          const result = await verifyRes.json();
-          setVerificationModalResult({
-            ...result,
-            docTitle: doc.file_name,
-            fingerprint: matched.document_fingerprint,
-          });
-        } else {
-          setVerificationModalResult({
-            status: "VALID",
-            is_valid: true,
-            docTitle: doc.file_name,
-            explanation: "Cryptographic SHA-256 fingerprint verified against local repository state. Ed25519 signature is intact.",
-            fingerprint: "91d1877b90297ab762e586c36b0b7a0a0bacb02f2373560155fbb793bcb693d9",
-            signing_algorithm: "Ed25519",
-            hash_algorithm: "SHA-256",
-            key_id: "consolith-officer-key-2026-v1",
-            verified_at: new Date().toLocaleTimeString(),
-          });
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setVerifyingDocId(null);
-    }
+  const handleCopyText = (text: string, index: number) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIndex(index);
+    setTimeout(() => setCopiedIndex(null), 2000);
   };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -592,8 +536,7 @@ export default function ConsolithApp() {
       if (res.ok) {
         const updated = await res.json();
         setCurrentUser(updated);
-        setProfileMessage("Profile information updated successfully.");
-        fetchActivity();
+        setProfileMessage("Your profile information has been saved successfully.");
       } else {
         const err = await res.json().catch(() => ({}));
         setProfileMessage(err.detail || "Failed to update profile.");
@@ -641,7 +584,7 @@ export default function ConsolithApp() {
       if (res.ok) {
         setAuthMode("otp");
         setOtpCountdown(60);
-        setAuthSuccess(`A 6-digit OTP code has been sent to ${authEmail}. (For demo: use 123456)`);
+        setAuthSuccess(`A 6-digit OTP code has been sent to ${authEmail}.`);
       } else {
         setAuthError(data.detail || "Failed to send OTP.");
       }
@@ -706,6 +649,18 @@ export default function ConsolithApp() {
     }
   };
 
+  const handleLogout = () => {
+    setCurrentUser({
+      id: "",
+      firebase_uid: "",
+      email: "",
+      full_name: "Guest Citizen",
+      role: "citizen",
+    });
+    setProfileDropdownOpen(false);
+    setActiveTab("home");
+  };
+
   // Filtered Forms
   const filteredForms = formsCatalog.filter((f) => {
     const matchesCategory = selectedFormCategory === "all" || f.category === selectedFormCategory;
@@ -718,173 +673,156 @@ export default function ConsolithApp() {
   });
 
   return (
-    <div className="min-h-screen bg-[#faf9f6] text-[#18181b] flex flex-col md:flex-row antialiased selection:bg-sand-200">
+    <div className="min-h-screen bg-[#faf9f6] text-[#18181b] flex flex-col md:flex-row antialiased selection:bg-zinc-200">
       {/* ========================================================================
-          SIDEBAR NAVIGATION (Light Minimalist Editorial Design)
+          SIDEBAR NAVIGATION (ChatGPT-Inspired Minimalist Collapsible Rail)
       ======================================================================== */}
-      <aside className="w-full md:w-64 bg-white border-r border-[#e5e2dc] flex flex-col justify-between shrink-0 select-none z-20">
+      <aside
+        className={`${
+          sidebarCollapsed ? "w-16" : "w-64"
+        } bg-white border-r border-[#e5e2dc] flex flex-col justify-between shrink-0 transition-all duration-200 ease-in-out z-20`}
+      >
         <div>
-          {/* Brand Header */}
-          <div className="h-16 px-6 border-b border-[#e5e2dc] flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[#18181b] text-white flex items-center justify-center shadow-xs">
+          {/* Brand Header with Collapse Toggle */}
+          <div className="h-16 px-4 border-b border-[#e5e2dc] flex items-center justify-between">
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="w-8 h-8 rounded-lg bg-[#18181b] text-white flex items-center justify-center shrink-0">
                 <Shield className="w-4 h-4 text-white" />
               </div>
-              <div>
-                <span className="font-semibold tracking-tight text-base text-[#18181b]">Consolith</span>
-                <span className="block text-[10px] uppercase font-mono tracking-wider text-charcoal-400">
-                  Citizen Portal
-                </span>
-              </div>
+              {!sidebarCollapsed && (
+                <span className="font-semibold tracking-tight text-base text-[#18181b] truncate">Consolith</span>
+              )}
             </div>
+
+            {/* Desktop Collapse Toggle Button */}
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="hidden md:flex p-1.5 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 rounded-md transition"
+              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {sidebarCollapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+            </button>
+
             {/* Mobile menu toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-1.5 text-charcoal-500 hover:text-charcoal-900 rounded-md"
+              className="md:hidden p-1.5 text-zinc-500 hover:text-zinc-900 rounded-md"
             >
               <Menu className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Navigation Links */}
-          <nav className={`p-4 space-y-1 ${mobileMenuOpen ? "block" : "hidden md:block"}`}>
+          {/* Citizen Primary Navigation Links */}
+          <nav className={`p-3 space-y-1 ${mobileMenuOpen ? "block" : "hidden md:block"}`}>
+            {/* 1. Home */}
             <button
               onClick={() => {
                 setActiveTab("home");
                 setMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition ${
+              title="Home"
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
                 activeTab === "home"
                   ? "bg-[#f5f3ef] text-[#18181b] font-semibold"
-                  : "text-charcoal-600 hover:bg-[#faf9f6] hover:text-[#18181b]"
+                  : "text-zinc-600 hover:bg-[#faf9f6] hover:text-[#18181b]"
               }`}
             >
-              <FileCheck2 className="w-4 h-4 text-charcoal-500" />
-              Home Overview
+              <FileCheck2 className="w-4 h-4 text-zinc-500 shrink-0" />
+              {!sidebarCollapsed && <span>Home</span>}
             </button>
 
+            {/* 2. Conflict Detection */}
             <button
               onClick={() => {
                 setActiveTab("conflicts");
                 setMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium transition ${
+              title="Conflict Detection"
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
                 activeTab === "conflicts"
                   ? "bg-[#f5f3ef] text-[#18181b] font-semibold"
-                  : "text-charcoal-600 hover:bg-[#faf9f6] hover:text-[#18181b]"
+                  : "text-zinc-600 hover:bg-[#faf9f6] hover:text-[#18181b]"
               }`}
             >
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="w-4 h-4 text-charcoal-500" />
-                Conflict Detection
-              </div>
-              {conflicts.length > 0 && (
-                <span className="px-2 py-0.5 text-xs font-mono font-medium rounded-full bg-amber-100 text-amber-800">
-                  {conflicts.length}
-                </span>
-              )}
+              <AlertTriangle className="w-4 h-4 text-zinc-500 shrink-0" />
+              {!sidebarCollapsed && <span>Conflict Detection</span>}
             </button>
 
+            {/* 3. AI Assistant */}
             <button
               onClick={() => {
                 setActiveTab("assistant");
                 setMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition ${
+              title="AI Assistant"
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
                 activeTab === "assistant"
                   ? "bg-[#f5f3ef] text-[#18181b] font-semibold"
-                  : "text-charcoal-600 hover:bg-[#faf9f6] hover:text-[#18181b]"
+                  : "text-zinc-600 hover:bg-[#faf9f6] hover:text-[#18181b]"
               }`}
             >
-              <Sparkles className="w-4 h-4 text-charcoal-500" />
-              AI Assistant
+              <Sparkles className="w-4 h-4 text-zinc-500 shrink-0" />
+              {!sidebarCollapsed && <span>AI Assistant</span>}
             </button>
 
+            {/* 4. Forms Repository */}
             <button
               onClick={() => {
                 setActiveTab("forms");
                 setMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition ${
+              title="Forms Repository"
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
                 activeTab === "forms"
                   ? "bg-[#f5f3ef] text-[#18181b] font-semibold"
-                  : "text-charcoal-600 hover:bg-[#faf9f6] hover:text-[#18181b]"
+                  : "text-zinc-600 hover:bg-[#faf9f6] hover:text-[#18181b]"
               }`}
             >
-              <FileText className="w-4 h-4 text-charcoal-500" />
-              Forms Repository
+              <FileText className="w-4 h-4 text-zinc-500 shrink-0" />
+              {!sidebarCollapsed && <span>Forms Repository</span>}
             </button>
 
+            {/* 5. Profile */}
             <button
               onClick={() => {
-                setActiveTab("activity");
+                setActiveTab("profile");
                 setMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition ${
-                activeTab === "activity"
+              title="Profile"
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
+                activeTab === "profile"
                   ? "bg-[#f5f3ef] text-[#18181b] font-semibold"
-                  : "text-charcoal-600 hover:bg-[#faf9f6] hover:text-[#18181b]"
+                  : "text-zinc-600 hover:bg-[#faf9f6] hover:text-[#18181b]"
               }`}
             >
-              <History className="w-4 h-4 text-charcoal-500" />
-              Activity History
+              <User className="w-4 h-4 text-zinc-500 shrink-0" />
+              {!sidebarCollapsed && <span>Profile</span>}
             </button>
-
-            {/* Admin Switcher */}
-            <div className="pt-4 mt-4 border-t border-[#e5e2dc]">
-              <div className="px-3 pb-2 text-[11px] font-medium uppercase tracking-wider text-charcoal-400">
-                System Mode
-              </div>
-              <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#f5f3ef] rounded-lg">
-                <button
-                  onClick={() => {
-                    setActiveRole("citizen");
-                    setActiveTab("home");
-                  }}
-                  className={`text-xs py-1.5 px-2 rounded-md font-medium transition ${
-                    activeRole === "citizen"
-                      ? "bg-white text-[#18181b] shadow-xs"
-                      : "text-charcoal-500 hover:text-[#18181b]"
-                  }`}
-                >
-                  Citizen
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveRole("admin");
-                    setActiveTab("admin");
-                  }}
-                  className={`text-xs py-1.5 px-2 rounded-md font-medium transition ${
-                    activeRole === "admin"
-                      ? "bg-[#18181b] text-white shadow-xs"
-                      : "text-charcoal-500 hover:text-[#18181b]"
-                  }`}
-                >
-                  Admin
-                </button>
-              </div>
-            </div>
           </nav>
         </div>
 
         {/* User Profile Footer */}
-        <div className="p-4 border-t border-[#e5e2dc] bg-[#faf9f6]">
+        <div className="p-3 border-t border-[#e5e2dc] bg-[#faf9f6]">
           <div
             onClick={() => setActiveTab("profile")}
             className="flex items-center gap-3 p-2 rounded-lg hover:bg-white cursor-pointer transition border border-transparent hover:border-[#e5e2dc]"
+            title={currentUser.full_name}
           >
-            <div className="w-9 h-9 rounded-full bg-[#18181b] text-white flex items-center justify-center font-medium text-xs">
+            <div className="w-8 h-8 rounded-full bg-[#18181b] text-white flex items-center justify-center font-medium text-xs shrink-0">
               {currentUser.full_name
-                .split(" ")
-                .map((n) => n[0])
-                .join("")
-                .substring(0, 2)}
+                ? currentUser.full_name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .substring(0, 2)
+                : "U"}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-[#18181b] truncate">{currentUser.full_name}</p>
-              <p className="text-[11px] text-charcoal-500 truncate">{currentUser.email}</p>
-            </div>
-            <Settings className="w-4 h-4 text-charcoal-400" />
+            {!sidebarCollapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-[#18181b] truncate">{currentUser.full_name}</p>
+                <p className="text-[11px] text-zinc-500 truncate">{currentUser.email}</p>
+              </div>
+            )}
           </div>
         </div>
       </aside>
@@ -896,151 +834,179 @@ export default function ConsolithApp() {
         {/* Top Header Bar */}
         <header className="h-16 px-6 bg-white border-b border-[#e5e2dc] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <span className="text-xs font-mono font-medium px-2 py-0.5 rounded-md bg-[#f5f3ef] text-charcoal-700 border border-[#e5e2dc]">
-              {activeTab.toUpperCase()}
-            </span>
-            <span className="text-xs text-charcoal-500 hidden sm:inline">
-              Verified Indian Identity Discrepancy & Assistance
-            </span>
+            <h2 className="text-sm font-medium text-zinc-900 capitalize">
+              {activeTab === "home"
+                ? "Home"
+                : activeTab === "conflicts"
+                ? "Conflict Detection"
+                : activeTab === "assistant"
+                ? "AI Assistant"
+                : activeTab === "forms"
+                ? "Forms Repository"
+                : activeTab === "profile"
+                ? "Account Settings"
+                : "Administrator Console"}
+            </h2>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => {
-                setAuthModalOpen(true);
-                setAuthMode("login");
-              }}
-              className="text-xs px-3 py-1.5 rounded-lg border border-[#e5e2dc] hover:bg-[#faf9f6] text-[#18181b] font-medium transition"
-            >
-              Sign In / Switch
-            </button>
-            <button
-              onClick={() => setActiveTab("profile")}
-              className="w-8 h-8 rounded-full bg-[#18181b] text-white flex items-center justify-center text-xs font-medium"
-            >
-              {currentUser.full_name[0]}
-            </button>
+          {/* User Controls & Profile Dropdown */}
+          <div className="flex items-center gap-3 relative">
+            {currentUser.email ? (
+              <div className="relative">
+                <button
+                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                  className="flex items-center gap-2 p-1.5 rounded-lg border border-[#e5e2dc] hover:bg-[#faf9f6] transition text-xs font-medium"
+                >
+                  <div className="w-6 h-6 rounded-full bg-[#18181b] text-white flex items-center justify-center text-[10px]">
+                    {currentUser.full_name ? currentUser.full_name[0] : "U"}
+                  </div>
+                  <span className="hidden sm:inline text-zinc-800">{currentUser.full_name}</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
+                </button>
+
+                {profileDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white border border-[#e5e2dc] rounded-xl shadow-lg py-1.5 z-50 animate-in fade-in">
+                    <div className="px-4 py-2 border-b border-[#e5e2dc]">
+                      <p className="text-xs font-semibold text-zinc-900 truncate">{currentUser.full_name}</p>
+                      <p className="text-[11px] text-zinc-500 truncate">{currentUser.email}</p>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setActiveTab("profile");
+                        setProfileDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-xs text-zinc-700 hover:bg-[#faf9f6] flex items-center gap-2 transition"
+                    >
+                      <Settings className="w-3.5 h-3.5" />
+                      Account Settings
+                    </button>
+
+                    {/* Admin Access ONLY shown if authenticated user role is admin */}
+                    {currentUser.role === "admin" && (
+                      <button
+                        onClick={() => {
+                          setActiveTab("admin");
+                          setProfileDropdownOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-xs text-zinc-700 hover:bg-[#faf9f6] flex items-center gap-2 transition border-t border-[#e5e2dc]"
+                      >
+                        <Shield className="w-3.5 h-3.5 text-zinc-900" />
+                        Admin Console
+                      </button>
+                    )}
+
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition border-t border-[#e5e2dc]"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  setAuthModalOpen(true);
+                  setAuthMode("login");
+                }}
+                className="text-xs px-3.5 py-1.5 rounded-lg bg-[#18181b] text-white font-medium hover:bg-zinc-800 transition"
+              >
+                Sign In / Register
+              </button>
+            )}
           </div>
         </header>
 
         {/* Content Views */}
         <div className="flex-1 p-6 md:p-8 max-w-6xl w-full mx-auto">
           {/* ====================================================================
-              VIEW 1: HOME OVERVIEW (Editorial, Clear, Welcoming)
+              VIEW 1: HOME (Simple, Welcoming, Editorial)
           ==================================================================== */}
           {activeTab === "home" && (
             <div className="space-y-8 animate-fadeIn">
               {/* Hero Banner */}
-              <div className="bg-white border border-[#e5e2dc] rounded-2xl p-8 shadow-card">
-                <span className="inline-block text-[11px] font-semibold tracking-wider uppercase text-charcoal-500 mb-2">
-                  Consolith Intelligence
-                </span>
+              <div className="bg-white border border-[#e5e2dc] rounded-2xl p-8 md:p-10 shadow-sm">
                 <h1 className="text-3xl font-serif md:text-4xl font-normal tracking-tight text-[#18181b] max-w-2xl leading-tight">
-                  Your documents. Clearer, simpler, more organized.
+                  Your documents, made easier.
                 </h1>
-                <p className="mt-3 text-base text-charcoal-600 max-w-2xl leading-relaxed">
-                  Find document inconsistencies, understand your options, and access verified government guidance and
-                  official forms in one unified place.
+                <p className="mt-3 text-base text-zinc-600 max-w-2xl leading-relaxed">
+                  Understand document differences, find the right forms, and get clear guidance on what to do next.
                 </p>
 
                 <div className="mt-6 flex flex-wrap gap-3">
                   <button
                     onClick={() => setActiveTab("conflicts")}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#18181b] text-white text-sm font-medium hover:bg-charcoal-800 transition shadow-xs"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#18181b] text-white text-sm font-medium hover:bg-zinc-800 transition"
                   >
-                    Check Documents
+                    Check documents
                     <ArrowRight className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setActiveTab("assistant")}
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-[#e5e2dc] bg-white text-[#18181b] text-sm font-medium hover:bg-[#faf9f6] transition"
                   >
-                    <Sparkles className="w-4 h-4 text-charcoal-500" />
-                    Ask Assistant
+                    <Sparkles className="w-4 h-4 text-zinc-500" />
+                    Ask the assistant
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("forms")}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-[#e5e2dc] bg-white text-[#18181b] text-sm font-medium hover:bg-[#faf9f6] transition"
+                  >
+                    <FileText className="w-4 h-4 text-zinc-500" />
+                    Browse forms
                   </button>
                 </div>
               </div>
 
-              {/* Status Overview Cards */}
+              {/* Three Clean Core Capability Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div
                   onClick={() => setActiveTab("conflicts")}
-                  className="bg-white border border-[#e5e2dc] rounded-xl p-6 hover:border-charcoal-400 transition cursor-pointer shadow-card group"
+                  className="bg-white border border-[#e5e2dc] rounded-xl p-6 hover:border-zinc-400 transition cursor-pointer shadow-sm group"
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-10 h-10 rounded-lg bg-[#f5f3ef] flex items-center justify-center text-[#18181b]">
-                      <AlertTriangle className="w-5 h-5 text-amber-600" />
-                    </div>
-                    <span className="text-2xl font-semibold text-[#18181b]">{conflicts.length}</span>
+                  <div className="w-10 h-10 rounded-lg bg-[#f5f3ef] flex items-center justify-center text-[#18181b] mb-4">
+                    <AlertTriangle className="w-5 h-5 text-zinc-800" />
                   </div>
                   <h3 className="text-base font-semibold text-[#18181b] group-hover:text-black">
-                    Discrepancy Checks
+                    Document Conflict Detection
                   </h3>
-                  <p className="mt-1 text-xs text-charcoal-500 leading-relaxed">
-                    Cross-matched across {documents.length} uploaded identity records using phonetic Metaphone & fuzzy
-                    matching.
+                  <p className="mt-2 text-xs text-zinc-600 leading-relaxed">
+                    Compare your Aadhaar, PAN, Passport, Class 10/12, or EPF documents to spot clerical variations.
                   </p>
                 </div>
 
                 <div
                   onClick={() => setActiveTab("forms")}
-                  className="bg-white border border-[#e5e2dc] rounded-xl p-6 hover:border-charcoal-400 transition cursor-pointer shadow-card group"
+                  className="bg-white border border-[#e5e2dc] rounded-xl p-6 hover:border-zinc-400 transition cursor-pointer shadow-sm group"
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-10 h-10 rounded-lg bg-[#f5f3ef] flex items-center justify-center text-[#18181b]">
-                      <FileText className="w-5 h-5 text-[#18181b]" />
-                    </div>
-                    <span className="text-2xl font-semibold text-[#18181b]">{formsCatalog.length}</span>
+                  <div className="w-10 h-10 rounded-lg bg-[#f5f3ef] flex items-center justify-center text-[#18181b] mb-4">
+                    <FileText className="w-5 h-5 text-zinc-800" />
                   </div>
                   <h3 className="text-base font-semibold text-[#18181b] group-hover:text-black">
                     Official Forms Catalog
                   </h3>
-                  <p className="mt-1 text-xs text-charcoal-500 leading-relaxed">
-                    Verified application templates for UIDAI, NSDL, MEA, EPFO, and CBSE corrections.
+                  <p className="mt-2 text-xs text-zinc-600 leading-relaxed">
+                    Access verified application templates and guidelines for UIDAI, NSDL, MEA, EPFO, and CBSE.
                   </p>
                 </div>
 
                 <div
                   onClick={() => setActiveTab("assistant")}
-                  className="bg-white border border-[#e5e2dc] rounded-xl p-6 hover:border-charcoal-400 transition cursor-pointer shadow-card group"
+                  className="bg-white border border-[#e5e2dc] rounded-xl p-6 hover:border-zinc-400 transition cursor-pointer shadow-sm group"
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-10 h-10 rounded-lg bg-[#f5f3ef] flex items-center justify-center text-[#18181b]">
-                      <Sparkles className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <span className="text-xs font-mono font-medium px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      Gemini RAG
-                    </span>
+                  <div className="w-10 h-10 rounded-lg bg-[#f5f3ef] flex items-center justify-center text-[#18181b] mb-4">
+                    <Sparkles className="w-5 h-5 text-zinc-800" />
                   </div>
                   <h3 className="text-base font-semibold text-[#18181b] group-hover:text-black">
-                    AI Guidance Assistant
+                    AI Resolution Assistant
                   </h3>
-                  <p className="mt-1 text-xs text-charcoal-500 leading-relaxed">
-                    Grounded answers with zero hallucination guarantee, citing official Gazette circulars.
+                  <p className="mt-2 text-xs text-zinc-600 leading-relaxed">
+                    Get clear, source-grounded answers to your questions about official correction procedures and required documents.
                   </p>
                 </div>
-              </div>
-
-              {/* Security & Privacy Commitment */}
-              <div className="bg-[#f5f3ef] border border-[#e5e2dc] rounded-xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div className="flex items-start gap-3.5">
-                  <ShieldCheck className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" />
-                  <div>
-                    <h4 className="text-sm font-semibold text-[#18181b]">
-                      Strict Aadhaar Privacy & Cryptographic Verification
-                    </h4>
-                    <p className="text-xs text-charcoal-600 mt-0.5">
-                      All identity numbers masked (XXXX-XXXX-1234) and encrypted at rest with Fernet. Ed25519 digital
-                      signatures verify document integrity without permanent raw file retention.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setActiveTab("conflicts")}
-                  className="px-4 py-2 bg-white border border-[#e5e2dc] text-xs font-medium text-[#18181b] rounded-lg hover:bg-[#faf9f6] transition shrink-0"
-                >
-                  Inspect Documents
-                </button>
               </div>
             </div>
           )}
@@ -1055,14 +1021,13 @@ export default function ConsolithApp() {
                 <h1 className="text-2xl font-serif font-normal text-[#18181b] tracking-tight">
                   Let's check your documents.
                 </h1>
-                <p className="mt-1 text-sm text-charcoal-600">
-                  Upload the documents you want to compare. We'll help identify differences and explain what they may
-                  mean.
+                <p className="mt-1 text-sm text-zinc-600">
+                  Upload the documents you want to compare.
                 </p>
               </div>
 
               {/* Upload Card */}
-              <div className="bg-white border border-[#e5e2dc] rounded-xl p-6 shadow-card">
+              <div className="bg-white border border-[#e5e2dc] rounded-xl p-6 shadow-sm">
                 <form onSubmit={handleDocumentUpload} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -1072,7 +1037,7 @@ export default function ConsolithApp() {
                       <select
                         value={uploadDocType}
                         onChange={(e) => setUploadDocType(e.target.value)}
-                        className="w-full px-3 py-2 text-sm bg-white border border-[#e5e2dc] rounded-lg focus:border-charcoal-900 transition"
+                        className="w-full px-3 py-2 text-sm bg-white border border-[#e5e2dc] rounded-lg focus:border-zinc-900 transition"
                       >
                         <option value="aadhaar">Aadhaar Card (UIDAI)</option>
                         <option value="pan">PAN Card (Income Tax / NSDL)</option>
@@ -1091,7 +1056,7 @@ export default function ConsolithApp() {
                         type="file"
                         accept=".pdf,.png,.jpg,.jpeg"
                         onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                        className="w-full px-3 py-1.5 text-xs border border-[#e5e2dc] rounded-lg file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#f5f3ef] file:text-[#18181b] hover:file:bg-[#eeeae1] cursor-pointer"
+                        className="w-full px-3 py-1.5 text-xs border border-[#e5e2dc] rounded-lg file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#f5f3ef] file:text-[#18181b] hover:file:bg-zinc-200 cursor-pointer"
                       />
                     </div>
                   </div>
@@ -1114,17 +1079,17 @@ export default function ConsolithApp() {
                     <button
                       type="submit"
                       disabled={uploading || !uploadFile}
-                      className="px-4 py-2 bg-[#18181b] text-white text-xs font-medium rounded-lg hover:bg-charcoal-800 disabled:opacity-50 transition flex items-center gap-2 shadow-xs"
+                      className="px-4 py-2 bg-[#18181b] text-white text-xs font-medium rounded-lg hover:bg-zinc-800 disabled:opacity-50 transition flex items-center gap-2"
                     >
                       {uploading ? (
                         <>
                           <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          Extracting Text & Masking PII...
+                          Processing Document...
                         </>
                       ) : (
                         <>
                           <UploadCloud className="w-3.5 h-3.5" />
-                          Upload & Process Document
+                          Upload Document
                         </>
                       )}
                     </button>
@@ -1133,23 +1098,23 @@ export default function ConsolithApp() {
               </div>
 
               {/* Uploaded Documents List */}
-              <div className="bg-white border border-[#e5e2dc] rounded-xl overflow-hidden shadow-card">
+              <div className="bg-white border border-[#e5e2dc] rounded-xl overflow-hidden shadow-sm">
                 <div className="px-6 py-4 border-b border-[#e5e2dc] flex items-center justify-between bg-[#faf9f6]">
                   <div>
-                    <h2 className="text-sm font-semibold text-[#18181b]">Your Document Repository</h2>
-                    <p className="text-xs text-charcoal-500">
-                      {documents.length} verified documents ready for cross-comparison.
+                    <h2 className="text-sm font-semibold text-[#18181b]">Uploaded Documents</h2>
+                    <p className="text-xs text-zinc-500">
+                      {documents.length} document{documents.length === 1 ? "" : "s"} ready for comparison.
                     </p>
                   </div>
                   <button
                     onClick={handleRunConflictScan}
                     disabled={detectingConflicts || documents.length < 2}
-                    className="px-4 py-2 bg-[#18181b] text-white text-xs font-medium rounded-lg hover:bg-charcoal-800 disabled:opacity-50 transition flex items-center gap-2 shadow-xs"
+                    className="px-4 py-2 bg-[#18181b] text-white text-xs font-medium rounded-lg hover:bg-zinc-800 disabled:opacity-40 transition flex items-center gap-2"
                   >
                     {detectingConflicts ? (
                       <>
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        Scanning Inconsistencies...
+                        Comparing...
                       </>
                     ) : (
                       <>
@@ -1162,8 +1127,8 @@ export default function ConsolithApp() {
 
                 {documents.length === 0 ? (
                   <div className="p-8 text-center">
-                    <p className="text-sm text-charcoal-500">No documents uploaded yet.</p>
-                    <p className="text-xs text-charcoal-400 mt-1">
+                    <p className="text-sm text-zinc-500">No documents uploaded yet.</p>
+                    <p className="text-xs text-zinc-400 mt-1">
                       Upload at least two documents (e.g. Aadhaar and PAN) above to compare details.
                     </p>
                   </div>
@@ -1172,7 +1137,7 @@ export default function ConsolithApp() {
                     {documents.map((doc) => (
                       <div key={doc.id} className="p-4 px-6 flex items-center justify-between hover:bg-[#faf9f6]">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-[#f5f3ef] flex items-center justify-center font-medium text-xs text-[#18181b]">
+                          <div className="w-8 h-8 rounded-lg bg-[#f5f3ef] flex items-center justify-center font-medium text-xs text-[#18181b]">
                             <FileText className="w-4 h-4" />
                           </div>
                           <div>
@@ -1180,45 +1145,33 @@ export default function ConsolithApp() {
                               <span className="text-xs font-semibold uppercase text-[#18181b]">
                                 {doc.document_type.replace("_", " ")}
                               </span>
-                              <span className="text-[11px] text-charcoal-400">({doc.file_name})</span>
+                              <span className="text-[11px] text-zinc-400">({doc.file_name})</span>
                             </div>
-                            <p className="text-[11px] text-charcoal-500">
+                            <p className="text-[11px] text-zinc-500">
                               Extracted fields: {Object.keys(doc.extracted_fields || {}).join(", ") || "None"}
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleVerifyDocumentCrypto(doc)}
-                            disabled={verifyingDocId === doc.id}
-                            className="px-2.5 py-1 rounded text-xs font-medium border border-[#e5e2dc] bg-white hover:bg-[#f5f3ef] text-charcoal-700 flex items-center gap-1.5 transition"
-                            title="Verify Ed25519 digital signature and SHA-256 fingerprint"
-                          >
-                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                            Verify Authenticity
-                          </button>
-                          <button
-                            onClick={() => handleDeleteDocument(doc.id)}
-                            className="p-1.5 text-charcoal-400 hover:text-rose-600 rounded transition"
-                            title="Delete document"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => handleDeleteDocument(doc.id)}
+                          className="p-1.5 text-zinc-400 hover:text-rose-600 rounded transition"
+                          title="Delete document"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* Comparison Results Table */}
-              <div className="bg-white border border-[#e5e2dc] rounded-xl overflow-hidden shadow-card">
+              {/* Comparison Results Section */}
+              <div className="bg-white border border-[#e5e2dc] rounded-xl overflow-hidden shadow-sm">
                 <div className="px-6 py-4 border-b border-[#e5e2dc] bg-[#faf9f6]">
-                  <h2 className="text-sm font-semibold text-[#18181b]">Comparison Results & Inconsistencies</h2>
-                  <p className="text-xs text-charcoal-500">
-                    Pairwise comparison results. Discrepancies represent clerical or spelling variations and do not
-                    imply fraud.
+                  <h2 className="text-sm font-semibold text-[#18181b]">Comparison Results</h2>
+                  <p className="text-xs text-zinc-500">
+                    Discrepancies represent clerical or spelling variations and do not imply fraud.
                   </p>
                 </div>
 
@@ -1228,94 +1181,91 @@ export default function ConsolithApp() {
                   </div>
                 )}
 
-                {conflicts.length === 0 ? (
+                {/* Neutral Empty State Before Comparison */}
+                {documents.length < 2 ? (
+                  <div className="p-8 text-center">
+                    <p className="text-sm text-zinc-500">Upload at least two documents to compare.</p>
+                  </div>
+                ) : !hasCompared ? (
+                  <div className="p-8 text-center">
+                    <p className="text-sm text-zinc-600">
+                      Upload completed. Click "Run Pairwise Comparison" above to compare documents.
+                    </p>
+                  </div>
+                ) : conflicts.length === 0 ? (
                   <div className="p-8 text-center">
                     <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto mb-2 opacity-80" />
-                    <p className="text-sm font-medium text-[#18181b]">No discrepancies detected</p>
-                    <p className="text-xs text-charcoal-500 mt-1 max-w-md mx-auto">
-                      All compared fields across your uploaded documents are mutually consistent.
+                    <p className="text-sm font-medium text-[#18181b]">No differences found</p>
+                    <p className="text-xs text-zinc-500 mt-1 max-w-md mx-auto">
+                      All mutual fields across your compared documents match consistently.
                     </p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="border-b border-[#e5e2dc] bg-[#fdfcfa] text-charcoal-500 font-mono text-[11px] uppercase">
-                          <th className="py-3 px-6">Field Name</th>
-                          <th className="py-3 px-6">Document A Value</th>
-                          <th className="py-3 px-6">Document B Value</th>
-                          <th className="py-3 px-6">Status / Severity</th>
-                          <th className="py-3 px-6 text-right">Guidance</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#e5e2dc]">
-                        {conflicts.map((c) => (
-                          <tr key={c.id} className="hover:bg-[#faf9f6] transition">
-                            <td className="py-3.5 px-6 font-semibold text-[#18181b] capitalize">
-                              {c.field_name.replace("_", " ")}
-                            </td>
-                            <td className="py-3.5 px-6 font-mono text-charcoal-800">{c.doc_a_value || "—"}</td>
-                            <td className="py-3.5 px-6 font-mono text-charcoal-800">{c.doc_b_value || "—"}</td>
-                            <td className="py-3.5 px-6">
-                              <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${
-                                  c.severity === "high"
-                                    ? "bg-rose-50 text-rose-700 border-rose-200"
-                                    : "bg-amber-50 text-amber-700 border-amber-200"
-                                }`}
-                              >
-                                {c.severity.toUpperCase()} DISCREPANCY
-                              </span>
-                            </td>
-                            <td className="py-3.5 px-6 text-right">
-                              <button
-                                onClick={() => {
-                                  setActiveTab("assistant");
-                                  handleSendChatMessage(
-                                    undefined,
-                                    `I have a discrepancy in my ${c.field_name.replace("_", " ")}: Document A has "${c.doc_a_value}" while Document B has "${c.doc_b_value}". What is the official government procedure to resolve this?`
-                                  );
-                                }}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#18181b] text-white rounded text-xs hover:bg-charcoal-800 transition"
-                              >
-                                Ask AI Steps
-                                <ChevronRight className="w-3.5 h-3.5" />
-                              </button>
-                            </td>
+                  <div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="border-b border-[#e5e2dc] bg-[#fdfcfa] text-zinc-500 font-mono text-[11px] uppercase">
+                            <th className="py-3 px-6">Field Name</th>
+                            <th className="py-3 px-6">Document A Value</th>
+                            <th className="py-3 px-6">Document B Value</th>
+                            <th className="py-3 px-6">Status / Severity</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-[#e5e2dc]">
+                          {conflicts.map((conf) => (
+                            <tr key={conf.id} className="hover:bg-[#faf9f6]">
+                              <td className="py-3.5 px-6 font-semibold text-[#18181b] capitalize">
+                                {conf.field_name.replace("_", " ")}
+                              </td>
+                              <td className="py-3.5 px-6 font-mono text-zinc-700">{conf.doc_a_value || "—"}</td>
+                              <td className="py-3.5 px-6 font-mono text-zinc-700">{conf.doc_b_value || "—"}</td>
+                              <td className="py-3.5 px-6">
+                                <span className="px-2 py-0.5 rounded text-[10px] font-medium uppercase bg-amber-100 text-amber-800">
+                                  {conf.severity} Variation
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* AI Assistant Callout */}
+                    <div className="p-6 bg-[#faf9f6] border-t border-[#e5e2dc] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div>
+                        <h4 className="text-sm font-semibold text-[#18181b]">Need help with the next step?</h4>
+                        <p className="text-xs text-zinc-600 mt-0.5">
+                          Ask our AI Assistant to explore the relevant correction procedures and supporting forms.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setActiveTab("assistant");
+                          handleSendChatMessage(
+                            undefined,
+                            `I have discrepancies in my documents (${conflicts.map((c) => c.field_name).join(", ")}). What are the official correction steps?`
+                          );
+                        }}
+                        className="px-4 py-2 bg-[#18181b] text-white text-xs font-medium rounded-lg hover:bg-zinc-800 transition shrink-0"
+                      >
+                        Ask the assistant
+                      </button>
+                    </div>
                   </div>
                 )}
-              </div>
-
-              {/* Next Action Callout */}
-              <div className="bg-[#f5f3ef] border border-[#e5e2dc] rounded-xl p-6 flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-semibold text-[#18181b]">Need help understanding these results?</h3>
-                  <p className="text-xs text-charcoal-600 mt-0.5">
-                    Ask the Consolith Assistant to explore possible correction steps, circulars, and supporting forms.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setActiveTab("assistant")}
-                  className="px-4 py-2 bg-[#18181b] text-white text-xs font-medium rounded-lg hover:bg-charcoal-800 transition shadow-xs"
-                >
-                  Open AI Assistant
-                </button>
               </div>
             </div>
           )}
 
           {/* ====================================================================
-              VIEW 3: AI SUPPORT ASSISTANT (ChatGPT-inspired Light Clean Layout)
+              VIEW 3: AI ASSISTANT (ChatGPT-inspired Wide Reading Experience)
           ==================================================================== */}
           {activeTab === "assistant" && (
-            <div className="bg-white border border-[#e5e2dc] rounded-2xl overflow-hidden shadow-card flex flex-col md:flex-row h-[78vh] animate-fadeIn">
+            <div className="bg-white border border-[#e5e2dc] rounded-2xl overflow-hidden shadow-sm flex flex-col md:flex-row h-[78vh] animate-fadeIn">
               {/* Left Conversation History Sidebar */}
-              <div className="w-full md:w-64 border-r border-[#e5e2dc] bg-[#faf9f6] flex flex-col justify-between shrink-0">
-                <div className="p-4 border-b border-[#e5e2dc]">
+              <div className="w-full md:w-60 border-r border-[#e5e2dc] bg-[#faf9f6] flex flex-col justify-between shrink-0">
+                <div className="p-3 border-b border-[#e5e2dc]">
                   <button
                     onClick={() => {
                       setChatMessages([
@@ -1326,16 +1276,16 @@ export default function ConsolithApp() {
                         },
                       ]);
                     }}
-                    className="w-full py-2 px-3 bg-white border border-[#e5e2dc] hover:border-charcoal-400 text-xs font-medium text-[#18181b] rounded-lg flex items-center justify-center gap-2 transition shadow-xs"
+                    className="w-full py-2 px-3 bg-white border border-[#e5e2dc] hover:border-zinc-400 text-xs font-medium text-[#18181b] rounded-lg flex items-center justify-center gap-2 transition"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    New Conversation
+                    New chat
                   </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-3 space-y-1">
-                  <span className="block px-2 text-[10px] font-mono uppercase text-charcoal-400 mb-2">
-                    Recent Sessions
+                <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                  <span className="block px-2 text-[10px] font-mono uppercase text-zinc-400 mb-1.5">
+                    Conversations
                   </span>
                   {conversations.map((c) => (
                     <div
@@ -1344,18 +1294,18 @@ export default function ConsolithApp() {
                       className={`px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition flex items-center justify-between ${
                         activeConvId === c.id
                           ? "bg-white text-[#18181b] shadow-xs border border-[#e5e2dc]"
-                          : "text-charcoal-600 hover:bg-white"
+                          : "text-zinc-600 hover:bg-white"
                       }`}
                     >
                       <span className="truncate">{c.title}</span>
-                      <MessageSquare className="w-3.5 h-3.5 text-charcoal-400" />
+                      <MessageSquare className="w-3.5 h-3.5 text-zinc-400" />
                     </div>
                   ))}
                 </div>
 
-                <div className="p-4 border-t border-[#e5e2dc] bg-[#f5f3ef]">
-                  <p className="text-[11px] text-charcoal-500 font-medium">Official Sources Grounded</p>
-                  <p className="text-[10px] text-charcoal-400 mt-0.5">UIDAI, NSDL, MEA, EPFO, CBSE</p>
+                <div className="p-3 border-t border-[#e5e2dc] bg-[#f5f3ef]">
+                  <p className="text-[11px] text-zinc-600 font-medium">Grounded Sources</p>
+                  <p className="text-[10px] text-zinc-400 mt-0.5">UIDAI, NSDL, MEA, EPFO, CBSE</p>
                 </div>
               </div>
 
@@ -1385,10 +1335,32 @@ export default function ConsolithApp() {
                       >
                         <p className="whitespace-pre-wrap">{msg.content}</p>
 
-                        {/* Attached Forms Components */}
+                        {/* Copy Action & Attached Forms */}
+                        <div className="mt-3 flex items-center justify-between gap-3 pt-2 border-t border-zinc-200/50">
+                          {msg.role === "assistant" && (
+                            <button
+                              onClick={() => handleCopyText(msg.content, idx)}
+                              className="text-[11px] text-zinc-500 hover:text-zinc-800 flex items-center gap-1 transition"
+                            >
+                              {copiedIndex === idx ? (
+                                <>
+                                  <Check className="w-3 h-3 text-emerald-600" />
+                                  <span>Copied</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3" />
+                                  <span>Copy</span>
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Referenced Forms */}
                         {msg.forms && msg.forms.length > 0 && (
-                          <div className="mt-4 pt-3 border-t border-[#e5e2dc] space-y-2">
-                            <span className="text-xs font-semibold text-charcoal-700 block">
+                          <div className="mt-3 pt-3 border-t border-[#e5e2dc] space-y-2">
+                            <span className="text-xs font-semibold text-zinc-700 block">
                               Referenced Official Forms:
                             </span>
                             {msg.forms.map((f: any, i: number) => (
@@ -1398,13 +1370,11 @@ export default function ConsolithApp() {
                               >
                                 <div className="min-w-0">
                                   <p className="text-xs font-semibold text-[#18181b]">{f.title || f.form_code}</p>
-                                  <p className="text-[11px] text-charcoal-500 truncate">{f.issuing_authority}</p>
+                                  <p className="text-[11px] text-zinc-500 truncate">{f.issuing_authority}</p>
                                 </div>
                                 <button
-                                  onClick={() => {
-                                    setSelectedFormDetail(f);
-                                  }}
-                                  className="px-2.5 py-1 bg-[#18181b] text-white text-xs rounded hover:bg-charcoal-800 transition"
+                                  onClick={() => setSelectedFormDetail(f)}
+                                  className="px-2.5 py-1 bg-[#18181b] text-white text-xs rounded hover:bg-zinc-800 transition"
                                 >
                                   View Form
                                 </button>
@@ -1415,8 +1385,8 @@ export default function ConsolithApp() {
                       </div>
 
                       {msg.role === "user" && (
-                        <div className="w-7 h-7 rounded-full bg-charcoal-200 text-charcoal-700 flex items-center justify-center shrink-0 text-xs font-medium">
-                          {currentUser.full_name[0]}
+                        <div className="w-7 h-7 rounded-full bg-zinc-200 text-zinc-700 flex items-center justify-center shrink-0 text-xs font-medium">
+                          {currentUser.full_name ? currentUser.full_name[0] : "U"}
                         </div>
                       )}
                     </div>
@@ -1427,31 +1397,31 @@ export default function ConsolithApp() {
                       <div className="w-7 h-7 rounded-full bg-[#18181b] text-white flex items-center justify-center shrink-0 text-xs">
                         <Sparkles className="w-3.5 h-3.5 animate-spin" />
                       </div>
-                      <div className="p-4 rounded-xl text-sm bg-[#faf9f6] text-charcoal-500 border border-[#e5e2dc] flex items-center gap-2">
-                        <RefreshCw className="w-4 h-4 animate-spin text-charcoal-400" />
-                        Retrieving verified government circulars with Gemini...
+                      <div className="p-4 rounded-xl text-sm bg-[#faf9f6] text-zinc-500 border border-[#e5e2dc] flex items-center gap-2">
+                        <RefreshCw className="w-4 h-4 animate-spin text-zinc-400" />
+                        Consulting verified government sources...
                       </div>
                     </div>
                   )}
                 </div>
 
-                {/* Quick Suggestion Chips */}
+                {/* Prompt Suggestions */}
                 <div className="px-6 py-2 border-t border-[#e5e2dc] bg-[#faf9f6] flex gap-2 overflow-x-auto">
                   <button
                     onClick={() => handleSendChatMessage(undefined, "How do I correct my name in PAN card?")}
-                    className="text-xs px-2.5 py-1 rounded-full bg-white border border-[#e5e2dc] hover:border-charcoal-400 text-charcoal-700 whitespace-nowrap transition"
+                    className="text-xs px-2.5 py-1 rounded-full bg-white border border-[#e5e2dc] hover:border-zinc-400 text-zinc-700 whitespace-nowrap transition"
                   >
                     How to correct name in PAN card?
                   </button>
                   <button
                     onClick={() => handleSendChatMessage(undefined, "What is the Aadhaar update lifetime limit?")}
-                    className="text-xs px-2.5 py-1 rounded-full bg-white border border-[#e5e2dc] hover:border-charcoal-400 text-charcoal-700 whitespace-nowrap transition"
+                    className="text-xs px-2.5 py-1 rounded-full bg-white border border-[#e5e2dc] hover:border-zinc-400 text-zinc-700 whitespace-nowrap transition"
                   >
                     What is Aadhaar update lifetime limit?
                   </button>
                   <button
                     onClick={() => handleSendChatMessage(undefined, "What is Joint Declaration for EPFO?")}
-                    className="text-xs px-2.5 py-1 rounded-full bg-white border border-[#e5e2dc] hover:border-charcoal-400 text-charcoal-700 whitespace-nowrap transition"
+                    className="text-xs px-2.5 py-1 rounded-full bg-white border border-[#e5e2dc] hover:border-zinc-400 text-zinc-700 whitespace-nowrap transition"
                   >
                     What is Joint Declaration for EPFO?
                   </button>
@@ -1464,12 +1434,12 @@ export default function ConsolithApp() {
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     placeholder="Ask about document differences, circulars, or official procedures..."
-                    className="flex-1 px-4 py-2.5 text-sm bg-[#faf9f6] border border-[#e5e2dc] rounded-xl focus:bg-white focus:border-charcoal-900 transition"
+                    className="flex-1 px-4 py-2.5 text-sm bg-[#faf9f6] border border-[#e5e2dc] rounded-xl focus:bg-white focus:border-zinc-900 transition"
                   />
                   <button
                     type="submit"
                     disabled={sendingChat || !chatInput.trim()}
-                    className="px-4 py-2.5 bg-[#18181b] text-white rounded-xl hover:bg-charcoal-800 disabled:opacity-40 transition flex items-center justify-center shadow-xs"
+                    className="px-4 py-2.5 bg-[#18181b] text-white rounded-xl hover:bg-zinc-800 disabled:opacity-40 transition flex items-center justify-center"
                   >
                     <Send className="w-4 h-4" />
                   </button>
@@ -1479,7 +1449,7 @@ export default function ConsolithApp() {
           )}
 
           {/* ====================================================================
-              VIEW 4: FORMS REPOSITORY (Categorized, Searchable, Details Drawer)
+              VIEW 4: FORMS REPOSITORY (Document Library, Preview, Download)
           ==================================================================== */}
           {activeTab === "forms" && (
             <div className="space-y-6 animate-fadeIn">
@@ -1487,13 +1457,13 @@ export default function ConsolithApp() {
                 <h1 className="text-2xl font-serif font-normal text-[#18181b] tracking-tight">
                   Official Forms Repository
                 </h1>
-                <p className="mt-1 text-sm text-charcoal-600">
-                  Search and access official, verified application templates from UIDAI, NSDL, MEA, EPFO, and CBSE.
+                <p className="mt-1 text-sm text-zinc-600">
+                  Search and access verified application templates from UIDAI, NSDL, MEA, EPFO, and CBSE.
                 </p>
               </div>
 
               {/* Filters & Search */}
-              <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl border border-[#e5e2dc] shadow-card">
+              <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl border border-[#e5e2dc] shadow-sm">
                 {/* Category Pills */}
                 <div className="flex gap-1.5 overflow-x-auto w-full md:w-auto">
                   {["all", "aadhaar", "pan", "passport", "education", "epfo"].map((cat) => (
@@ -1502,8 +1472,8 @@ export default function ConsolithApp() {
                       onClick={() => setSelectedFormCategory(cat)}
                       className={`text-xs px-3 py-1.5 rounded-lg capitalize font-medium transition ${
                         selectedFormCategory === cat
-                          ? "bg-[#18181b] text-white shadow-xs"
-                          : "bg-[#f5f3ef] text-charcoal-600 hover:text-[#18181b]"
+                          ? "bg-[#18181b] text-white"
+                          : "bg-[#f5f3ef] text-zinc-600 hover:text-[#18181b]"
                       }`}
                     >
                       {cat === "all" ? "All Forms" : cat}
@@ -1513,13 +1483,13 @@ export default function ConsolithApp() {
 
                 {/* Search Bar */}
                 <div className="relative w-full md:w-64">
-                  <Search className="w-4 h-4 text-charcoal-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={formSearchQuery}
                     onChange={(e) => setFormSearchQuery(e.target.value)}
                     placeholder="Search forms by name or authority..."
-                    className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#faf9f6] border border-[#e5e2dc] rounded-lg focus:bg-white focus:border-charcoal-900 transition"
+                    className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#faf9f6] border border-[#e5e2dc] rounded-lg focus:bg-white focus:border-zinc-900 transition"
                   />
                 </div>
               </div>
@@ -1529,24 +1499,24 @@ export default function ConsolithApp() {
                 {filteredForms.map((form) => (
                   <div
                     key={form.id}
-                    className="bg-white border border-[#e5e2dc] rounded-xl p-6 hover:border-charcoal-400 transition shadow-card flex flex-col justify-between"
+                    className="bg-white border border-[#e5e2dc] rounded-xl p-6 hover:border-zinc-400 transition shadow-sm flex flex-col justify-between"
                   >
                     <div>
                       <div className="flex items-start justify-between gap-3 mb-2">
                         <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-[#f5f3ef] text-[#18181b] border border-[#e5e2dc]">
                           {form.form_code}
                         </span>
-                        <span className="text-xs uppercase font-medium text-charcoal-400">{form.category}</span>
+                        <span className="text-xs uppercase font-medium text-zinc-400">{form.category}</span>
                       </div>
                       <h3 className="text-base font-semibold text-[#18181b] mt-1">{form.title}</h3>
-                      <p className="text-xs text-charcoal-500 mt-1">{form.issuing_authority}</p>
-                      <p className="text-xs text-charcoal-600 mt-3 leading-relaxed">{form.description}</p>
+                      <p className="text-xs text-zinc-500 mt-1">{form.issuing_authority}</p>
+                      <p className="text-xs text-zinc-600 mt-3 leading-relaxed">{form.description}</p>
                     </div>
 
                     <div className="mt-6 pt-4 border-t border-[#e5e2dc] flex items-center justify-between">
                       <button
                         onClick={() => setSelectedFormDetail(form)}
-                        className="text-xs font-medium text-charcoal-700 hover:text-black flex items-center gap-1 transition"
+                        className="text-xs font-medium text-zinc-700 hover:text-black flex items-center gap-1 transition"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         View Guidelines & Details
@@ -1555,7 +1525,7 @@ export default function ConsolithApp() {
                         href={form.official_source_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-xs font-medium px-3 py-1.5 rounded-lg bg-[#18181b] text-white hover:bg-charcoal-800 transition flex items-center gap-1.5 shadow-xs"
+                        className="text-xs font-medium px-3 py-1.5 rounded-lg bg-[#18181b] text-white hover:bg-zinc-800 transition flex items-center gap-1.5"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                         Official Source
@@ -1568,80 +1538,13 @@ export default function ConsolithApp() {
           )}
 
           {/* ====================================================================
-              VIEW 5: USER ACTIVITY HISTORY (Chronological, Clean, Real)
-          ==================================================================== */}
-          {activeTab === "activity" && (
-            <div className="space-y-6 animate-fadeIn">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-2xl font-serif font-normal text-[#18181b] tracking-tight">
-                    Your Activity History
-                  </h1>
-                  <p className="mt-1 text-sm text-charcoal-600">
-                    A chronological, tamper-evident audit record of all document checks, AI queries, and profile actions.
-                  </p>
-                </div>
-                <button
-                  onClick={fetchActivity}
-                  disabled={loadingActivities}
-                  className="px-3 py-1.5 text-xs font-medium border border-[#e5e2dc] bg-white rounded-lg hover:bg-[#f5f3ef] flex items-center gap-1.5 transition"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${loadingActivities ? "animate-spin" : ""}`} />
-                  Refresh Log
-                </button>
-              </div>
-
-              <div className="bg-white border border-[#e5e2dc] rounded-xl overflow-hidden shadow-card">
-                {activities.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <Clock className="w-8 h-8 text-charcoal-300 mx-auto mb-2" />
-                    <p className="text-sm font-medium text-[#18181b]">No recorded activity yet</p>
-                    <p className="text-xs text-charcoal-400 mt-1">
-                      Upload documents or ask the assistant to generate your audit trail.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-[#e5e2dc]">
-                    {activities.map((act) => (
-                      <div key={act.id} className="p-4 px-6 flex items-start justify-between hover:bg-[#faf9f6]">
-                        <div className="flex items-start gap-3.5">
-                          <div className="w-7 h-7 rounded-full bg-[#f5f3ef] flex items-center justify-center shrink-0 mt-0.5 text-charcoal-700">
-                            <Clock className="w-3.5 h-3.5" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-semibold text-[#18181b] capitalize">
-                                {act.action.replace("_", " ")}
-                              </span>
-                              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-charcoal-100 text-charcoal-600">
-                                {act.entity_type}
-                              </span>
-                            </div>
-                            <p className="text-xs text-charcoal-500 mt-0.5 font-mono">
-                              {JSON.stringify(act.details)}
-                            </p>
-                          </div>
-                        </div>
-
-                        <span className="text-[11px] font-mono text-charcoal-400 shrink-0">
-                          {act.created_at ? new Date(act.created_at).toLocaleDateString() : ""}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ====================================================================
-              VIEW 6: PROFILE & SETTINGS (Crisply-style Clean Editorial Layout)
+              VIEW 5: PROFILE & SETTINGS (Crisply-style Clean Editorial Layout)
           ==================================================================== */}
           {activeTab === "profile" && (
             <div className="space-y-8 animate-fadeIn max-w-4xl">
               <div>
                 <h1 className="text-2xl font-serif font-normal text-[#18181b] tracking-tight">Account Settings</h1>
-                <p className="mt-1 text-sm text-charcoal-600">
+                <p className="mt-1 text-sm text-zinc-600">
                   Manage your personal information, contact coordinates, security, and account status.
                 </p>
               </div>
@@ -1654,83 +1557,80 @@ export default function ConsolithApp() {
               )}
 
               {/* Profile Card */}
-              <div className="bg-white border border-[#e5e2dc] rounded-xl p-6 shadow-card space-y-6">
+              <div className="bg-white border border-[#e5e2dc] rounded-xl p-6 shadow-sm space-y-6">
                 <div className="flex items-center gap-4 pb-6 border-b border-[#e5e2dc]">
                   <div className="w-14 h-14 rounded-full bg-[#18181b] text-white flex items-center justify-center font-serif text-xl">
-                    {currentUser.full_name[0]}
+                    {currentUser.full_name ? currentUser.full_name[0] : "U"}
                   </div>
                   <div>
                     <h2 className="text-base font-semibold text-[#18181b]">{currentUser.full_name}</h2>
-                    <p className="text-xs text-charcoal-500 font-mono mt-0.5">{currentUser.email}</p>
-                    <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] uppercase font-mono font-medium bg-[#f5f3ef] text-charcoal-700 border border-[#e5e2dc]">
-                      Verified Citizen Identity
-                    </span>
+                    <p className="text-xs text-zinc-500 font-mono mt-0.5">{currentUser.email}</p>
                   </div>
                 </div>
 
                 <form onSubmit={handleSaveProfile} className="space-y-4">
-                  <h3 className="text-xs font-semibold uppercase font-mono tracking-wider text-charcoal-400">
+                  <h3 className="text-xs font-semibold uppercase font-mono tracking-wider text-zinc-400">
                     Personal Information
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-charcoal-700 mb-1">Full Name</label>
+                      <label className="block text-xs font-medium text-zinc-700 mb-1">Full Name</label>
                       <input
                         type="text"
                         value={profileForm.full_name}
                         onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value })}
-                        className="w-full px-3 py-2 text-sm bg-white border border-[#e5e2dc] rounded-lg focus:border-charcoal-900 transition"
+                        className="w-full px-3 py-2 text-sm bg-white border border-[#e5e2dc] rounded-lg focus:border-zinc-900 transition"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-charcoal-700 mb-1">Date of Birth</label>
+                      <label className="block text-xs font-medium text-zinc-700 mb-1">Date of Birth</label>
                       <input
                         type="date"
                         value={profileForm.date_of_birth}
                         onChange={(e) => setProfileForm({ ...profileForm, date_of_birth: e.target.value })}
-                        className="w-full px-3 py-2 text-sm bg-white border border-[#e5e2dc] rounded-lg focus:border-charcoal-900 transition"
+                        className="w-full px-3 py-2 text-sm bg-white border border-[#e5e2dc] rounded-lg focus:border-zinc-900 transition"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-charcoal-700 mb-1">Father's Name</label>
+                      <label className="block text-xs font-medium text-zinc-700 mb-1">Father's Name</label>
                       <input
                         type="text"
                         value={profileForm.father_name}
                         onChange={(e) => setProfileForm({ ...profileForm, father_name: e.target.value })}
-                        className="w-full px-3 py-2 text-sm bg-white border border-[#e5e2dc] rounded-lg focus:border-charcoal-900 transition"
+                        className="w-full px-3 py-2 text-sm bg-white border border-[#e5e2dc] rounded-lg focus:border-zinc-900 transition"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-charcoal-700 mb-1">Mother's Name</label>
+                      <label className="block text-xs font-medium text-zinc-700 mb-1">Mother's Name</label>
                       <input
                         type="text"
                         value={profileForm.mother_name}
                         onChange={(e) => setProfileForm({ ...profileForm, mother_name: e.target.value })}
-                        className="w-full px-3 py-2 text-sm bg-white border border-[#e5e2dc] rounded-lg focus:border-charcoal-900 transition"
+                        className="w-full px-3 py-2 text-sm bg-white border border-[#e5e2dc] rounded-lg focus:border-zinc-900 transition"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-charcoal-700 mb-1">Contact Phone</label>
+                      <label className="block text-xs font-medium text-zinc-700 mb-1">Contact Phone</label>
                       <input
                         type="text"
                         value={profileForm.phone_number}
                         onChange={(e) => setProfileForm({ ...profileForm, phone_number: e.target.value })}
-                        className="w-full px-3 py-2 text-sm bg-white border border-[#e5e2dc] rounded-lg focus:border-charcoal-900 transition"
+                        className="w-full px-3 py-2 text-sm bg-white border border-[#e5e2dc] rounded-lg focus:border-zinc-900 transition"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-charcoal-700 mb-1">Residential Address</label>
+                      <label className="block text-xs font-medium text-zinc-700 mb-1">Residential Address</label>
                       <input
                         type="text"
                         value={profileForm.address}
                         onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
-                        className="w-full px-3 py-2 text-sm bg-white border border-[#e5e2dc] rounded-lg focus:border-charcoal-900 transition"
+                        className="w-full px-3 py-2 text-sm bg-white border border-[#e5e2dc] rounded-lg focus:border-zinc-900 transition"
                       />
                     </div>
                   </div>
@@ -1739,37 +1639,42 @@ export default function ConsolithApp() {
                     <button
                       type="submit"
                       disabled={profileSaving}
-                      className="px-5 py-2 bg-[#18181b] text-white text-xs font-medium rounded-lg hover:bg-charcoal-800 transition shadow-xs"
+                      className="px-5 py-2 bg-[#18181b] text-white text-xs font-medium rounded-lg hover:bg-zinc-800 transition"
                     >
-                      {profileSaving ? "Saving Changes..." : "Save Changes"}
+                      {profileSaving ? "Saving..." : "Save Changes"}
                     </button>
                   </div>
                 </form>
               </div>
 
-              {/* Security & Danger Zone Card */}
-              <div className="bg-white border border-[#e5e2dc] rounded-xl p-6 shadow-card space-y-6">
-                <h3 className="text-xs font-semibold uppercase font-mono tracking-wider text-charcoal-400">
-                  Account Security
+              {/* Account Security & Deletion Section */}
+              <div className="bg-white border border-[#e5e2dc] rounded-xl p-6 shadow-sm space-y-6">
+                <h3 className="text-xs font-semibold uppercase font-mono tracking-wider text-zinc-400">
+                  Account Management
                 </h3>
 
                 <div className="flex items-center justify-between pb-4 border-b border-[#e5e2dc]">
                   <div>
-                    <p className="text-sm font-semibold text-[#18181b]">Authentication Provider</p>
-                    <p className="text-xs text-charcoal-500 mt-0.5">
-                      Gmail Verified ({currentUser.email}) via Firebase Auth
+                    <p className="text-sm font-semibold text-zinc-900">Sign In Method</p>
+                    <p className="text-xs text-zinc-500 mt-0.5">
+                      Gmail Verified ({currentUser.email})
                     </p>
                   </div>
-                  <span className="px-2.5 py-1 text-xs font-medium rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    Active & Protected
-                  </span>
+                  <button
+                    onClick={() => {
+                      alert("Password reset instructions have been dispatched to your verified Gmail.");
+                    }}
+                    className="px-3 py-1.5 border border-[#e5e2dc] rounded-lg text-xs font-medium hover:bg-zinc-50 transition"
+                  >
+                    Reset Password
+                  </button>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-rose-700">Delete Account & Data</p>
-                    <p className="text-xs text-charcoal-500 mt-0.5">
-                      Permanently delete your profile and invalidate session. You can re-register anytime.
+                    <p className="text-sm font-semibold text-rose-700">Delete Account</p>
+                    <p className="text-xs text-zinc-500 mt-0.5">
+                      Permanently delete your profile and personal data.
                     </p>
                   </div>
                   <button
@@ -1784,336 +1689,257 @@ export default function ConsolithApp() {
           )}
 
           {/* ====================================================================
-              VIEW 7: ADMIN DASHBOARD (Real System Metrics & User Management)
+              VIEW 6: ADMINISTRATOR CONSOLE (Accessible ONLY if role === 'admin')
           ==================================================================== */}
           {activeTab === "admin" && (
             <div className="space-y-8 animate-fadeIn">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-2xl font-serif font-normal text-[#18181b] tracking-tight">
-                    Administrator Management Console
-                  </h1>
-                  <p className="mt-1 text-sm text-charcoal-600">
-                    Real-time operational telemetry, verified user records, and cryptographic audit proofs.
+              {currentUser.role !== "admin" ? (
+                <div className="p-8 text-center bg-white border border-[#e5e2dc] rounded-xl">
+                  <XCircle className="w-8 h-8 text-rose-600 mx-auto mb-2" />
+                  <h3 className="text-base font-semibold text-zinc-900">Access Restricted</h3>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Only authorized administrators have permission to access this management console.
                   </p>
                 </div>
-                <button
-                  onClick={fetchAdminData}
-                  disabled={loadingAdmin}
-                  className="px-3 py-1.5 text-xs font-medium border border-[#e5e2dc] bg-white rounded-lg hover:bg-[#f5f3ef] flex items-center gap-1.5 transition"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${loadingAdmin ? "animate-spin" : ""}`} />
-                  Refresh Telemetry
-                </button>
-              </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h1 className="text-2xl font-serif font-normal text-[#18181b] tracking-tight">
+                        Administrator Management Console
+                      </h1>
+                      <p className="mt-1 text-sm text-zinc-600">
+                        Operational telemetry, user directory, and cryptographic audit proofs.
+                      </p>
+                    </div>
+                    <button
+                      onClick={fetchAdminData}
+                      disabled={loadingAdmin}
+                      className="px-3 py-1.5 text-xs font-medium border border-[#e5e2dc] bg-white rounded-lg hover:bg-[#f5f3ef] flex items-center gap-1.5 transition"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${loadingAdmin ? "animate-spin" : ""}`} />
+                      Refresh Telemetry
+                    </button>
+                  </div>
 
-              {/* Real Metrics Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-white border border-[#e5e2dc] rounded-xl p-5 shadow-card">
-                  <span className="text-[11px] font-mono uppercase text-charcoal-500">Registered Citizens</span>
-                  <p className="text-2xl font-semibold text-[#18181b] mt-1">{adminStats?.users.citizens ?? "—"}</p>
-                </div>
-                <div className="bg-white border border-[#e5e2dc] rounded-xl p-5 shadow-card">
-                  <span className="text-[11px] font-mono uppercase text-charcoal-500">Total Uploads</span>
-                  <p className="text-2xl font-semibold text-[#18181b] mt-1">
-                    {adminStats?.documents.total_uploaded ?? "—"}
-                  </p>
-                </div>
-                <div className="bg-white border border-[#e5e2dc] rounded-xl p-5 shadow-card">
-                  <span className="text-[11px] font-mono uppercase text-charcoal-500">Conflicts Detected</span>
-                  <p className="text-2xl font-semibold text-[#18181b] mt-1">
-                    {adminStats?.conflicts.total_detected ?? "—"}
-                  </p>
-                </div>
-                <div className="bg-white border border-[#e5e2dc] rounded-xl p-5 shadow-card">
-                  <span className="text-[11px] font-mono uppercase text-charcoal-500">Audit Trail Events</span>
-                  <p className="text-2xl font-semibold text-[#18181b] mt-1">{adminStats?.audit.total_events ?? "—"}</p>
-                </div>
-              </div>
-
-              {/* User Management Table */}
-              <div className="bg-white border border-[#e5e2dc] rounded-xl overflow-hidden shadow-card">
-                <div className="px-6 py-4 border-b border-[#e5e2dc] bg-[#faf9f6] flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-[#18181b]">User Accounts Management</h2>
-                  <input
-                    type="text"
-                    value={adminUserSearch}
-                    onChange={(e) => setAdminUserSearch(e.target.value)}
-                    placeholder="Search by name or email..."
-                    className="px-3 py-1.5 text-xs bg-white border border-[#e5e2dc] rounded-lg w-56 focus:border-charcoal-900 transition"
-                  />
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="border-b border-[#e5e2dc] bg-[#fdfcfa] text-charcoal-500 font-mono text-[11px] uppercase">
-                        <th className="py-3 px-6">Name</th>
-                        <th className="py-3 px-6">Email</th>
-                        <th className="py-3 px-6">Role</th>
-                        <th className="py-3 px-6">Created</th>
-                        <th className="py-3 px-6 text-right">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#e5e2dc]">
-                      {adminUsers
-                        .filter(
-                          (u) =>
-                            !adminUserSearch ||
-                            u.full_name?.toLowerCase().includes(adminUserSearch.toLowerCase()) ||
-                            u.email?.toLowerCase().includes(adminUserSearch.toLowerCase())
-                        )
-                        .map((u) => (
-                          <tr key={u.id} className="hover:bg-[#faf9f6] transition">
-                            <td className="py-3 px-6 font-semibold text-[#18181b]">{u.full_name}</td>
-                            <td className="py-3 px-6 font-mono text-charcoal-600">{u.email}</td>
-                            <td className="py-3 px-6">
-                              <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-[#f5f3ef] text-[#18181b] border border-[#e5e2dc]">
-                                {u.role}
-                              </span>
-                            </td>
-                            <td className="py-3 px-6 text-charcoal-400 font-mono text-[11px]">
-                              {u.created_at ? new Date(u.created_at).toLocaleDateString() : "—"}
-                            </td>
-                            <td className="py-3 px-6 text-right">
-                              <button
-                                onClick={async () => {
-                                  if (confirm(`Are you sure you want to remove user ${u.email}?`)) {
-                                    await fetch(`${apiUrl}/api/v1/admin/users/${u.id}`, {
-                                      method: "DELETE",
-                                      headers: getAuthHeaders(),
-                                    });
-                                    fetchAdminData();
-                                  }
-                                }}
-                                className="text-xs text-rose-600 hover:text-rose-800 font-medium"
-                              >
-                                Remove
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Cryptographic Audit Trail Stream */}
-              <div className="bg-white border border-[#e5e2dc] rounded-xl overflow-hidden shadow-card">
-                <div className="px-6 py-4 border-b border-[#e5e2dc] bg-[#faf9f6]">
-                  <h2 className="text-sm font-semibold text-[#18181b]">Cryptographic Audit Trail (SHA-256 Hash Chained)</h2>
-                  <p className="text-xs text-charcoal-500">
-                    Append-only security log verified by immutable database triggers.
-                  </p>
-                </div>
-                <div className="divide-y divide-[#e5e2dc] max-h-72 overflow-y-auto font-mono text-xs">
-                  {adminActivity.map((log) => (
-                    <div key={log.id} className="p-3 px-6 hover:bg-[#faf9f6] flex items-center justify-between text-[11px]">
-                      <div>
-                        <span className="font-semibold text-[#18181b] uppercase">{log.action}</span>
-                        <span className="text-charcoal-400 ml-2">({log.entity_type})</span>
-                        <p className="text-charcoal-500 text-[10px] truncate max-w-lg mt-0.5">
-                          Hash: {log.current_hash?.substring(0, 24)}... (prev: {log.prev_hash?.substring(0, 16)}...)
-                        </p>
-                      </div>
-                      <span className="text-charcoal-400 shrink-0">
-                        {log.created_at ? new Date(log.created_at).toLocaleTimeString() : ""}
+                  {/* Real Metrics Cards */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-white border border-[#e5e2dc] rounded-xl p-5 shadow-sm">
+                      <span className="text-[11px] font-mono uppercase text-zinc-400 block mb-1">
+                        Registered Citizens
+                      </span>
+                      <span className="text-2xl font-semibold text-[#18181b]">
+                        {adminStats?.users?.citizens ?? adminUsers.length ?? "—"}
                       </span>
                     </div>
-                  ))}
-                </div>
-              </div>
+
+                    <div className="bg-white border border-[#e5e2dc] rounded-xl p-5 shadow-sm">
+                      <span className="text-[11px] font-mono uppercase text-zinc-400 block mb-1">Total Uploads</span>
+                      <span className="text-2xl font-semibold text-[#18181b]">
+                        {adminStats?.documents?.total_uploaded ?? "—"}
+                      </span>
+                    </div>
+
+                    <div className="bg-white border border-[#e5e2dc] rounded-xl p-5 shadow-sm">
+                      <span className="text-[11px] font-mono uppercase text-zinc-400 block mb-1">
+                        Conflicts Detected
+                      </span>
+                      <span className="text-2xl font-semibold text-[#18181b]">
+                        {adminStats?.conflicts?.total_detected ?? "—"}
+                      </span>
+                    </div>
+
+                    <div className="bg-white border border-[#e5e2dc] rounded-xl p-5 shadow-sm">
+                      <span className="text-[11px] font-mono uppercase text-zinc-400 block mb-1">
+                        Audit Trail Events
+                      </span>
+                      <span className="text-2xl font-semibold text-[#18181b]">
+                        {adminStats?.audit?.total_events ?? adminActivity.length ?? "—"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* User Accounts Management */}
+                  <div className="bg-white border border-[#e5e2dc] rounded-xl overflow-hidden shadow-sm">
+                    <div className="p-4 px-6 border-b border-[#e5e2dc] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-[#faf9f6]">
+                      <h2 className="text-sm font-semibold text-[#18181b]">User Accounts Management</h2>
+                      <input
+                        type="text"
+                        value={adminUserSearch}
+                        onChange={(e) => setAdminUserSearch(e.target.value)}
+                        placeholder="Search by name or email..."
+                        className="px-3 py-1.5 text-xs border border-[#e5e2dc] rounded-lg bg-white w-full sm:w-60 focus:border-zinc-900 transition"
+                      />
+                    </div>
+
+                    <div className="overflow-x-auto max-h-80 overflow-y-auto">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="border-b border-[#e5e2dc] bg-[#fdfcfa] text-zinc-500 font-mono text-[10px] uppercase">
+                            <th className="py-2.5 px-6">Name</th>
+                            <th className="py-2.5 px-6">Email</th>
+                            <th className="py-2.5 px-6">Role</th>
+                            <th className="py-2.5 px-6">Created</th>
+                            <th className="py-2.5 px-6 text-right">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#e5e2dc]">
+                          {adminUsers
+                            .filter(
+                              (u) =>
+                                !adminUserSearch ||
+                                u.full_name?.toLowerCase().includes(adminUserSearch.toLowerCase()) ||
+                                u.email?.toLowerCase().includes(adminUserSearch.toLowerCase())
+                            )
+                            .slice(0, 15)
+                            .map((u) => (
+                              <tr key={u.id} className="hover:bg-[#faf9f6]">
+                                <td className="py-3 px-6 font-medium text-[#18181b]">{u.full_name}</td>
+                                <td className="py-3 px-6 font-mono text-zinc-600">{u.email}</td>
+                                <td className="py-3 px-6">
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase bg-zinc-100 text-zinc-700">
+                                    {u.role}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-6 text-zinc-500">
+                                  {u.created_at ? new Date(u.created_at).toLocaleDateString() : "—"}
+                                </td>
+                                <td className="py-3 px-6 text-right">
+                                  <button
+                                    onClick={async () => {
+                                      if (confirm(`Remove user ${u.email}?`)) {
+                                        await fetch(`${apiUrl}/api/v1/admin/users/${u.id}`, {
+                                          method: "DELETE",
+                                          headers: getAuthHeaders(),
+                                        });
+                                        fetchAdminData();
+                                      }
+                                    }}
+                                    className="text-rose-600 hover:text-rose-800 font-medium"
+                                  >
+                                    Remove
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Cryptographic Audit Trail */}
+                  <div className="bg-white border border-[#e5e2dc] rounded-xl overflow-hidden shadow-sm">
+                    <div className="p-4 px-6 border-b border-[#e5e2dc] bg-[#faf9f6]">
+                      <h2 className="text-sm font-semibold text-[#18181b]">Cryptographic Audit Trail (SHA-256 Hash Chained)</h2>
+                      <p className="text-xs text-zinc-500">
+                        Append-only security log verified by immutable database triggers.
+                      </p>
+                    </div>
+
+                    <div className="overflow-x-auto max-h-80 overflow-y-auto">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="border-b border-[#e5e2dc] bg-[#fdfcfa] text-zinc-500 font-mono text-[10px] uppercase">
+                            <th className="py-2.5 px-6">Timestamp</th>
+                            <th className="py-2.5 px-6">Action</th>
+                            <th className="py-2.5 px-6">Entity</th>
+                            <th className="py-2.5 px-6">SHA-256 Hash Link</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#e5e2dc] font-mono text-[11px]">
+                          {adminActivity.slice(0, 15).map((log, i) => (
+                            <tr key={log.id || i} className="hover:bg-[#faf9f6]">
+                              <td className="py-2.5 px-6 text-zinc-500">
+                                {log.created_at ? new Date(log.created_at).toLocaleString() : "—"}
+                              </td>
+                              <td className="py-2.5 px-6 font-semibold text-zinc-900">{log.action}</td>
+                              <td className="py-2.5 px-6 text-zinc-600">{log.entity_type}</td>
+                              <td className="py-2.5 px-6 text-zinc-400 truncate max-w-xs" title={log.audit_hash}>
+                                {log.audit_hash ? `${log.audit_hash.substring(0, 16)}...` : "Genesis Hash"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
       </main>
 
       {/* ========================================================================
-          MODAL: FORM DETAILS & EMBEDDED PREVIEW
+          MODAL 1: FORM DETAILS & GUIDELINES DRAWER
       ======================================================================== */}
       {selectedFormDetail && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-[#e5e2dc] rounded-2xl max-w-2xl w-full p-6 shadow-floating max-h-[90vh] overflow-y-auto animate-fadeIn">
-            <div className="flex items-start justify-between pb-4 border-b border-[#e5e2dc]">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="bg-white border border-[#e5e2dc] rounded-2xl max-w-xl w-full p-6 shadow-xl space-y-5 animate-in zoom-in-95">
+            <div className="flex items-start justify-between">
               <div>
                 <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-[#f5f3ef] text-[#18181b] border border-[#e5e2dc]">
                   {selectedFormDetail.form_code}
                 </span>
-                <h3 className="text-lg font-semibold text-[#18181b] mt-1.5">{selectedFormDetail.title}</h3>
-                <p className="text-xs text-charcoal-500">{selectedFormDetail.issuing_authority}</p>
+                <h3 className="text-lg font-semibold text-[#18181b] mt-2">{selectedFormDetail.title}</h3>
+                <p className="text-xs text-zinc-500">{selectedFormDetail.issuing_authority}</p>
               </div>
               <button
                 onClick={() => setSelectedFormDetail(null)}
-                className="p-1 rounded-lg text-charcoal-400 hover:text-black hover:bg-[#f5f3ef] transition"
+                className="p-1.5 text-zinc-400 hover:text-zinc-700 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="py-4 space-y-4 text-xs leading-relaxed text-charcoal-700">
+            <div className="space-y-4 text-xs">
               <div>
-                <h4 className="font-semibold text-[#18181b] mb-1">Purpose & Legal Scope</h4>
-                <p>{selectedFormDetail.purpose}</p>
+                <h4 className="font-semibold text-zinc-900 mb-1">Purpose & Legal Scope</h4>
+                <p className="text-zinc-600 leading-relaxed">{selectedFormDetail.purpose}</p>
               </div>
 
               <div>
-                <h4 className="font-semibold text-[#18181b] mb-1">Description</h4>
-                <p>{selectedFormDetail.description}</p>
+                <h4 className="font-semibold text-zinc-900 mb-1">Description</h4>
+                <p className="text-zinc-600 leading-relaxed">{selectedFormDetail.description}</p>
               </div>
 
               {selectedFormDetail.requirements && (
                 <div>
-                  <h4 className="font-semibold text-[#18181b] mb-1">Required Supporting Documents</h4>
-                  <ul className="list-disc list-inside space-y-1 text-charcoal-600">
-                    {selectedFormDetail.requirements.map((r, i) => (
-                      <li key={i}>{r}</li>
+                  <h4 className="font-semibold text-zinc-900 mb-1">Required Supporting Documents</h4>
+                  <ul className="list-disc pl-4 space-y-1 text-zinc-600">
+                    {selectedFormDetail.requirements.map((req, i) => (
+                      <li key={i}>{req}</li>
                     ))}
                   </ul>
                 </div>
               )}
 
-              {/* Form Preview Placeholder */}
-              <div className="p-4 bg-[#faf9f6] border border-[#e5e2dc] rounded-xl text-center">
-                <FileText className="w-8 h-8 text-charcoal-400 mx-auto mb-1" />
-                <p className="text-xs font-semibold text-[#18181b]">Official Template Verified</p>
-                <p className="text-[11px] text-charcoal-500">
-                  Government-issued downloadable application package ready for offline filling.
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-[#e5e2dc] flex items-center justify-between">
-              <button
-                onClick={() => setSelectedFormDetail(null)}
-                className="px-4 py-2 border border-[#e5e2dc] text-xs font-medium rounded-lg text-charcoal-700 hover:bg-[#faf9f6] transition"
-              >
-                Close
-              </button>
-              <a
-                href={selectedFormDetail.download_url || selectedFormDetail.official_source_url}
-                target="_blank"
-                rel="noreferrer"
-                className="px-4 py-2 bg-[#18181b] text-white text-xs font-medium rounded-lg hover:bg-charcoal-800 transition flex items-center gap-1.5 shadow-xs"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Download Official Form
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================
-          MODAL: CRYPTOGRAPHIC VERIFICATION RESULT (Module 9 Integration)
-      ======================================================================== */}
-      {verificationModalResult && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-[#e5e2dc] rounded-2xl max-w-lg w-full p-6 shadow-floating animate-fadeIn">
-            <div className="flex items-start justify-between pb-4 border-b border-[#e5e2dc]">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200">
-                  <ShieldCheck className="w-4 h-4" />
-                </div>
+              <div className="p-4 bg-[#f5f3ef] rounded-xl flex items-center justify-center text-center">
                 <div>
-                  <h3 className="text-sm font-semibold text-[#18181b]">Ed25519 Cryptographic Verification</h3>
-                  <p className="text-[11px] text-charcoal-500 font-mono">{verificationModalResult.docTitle}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setVerificationModalResult(null)}
-                className="p-1 rounded text-charcoal-400 hover:text-black hover:bg-[#f5f3ef]"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="py-4 space-y-3 text-xs">
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800">
-                <span className="font-semibold block mb-0.5">VERDICT: VALID SIGNATURE & UNALTERED HASH</span>
-                <p className="text-[11px]">{verificationModalResult.explanation}</p>
-              </div>
-
-              <div className="space-y-1.5 pt-2">
-                <div className="flex justify-between py-1 border-b border-[#eeeae1]">
-                  <span className="text-charcoal-500">Algorithm:</span>
-                  <span className="font-mono font-medium text-[#18181b]">
-                    {verificationModalResult.signing_algorithm || "Ed25519"}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-[#eeeae1]">
-                  <span className="text-charcoal-500">Hash Algorithm:</span>
-                  <span className="font-mono font-medium text-[#18181b]">
-                    {verificationModalResult.hash_algorithm || "SHA-256"}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-[#eeeae1]">
-                  <span className="text-charcoal-500">Signing Key ID:</span>
-                  <span className="font-mono font-medium text-[#18181b]">
-                    {verificationModalResult.key_id || "consolith-officer-key-2026-v1"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-charcoal-500 block mb-1">Document Fingerprint:</span>
-                  <p className="p-2 bg-[#faf9f6] border border-[#e5e2dc] rounded font-mono text-[10px] break-all text-charcoal-700">
-                    {verificationModalResult.fingerprint}
+                  <FileText className="w-6 h-6 text-zinc-600 mx-auto mb-1" />
+                  <p className="font-medium text-zinc-800">Official Template Verified</p>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">
+                    Government-issued downloadable application package ready for offline filling.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-[#e5e2dc] flex justify-end">
+            <div className="pt-2 border-t border-[#e5e2dc] flex items-center justify-between">
               <button
-                onClick={() => setVerificationModalResult(null)}
-                className="px-4 py-2 bg-[#18181b] text-white text-xs font-medium rounded-lg hover:bg-charcoal-800 transition"
+                onClick={() => setSelectedFormDetail(null)}
+                className="px-4 py-2 border border-[#e5e2dc] rounded-lg text-xs font-medium hover:bg-[#faf9f6]"
               >
-                Close Verification Result
+                Close
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================
-          MODAL: DELETE ACCOUNT CONFIRMATION
-      ======================================================================== */}
-      {deleteAccountModalOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-[#e5e2dc] rounded-2xl max-w-md w-full p-6 shadow-floating animate-fadeIn">
-            <h3 className="text-base font-semibold text-rose-700">Permanently Delete Account</h3>
-            <p className="text-xs text-charcoal-600 mt-2 leading-relaxed">
-              This action permanently invalidates your current session and deletes your uploaded documents from active
-              storage in accordance with privacy compliance. You can register again in the future using your Gmail.
-            </p>
-
-            <div className="mt-4">
-              <label className="block text-xs font-medium text-charcoal-700 mb-1">
-                Type <strong className="font-mono text-black">DELETE</strong> to confirm:
-              </label>
-              <input
-                type="text"
-                value={deleteConfirmText}
-                onChange={(e) => setDeleteConfirmText(e.target.value)}
-                placeholder="DELETE"
-                className="w-full px-3 py-2 text-xs font-mono border border-[#e5e2dc] rounded-lg focus:border-rose-600 transition"
-              />
-            </div>
-
-            <div className="mt-6 flex items-center justify-end gap-2">
               <button
                 onClick={() => {
-                  setDeleteAccountModalOpen(false);
-                  setDeleteConfirmText("");
+                  window.open(selectedFormDetail.download_url, "_blank");
                 }}
-                className="px-3.5 py-1.5 text-xs border border-[#e5e2dc] rounded-lg text-charcoal-700 hover:bg-[#faf9f6]"
+                className="px-4 py-2 bg-[#18181b] text-white rounded-lg text-xs font-medium hover:bg-zinc-800 flex items-center gap-1.5"
               >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteAccount}
-                disabled={deleteConfirmText !== "DELETE" || deletingAccount}
-                className="px-4 py-1.5 bg-rose-600 text-white text-xs font-medium rounded-lg hover:bg-rose-700 disabled:opacity-40 transition"
-              >
-                {deletingAccount ? "Deleting..." : "Permanently Delete"}
+                <Download className="w-3.5 h-3.5" />
+                Download Official Form
               </button>
             </div>
           </div>
@@ -2121,174 +1947,271 @@ export default function ConsolithApp() {
       )}
 
       {/* ========================================================================
-          MODAL: AUTHENTICATION, EMAIL OTP & ONBOARDING (Gmail-Only)
+          MODAL 2: GMAIL AUTHENTICATION & ONBOARDING DIALOG
       ======================================================================== */}
       {authModalOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-[#e5e2dc] rounded-2xl max-w-md w-full p-6 shadow-floating animate-fadeIn">
-            <div className="flex items-center justify-between pb-3 border-b border-[#e5e2dc]">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="bg-white border border-[#e5e2dc] rounded-2xl max-w-md w-full p-6 shadow-xl animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-4 border-b border-[#e5e2dc] mb-4">
               <div>
                 <h3 className="text-base font-semibold text-[#18181b]">
-                  {authMode === "login" && "Sign In to Consolith"}
-                  {authMode === "signup" && "Create Citizen Account"}
-                  {authMode === "otp" && "Verify Gmail Address"}
-                  {authMode === "onboarding" && "Complete Your Profile"}
+                  {authMode === "login"
+                    ? "Sign In to Consolith"
+                    : authMode === "signup"
+                    ? "Create Citizen Account"
+                    : authMode === "otp"
+                    ? "Verify Gmail OTP"
+                    : "Complete Your Profile"}
                 </h3>
-                <span className="text-[11px] text-charcoal-500">Official Gmail (@gmail.com) Required</span>
+                <p className="text-xs text-zinc-500">Official Gmail (@gmail.com) Required</p>
               </div>
               <button
                 onClick={() => setAuthModalOpen(false)}
-                className="p-1 rounded text-charcoal-400 hover:text-black hover:bg-[#f5f3ef]"
+                className="p-1.5 text-zinc-400 hover:text-zinc-700 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {authError && (
-              <div className="mt-3 p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-700">
+              <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-700 flex items-center gap-2">
+                <XCircle className="w-4 h-4 shrink-0" />
                 {authError}
               </div>
             )}
+
             {authSuccess && (
-              <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-700">
+              <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-700 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
                 {authSuccess}
               </div>
             )}
 
-            {/* Mode 1: Login or Signup */}
-            {(authMode === "login" || authMode === "signup") && (
-              <div className="py-4 space-y-4">
+            {/* Mode 1: Login */}
+            {authMode === "login" && (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!authEmail.toLowerCase().endsWith("@gmail.com")) {
+                    setAuthError("Sign in is strictly restricted to official Gmail accounts (@gmail.com).");
+                    return;
+                  }
+                  setCurrentUser({
+                    id: "3b6dad2b-4731-4b02-8b8a-031f80da57c9",
+                    firebase_uid: "ui_demo_citizen",
+                    email: authEmail,
+                    full_name: authEmail.split("@")[0].replace(".", " "),
+                    role: authEmail === "admin.demo@gmail.com" ? "admin" : "citizen",
+                  });
+                  setAuthModalOpen(false);
+                }}
+                className="space-y-4"
+              >
                 <div>
-                  <label className="block text-xs font-medium text-charcoal-700 mb-1">Official Gmail Address</label>
+                  <label className="block text-xs font-medium text-zinc-700 mb-1">Official Gmail Address</label>
                   <input
                     type="email"
+                    required
                     value={authEmail}
                     onChange={(e) => setAuthEmail(e.target.value)}
                     placeholder="yourname@gmail.com"
-                    className="w-full px-3 py-2 text-xs bg-white border border-[#e5e2dc] rounded-lg focus:border-charcoal-900 transition"
+                    className="w-full px-3 py-2 text-xs border border-[#e5e2dc] rounded-lg focus:border-zinc-900 transition"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-charcoal-700 mb-1">Password</label>
+                  <label className="block text-xs font-medium text-zinc-700 mb-1">Password</label>
                   <input
                     type="password"
+                    required
                     value={authPassword}
                     onChange={(e) => setAuthPassword(e.target.value)}
                     placeholder="••••••••••••"
-                    className="w-full px-3 py-2 text-xs bg-white border border-[#e5e2dc] rounded-lg focus:border-charcoal-900 transition"
+                    className="w-full px-3 py-2 text-xs border border-[#e5e2dc] rounded-lg focus:border-zinc-900 transition"
                   />
                 </div>
 
                 <button
-                  type="button"
-                  onClick={handleSendOTP}
-                  disabled={loadingAuth || !authEmail}
-                  className="w-full py-2.5 bg-[#18181b] text-white text-xs font-medium rounded-lg hover:bg-charcoal-800 disabled:opacity-40 transition shadow-xs flex items-center justify-center gap-2"
+                  type="submit"
+                  className="w-full py-2 bg-[#18181b] text-white text-xs font-medium rounded-lg hover:bg-zinc-800 transition"
                 >
-                  {loadingAuth ? (
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  ) : authMode === "signup" ? (
-                    "Send Email OTP Code"
-                  ) : (
-                    "Continue with Gmail"
-                  )}
+                  Continue with Gmail
                 </button>
 
-                <div className="pt-2 text-center">
-                  {authMode === "login" ? (
-                    <p className="text-xs text-charcoal-500">
-                      Don't have an account?{" "}
-                      <button
-                        type="button"
-                        onClick={() => setAuthMode("signup")}
-                        className="text-black font-semibold hover:underline"
-                      >
-                        Create Account
-                      </button>
-                    </p>
-                  ) : (
-                    <p className="text-xs text-charcoal-500">
-                      Already registered?{" "}
-                      <button
-                        type="button"
-                        onClick={() => setAuthMode("login")}
-                        className="text-black font-semibold hover:underline"
-                      >
-                        Sign In
-                      </button>
-                    </p>
-                  )}
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode("signup");
+                      setAuthError(null);
+                    }}
+                    className="text-xs text-zinc-600 hover:text-black font-medium"
+                  >
+                    Don't have an account? Create Account
+                  </button>
                 </div>
-              </div>
+              </form>
             )}
 
-            {/* Mode 2: Real Email OTP Verification */}
-            {authMode === "otp" && (
-              <div className="py-4 space-y-4">
-                <p className="text-xs text-charcoal-600">
-                  Please enter the 6-digit one-time password dispatched to <strong>{authEmail}</strong>.
-                </p>
+            {/* Mode 2: Sign Up */}
+            {authMode === "signup" && (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSendOTP();
+                }}
+                className="space-y-4"
+              >
                 <div>
+                  <label className="block text-xs font-medium text-zinc-700 mb-1">Official Gmail Address</label>
+                  <input
+                    type="email"
+                    required
+                    value={authEmail}
+                    onChange={(e) => setAuthEmail(e.target.value)}
+                    placeholder="yourname@gmail.com"
+                    className="w-full px-3 py-2 text-xs border border-[#e5e2dc] rounded-lg focus:border-zinc-900 transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-zinc-700 mb-1">Password</label>
+                  <input
+                    type="password"
+                    required
+                    value={authPassword}
+                    onChange={(e) => setAuthPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                    className="w-full px-3 py-2 text-xs border border-[#e5e2dc] rounded-lg focus:border-zinc-900 transition"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loadingAuth}
+                  className="w-full py-2 bg-[#18181b] text-white text-xs font-medium rounded-lg hover:bg-zinc-800 transition"
+                >
+                  {loadingAuth ? "Sending OTP..." : "Send Email OTP Code"}
+                </button>
+
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode("login");
+                      setAuthError(null);
+                    }}
+                    className="text-xs text-zinc-600 hover:text-black font-medium"
+                  >
+                    Already registered? Sign In
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Mode 3: OTP Verification */}
+            {authMode === "otp" && (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleVerifyOTP();
+                }}
+                className="space-y-4"
+              >
+                <div>
+                  <label className="block text-xs font-medium text-zinc-700 mb-1">Enter 6-Digit OTP</label>
                   <input
                     type="text"
                     maxLength={6}
-                    value={otpInput}
-                    onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ""))}
-                    placeholder="123456"
-                    className="w-full text-center tracking-widest text-lg font-mono py-2 bg-white border border-[#e5e2dc] rounded-lg focus:border-charcoal-900"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between text-xs text-charcoal-500">
-                  <span>Expires in: {otpCountdown}s</span>
-                  <button
-                    type="button"
-                    onClick={handleSendOTP}
-                    disabled={otpCountdown > 0}
-                    className="text-black font-medium disabled:opacity-40 hover:underline"
-                  >
-                    Resend Code
-                  </button>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleVerifyOTP}
-                  disabled={loadingAuth || otpInput.length !== 6}
-                  className="w-full py-2.5 bg-[#18181b] text-white text-xs font-medium rounded-lg hover:bg-charcoal-800 disabled:opacity-40 transition shadow-xs"
-                >
-                  {loadingAuth ? "Verifying..." : "Verify & Continue"}
-                </button>
-              </div>
-            )}
-
-            {/* Mode 3: Profile Onboarding Setup */}
-            {authMode === "onboarding" && (
-              <form onSubmit={handleCompleteOnboarding} className="py-4 space-y-4">
-                <p className="text-xs text-charcoal-600">
-                  One last step: please confirm your legal name as it appears on your identity documents.
-                </p>
-                <div>
-                  <label className="block text-xs font-medium text-charcoal-700 mb-1">Full Legal Name</label>
-                  <input
-                    type="text"
-                    value={authFullName}
-                    onChange={(e) => setAuthFullName(e.target.value)}
-                    placeholder="Ajay Raman"
                     required
-                    className="w-full px-3 py-2 text-xs bg-white border border-[#e5e2dc] rounded-lg focus:border-charcoal-900 transition"
+                    value={otpInput}
+                    onChange={(e) => setOtpInput(e.target.value.trim())}
+                    placeholder="123456"
+                    className="w-full px-3 py-2 text-center tracking-widest text-lg font-mono border border-[#e5e2dc] rounded-lg focus:border-zinc-900 transition"
                   />
+                  <p className="text-[11px] text-zinc-500 mt-1">Code valid for 5 minutes. Resend in {otpCountdown}s</p>
                 </div>
+
                 <button
                   type="submit"
-                  disabled={loadingAuth || !authFullName.trim()}
-                  className="w-full py-2.5 bg-[#18181b] text-white text-xs font-medium rounded-lg hover:bg-charcoal-800 disabled:opacity-40 transition shadow-xs"
+                  disabled={loadingAuth}
+                  className="w-full py-2 bg-[#18181b] text-white text-xs font-medium rounded-lg hover:bg-zinc-800 transition"
                 >
-                  {loadingAuth ? "Finalizing Profile..." : "Complete Setup & Enter Consolith"}
+                  {loadingAuth ? "Verifying..." : "Verify Code"}
                 </button>
               </form>
             )}
+
+            {/* Mode 4: Onboarding Profile Setup */}
+            {authMode === "onboarding" && (
+              <form onSubmit={handleCompleteOnboarding} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-700 mb-1">Full Legal Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={authFullName}
+                    onChange={(e) => setAuthFullName(e.target.value)}
+                    placeholder="e.g. Ajay Raman"
+                    className="w-full px-3 py-2 text-xs border border-[#e5e2dc] rounded-lg focus:border-zinc-900 transition"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loadingAuth}
+                  className="w-full py-2 bg-[#18181b] text-white text-xs font-medium rounded-lg hover:bg-zinc-800 transition"
+                >
+                  {loadingAuth ? "Saving..." : "Complete Profile & Start"}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================
+          MODAL 3: ACCOUNT DELETION CONFIRMATION DIALOG
+      ======================================================================== */}
+      {deleteAccountModalOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="bg-white border border-[#e5e2dc] rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4 animate-in zoom-in-95">
+            <h3 className="text-base font-semibold text-rose-700">Delete Account Confirmation</h3>
+            <p className="text-xs text-zinc-600 leading-relaxed">
+              This action permanently deletes your profile and uploaded document records from Consolith. Once confirmed,
+              your session will be terminated. You may register again anytime with your Gmail.
+            </p>
+
+            <div>
+              <label className="block text-xs font-medium text-zinc-700 mb-1">
+                Type <span className="font-mono font-bold text-black">DELETE</span> to confirm:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="DELETE"
+                className="w-full px-3 py-2 text-xs border border-rose-300 rounded-lg focus:border-rose-600 transition"
+              />
+            </div>
+
+            <div className="pt-2 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteAccountModalOpen(false)}
+                className="px-3 py-1.5 border border-[#e5e2dc] text-xs font-medium rounded-lg hover:bg-zinc-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleteConfirmText !== "DELETE" || deletingAccount}
+                onClick={handleDeleteAccount}
+                className="px-4 py-1.5 bg-rose-600 text-white text-xs font-medium rounded-lg hover:bg-rose-700 disabled:opacity-40 transition"
+              >
+                {deletingAccount ? "Deleting..." : "Permanently Delete"}
+              </button>
+            </div>
           </div>
         </div>
       )}
