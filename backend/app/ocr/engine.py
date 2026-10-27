@@ -6,7 +6,7 @@ from PIL import Image, ImageEnhance, ImageFilter
 import pytesseract
 import pypdf
 
-logger = logging.getLogger("consolith.ocr")
+logger = logging.getLogger("convelina.ocr")
 
 class BaseOCREngine(ABC):
     """

@@ -16,7 +16,7 @@ from app.conflicts.schemas import (
     ConflictDetectResponse,
 )
 
-logger = logging.getLogger("consolith.conflicts.router")
+logger = logging.getLogger("convelina.conflicts.router")
 router = APIRouter(prefix="/api/v1/conflicts", tags=["Conflicts"])
 
 VALID_STATUSES = {"detected", "in_review", "resolved", "ignored"}

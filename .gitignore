@@ -45,3 +45,6 @@ Thumbs.db
 data/
 qdrant_storage/
 postgres_data/
+
+# Test outputs
+docs/load_test_results.json

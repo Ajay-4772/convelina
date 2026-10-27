@@ -55,16 +55,18 @@ def get_current_user(
     user_role = row["role"]
     set_rls_context(db, user_id, user_role)
 
-    # Create User model instance
-    user = User(
-        id=user_id,
-        firebase_uid=row["firebase_uid"],
-        email=row["email"],
-        full_name=row["full_name"],
-        role=user_role,
-        created_at=row["created_at"],
-        updated_at=row["updated_at"]
-    )
+    # Fetch complete User entity from DB under active RLS session context
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        user = User(
+            id=user_id,
+            firebase_uid=row["firebase_uid"],
+            email=row["email"],
+            full_name=row["full_name"],
+            role=user_role,
+            created_at=row["created_at"],
+            updated_at=row["updated_at"],
+        )
     return user
 
 def require_authenticated_user(current_user: User = Depends(get_current_user)) -> User:

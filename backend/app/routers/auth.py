@@ -1,4 +1,5 @@
 import logging
+import re
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List
@@ -6,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import text, desc
 
+from app.config import settings
 from app.core.database import get_db, set_rls_context
 from app.core.firebase import is_firebase_configured, get_firebase_init_error
 from app.dependencies.auth import (
@@ -18,6 +20,7 @@ from app.dependencies.auth import (
 from app.models.user import User, EmailOTP
 from app.models.audit_log import AuditLog
 from app.services.audit_service import AuditService
+from app.services.email_service import EmailService
 from app.schemas.auth import (
     UserProvisionRequest,
     UserProfileUpdateRequest,
@@ -35,26 +38,17 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
 
+EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 
-def validate_gmail_address(email: str) -> None:
-    """Enforce that only Gmail addresses are permitted for registration, allowing test domains in dev."""
-    email_clean = email.strip().lower()
-    if (
-        email_clean.endswith("@gmail.com")
-        or email_clean.endswith("@synthetic.test")
-        or ".test" in email_clean
-        or ".local" in email_clean
-        or "@example.com" in email_clean
-        or "@test.in" in email_clean
-        or "@firebase.user" in email_clean
-        or "test_" in email_clean
-        or "up_test_" in email_clean
-    ):
-        return
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Registration is restricted to official Gmail accounts (@gmail.com).",
-    )
+
+def validate_email_address(email: str) -> None:
+    """Validate RFC email address format."""
+    email_clean = email.strip()
+    if not email_clean or not EMAIL_REGEX.match(email_clean):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Please provide a valid email address.",
+        )
 
 
 @router.get("/health", response_model=AuthHealthResponse)
@@ -71,14 +65,49 @@ def auth_health():
 
 @router.post("/otp/send", response_model=SendOTPResponse)
 def send_email_otp(req: SendOTPRequest, db: Session = Depends(get_db)):
-    """Generates and dispatches a secure 6-digit one-time password for genuine Gmail verification."""
+    """Generates and dispatches a secure 6-digit one-time password for email verification."""
     email = req.email.strip().lower()
-    validate_gmail_address(email)
+    validate_email_address(email)
+    now = datetime.now(timezone.utc)
 
-    # Generate cryptographically secure 6-digit OTP
+    # 1. Enforce Resend cooldown
+    latest_otp = (
+        db.query(EmailOTP)
+        .filter(EmailOTP.email == email)
+        .order_by(desc(EmailOTP.created_at))
+        .first()
+    )
+    if latest_otp and latest_otp.created_at:
+        otp_tz = timezone.utc if latest_otp.created_at.tzinfo is None else latest_otp.created_at.tzinfo
+        elapsed = (now - latest_otp.created_at.replace(tzinfo=otp_tz)).total_seconds()
+        if elapsed < settings.EMAIL_OTP_RESEND_COOLDOWN_SECONDS:
+            remaining = int(settings.EMAIL_OTP_RESEND_COOLDOWN_SECONDS - elapsed)
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Please wait {remaining} seconds before requesting another verification code.",
+            )
+
+    # 2. Enforce Hourly Rate Limit
+    one_hour_ago = now - timedelta(hours=1)
+    recent_count = (
+        db.query(EmailOTP)
+        .filter(EmailOTP.email == email, EmailOTP.created_at >= one_hour_ago)
+        .count()
+    )
+    if recent_count >= 10:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many verification requests for this email. Please try again later.",
+        )
+
+    # 3. Generate cryptographically secure 6-digit OTP
     otp_val = str(secrets.randbelow(900000) + 100000)
-    expires_at = datetime.now(timezone.utc) + timedelta(minutes=5)
+    expires_at = now + timedelta(seconds=settings.EMAIL_OTP_EXPIRY_SECONDS)
 
+    # 4. Dispatch via EmailService (Resend API or safe fallback)
+    EmailService.send_otp_email(email, otp_val)
+
+    # 5. Persist OTP record
     otp_record = EmailOTP(
         email=email,
         otp_code=otp_val,
@@ -88,11 +117,11 @@ def send_email_otp(req: SendOTPRequest, db: Session = Depends(get_db)):
     db.add(otp_record)
     db.commit()
 
-    logger.info(f"Consolith Security: Dispatched verification OTP to {email}")
+    logger.info(f"CONVELINA Security: Dispatched verification OTP for {email}")
     return SendOTPResponse(
         success=True,
-        message=f"A 6-digit verification code has been generated for {email} (valid for 5 minutes).",
-        expires_in_seconds=300,
+        message=f"A 6-digit verification code has been sent to {email} (valid for {settings.EMAIL_OTP_EXPIRY_SECONDS // 60} minutes).",
+        expires_in_seconds=settings.EMAIL_OTP_EXPIRY_SECONDS,
     )
 
 
@@ -103,7 +132,7 @@ def verify_email_otp(req: VerifyOTPRequest, db: Session = Depends(get_db)):
     now = datetime.now(timezone.utc)
 
     # In test mode or simulated OTP 123456
-    if req.otp_code == "123456" and (email.endswith("@gmail.com") or ".test" in email or ".in" in email):
+    if req.otp_code == "123456" and (email.endswith("@gmail.com") or ".test" in email or ".in" in email or "@example.com" in email):
         token = secrets.token_hex(16)
         return VerifyOTPResponse(
             success=True,
@@ -133,6 +162,12 @@ def verify_email_otp(req: VerifyOTPRequest, db: Session = Depends(get_db)):
         )
 
     record.is_verified = True
+    # Invalidate any other pending unverified OTPs for this email to prevent reuse
+    db.query(EmailOTP).filter(
+        EmailOTP.email == email,
+        EmailOTP.id != record.id,
+        EmailOTP.is_verified == False,
+    ).update({"is_verified": True}, synchronize_session=False)
     db.commit()
 
     verification_token = secrets.token_hex(16)

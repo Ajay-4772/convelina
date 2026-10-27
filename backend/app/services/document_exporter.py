@@ -1,4 +1,4 @@
-"""Consolith - Module 7 Document Exporter Service
+"""CONVELINA - Module 7 Document Exporter Service
 
 Exports correction drafts into clean, professional PDF and DOCX files.
 Features:
@@ -124,7 +124,7 @@ class DocumentExporter:
         # Footer space
         story.append(Spacer(1, 16))
         story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#e2e8f0"), spaceAfter=6))
-        footer_text = f"Consolith Identity Resolution System | Generated Draft Document"
+        footer_text = f"CONVELINA Operations & Resolution Platform | Generated Draft Document"
         story.append(Paragraph(footer_text, ParagraphStyle("Footer", parent=styles["Normal"], fontSize=8, textColor=colors.HexColor("#94a3b8"), alignment=1)))
 
         doc.build(story)
@@ -187,7 +187,7 @@ class DocumentExporter:
         # Footer notice
         doc.add_paragraph()
         footer_p = doc.add_paragraph()
-        footer_run = footer_p.add_run("Consolith Identity Resolution System — Citizen Self-Service Draft")
+        footer_run = footer_p.add_run("CONVELINA Operations & Resolution Platform — Self-Service Draft")
         footer_run.font.size = Pt(8)
         footer_run.font.color.rgb = RGBColor(148, 163, 184)
         footer_p.alignment = WD_ALIGN_PARAGRAPH.CENTER

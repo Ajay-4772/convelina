@@ -1,4 +1,4 @@
-"""Consolith - Append-Only Cryptographic Audit Log Service
+"""CONVELINA - Append-Only Cryptographic Audit Log Service
 
 Provides tamper-evident event logging where each audit event's current_hash
 is cryptographically linked to the previous event's current_hash using SHA-256.

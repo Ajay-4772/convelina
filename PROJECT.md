@@ -1,8 +1,9 @@
-# Project Context: Consolith
+# Project Context: CONVELINA
+**Tagline**: *Statutory Document Discrepancy Detection & Clerical Correction Platform*
 
-## 1. What Consolith is
+## 1. What CONVELINA is
 
-Consolith is an AI-powered system that detects conflicts across an Indian citizen's identity documents (Aadhaar, PAN, Passport, 10th/12th certificates, EPF records) — such as a name spelled differently across documents, or a genuine mismatch in a parent's name, date of birth, or address — and provides grounded, source-cited government correction guidance using Retrieval-Augmented Generation (RAG). It's a final-year academic project, built solo, on a roughly 6-month timeline.
+CONVELINA is an AI-powered statutory document reconciliation and verification platform that detects conflicts across Indian identity records (Aadhaar, PAN, Passport, 10th/12th certificates, EPF records) — such as names spelled differently across records, or genuine mismatches in parents' names, dates of birth, or addresses — and provides grounded, source-cited statutory guidance using Retrieval-Augmented Generation (RAG). Built with enterprise-grade Row-Level Security, Ed25519 PKI digital attestations, and cryptographic SHA-256 audit chaining.
 
 ---
 

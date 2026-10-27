@@ -20,7 +20,7 @@ from app.rag.schemas import (
     GroundedAnswer
 )
 
-logger = logging.getLogger("consolith.assistant.router")
+logger = logging.getLogger("convelina.assistant.router")
 router = APIRouter(prefix="/api/v1/assistant", tags=["AI Resolution Assistant"])
 
 @router.post("/chat", response_model=ChatMessageResponse)

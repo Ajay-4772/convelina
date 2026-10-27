@@ -1,5 +1,5 @@
 """
-Consolith Document Authenticity & Ed25519 PKI Router
+CONVELINA Document Authenticity & Ed25519 PKI Router
 Provides API endpoints for public key management, attestation signing,
 cryptographic verification, and tamper detection.
 """

@@ -15,8 +15,6 @@ from app.routers.conflicts import router as conflicts_router
 from app.routers.assistant import router as assistant_router
 from app.routers.knowledge import router as knowledge_router
 from app.routers.correction_drafts import router as correction_drafts_router
-from app.routers.cases import router as cases_router
-from app.routers.officer import router as officer_router
 from app.routers.admin import router as admin_router
 from app.routers.pki import router as pki_router
 
@@ -26,12 +24,30 @@ async def lifespan(app: FastAPI):
     initialize_firebase()
     yield
 
+is_prod = settings.ENVIRONMENT.lower() == "production"
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    description="Backend API for Consolith: AI-Powered Identity Conflict Detection & Assistance",
+    description="Backend API for CONVELINA: Modular AI-Powered Business Management & Verification Platform",
     version="1.0.0",
     lifespan=lifespan,
+    docs_url=None if is_prod and not settings.DEBUG else "/docs",
+    redoc_url=None if is_prod and not settings.DEBUG else "/redoc",
+    openapi_url=None if is_prod and not settings.DEBUG else "/openapi.json",
 )
+
+# Security Headers Middleware
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+    if is_prod:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
 
 # Configure CORS
 app.add_middleware(
@@ -49,8 +65,6 @@ app.include_router(conflicts_router)
 app.include_router(assistant_router)
 app.include_router(knowledge_router)
 app.include_router(correction_drafts_router)
-app.include_router(cases_router)
-app.include_router(officer_router)
 app.include_router(admin_router)
 app.include_router(pki_router)
 
@@ -58,7 +72,7 @@ app.include_router(pki_router)
 @app.get("/")
 def read_root():
     return {
-        "service": "Consolith Backend API",
+        "service": "CONVELINA Backend API",
         "status": "online",
         "version": "1.0.0",
         "docs": "/docs",

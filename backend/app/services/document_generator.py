@@ -1,4 +1,4 @@
-"""Consolith - Module 7 Document Generator Service
+"""CONVELINA - Module 7 Document Generator Service
 
 Generates structured, professional correction drafts using Google Gemini, grounded in
 Module 6 official government knowledge and verified forms.
@@ -30,7 +30,7 @@ SUPPORTED_DOCUMENT_TYPES = {
     "general_correction_application": "General Discrepancy Rectification Application",
 }
 
-SYSTEM_INSTRUCTION = f"""You are the Consolith Official Document Assistance Specialist.
+SYSTEM_INSTRUCTION = f"""You are the CONVELINA Official Document Assistance Specialist.
 Your responsibility is to draft professional, formally formatted correction request documents, checklists, or declarations for Indian citizens seeking identity document rectification.
 
 MANDATORY RULES:

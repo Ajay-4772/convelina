@@ -1,5 +1,5 @@
 """
-Consolith PKI & Verification Service
+CONVELINA PKI & Verification Service
 Implements Ed25519 key lifecycle management, canonical attestation signing,
 and multi-factor cryptographic verification (tamper detection, revocation, expiration).
 """
@@ -277,7 +277,7 @@ class PKIService:
             "signing_purpose": attestation_in.signing_purpose,
             "issued_at": now.isoformat(),
             "expires_at": expires_at.isoformat() if expires_at else None,
-            "issuer": "Consolith Verification PKI",
+            "issuer": "CONVELINA Verification PKI",
             "citizen_id": str(citizen_id),
             "officer_id": str(officer_id),
             "case_id": str(attestation_in.case_id) if attestation_in.case_id else None,
@@ -379,7 +379,7 @@ class PKIService:
                 attestation=attestation,
                 verifier_id=verifier_id,
                 status_code=PKIVerificationStatus.UNTRUSTED_KEY,
-                summary=f"The signing key '{key_id}' is not in Consolith's trusted PKI keystore.",
+                summary=f"The signing key '{key_id}' is not in CONVELINA's trusted PKI keystore.",
                 sig_valid=False,
                 doc_valid=False,
                 key_trusted=False,

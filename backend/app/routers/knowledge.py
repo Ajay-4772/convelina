@@ -20,7 +20,7 @@ from app.rag.schemas import (
     KnowledgeIngestionJobResponse
 )
 
-logger = logging.getLogger("consolith.knowledge.router")
+logger = logging.getLogger("convelina.knowledge.router")
 router = APIRouter(prefix="/api/v1/knowledge", tags=["Knowledge & Official Forms"])
 
 @router.get("/sources", response_model=KnowledgeSourceListResponse)

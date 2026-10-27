@@ -17,11 +17,12 @@
     - Account Settings: Crisply-inspired layout with personal info, residential address, parent details, account security, and GDPR-compliant account deletion modal with cascade data cleanup.
     - Admin Console: Protected management workspace featuring real-time operational telemetry (registered citizens, total uploads, conflicts detected, SHA-256 audit trail events), user account search/removal, and hash-chained audit log viewer.
     - Verification Lab: Integrated Ed25519 cryptographic attestation verification directly into conflict inspection workflow.
+- **Current Active State**: CONVELINA Rebranding & Product Identity Transformation Completed & Verified across UI, Landing, Auth, Backend, and Docker.
 - **Docker Stack**:
-  - `consolith-postgres`: PostgreSQL 16 Alpine, port 5432 (Healthy, migrations 001-009 applied)
-  - `consolith-qdrant`: Qdrant v1.11.0, port 6333/6334 (Healthy)
-  - `consolith-backend`: FastAPI Python 3.11 with cryptography Ed25519 + Tesseract 5.5.0 + Poppler + Qdrant client + Google Gemini SDK + ReportLab + python-docx, port 8000 (Healthy, connects via non-superuser `consolith_app`)
-  - `consolith-frontend`: Next.js 14 App Router, port 3000 (Operational with complete light-theme SaaS redesign)
+  - `convelina-postgres`: PostgreSQL 16 Alpine, port 5432 (Healthy, migrations 001-009 applied)
+  - `convelina-qdrant`: Qdrant v1.11.0, port 6333/6334 (Healthy)
+  - `convelina-backend`: FastAPI Python 3.11, port 8000 (Healthy, connects via non-superuser `consolith_app`)
+  - `convelina-frontend`: Next.js 14 App Router, port 3000 (Operational with complete CONVELINA branding)
 - **Database Status**:
   - Superuser: `postgres` (migrations/admin only)
   - Application role: `consolith_app` (non-superuser, least-privilege)

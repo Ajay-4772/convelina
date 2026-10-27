@@ -1,5 +1,5 @@
 """
-Consolith Cryptographic Service & Ed25519 PKI Primitives
+CONVELINA Cryptographic Service & Ed25519 PKI Primitives
 Provides deterministic document fingerprinting, canonical JSON payload serialization,
 Ed25519 keypair generation, digital signature creation, and mathematical verification.
 """

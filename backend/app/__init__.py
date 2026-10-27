@@ -1,1 +1,1 @@
-"""Consolith Backend Application Package."""
+"""CONVELINA Backend Application Package."""

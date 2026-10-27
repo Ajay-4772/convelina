@@ -1,6 +1,6 @@
-# Consolith Agent Operating Rules
+# CONVELINA Agent Operating Rules
 
-This file defines the mandatory operating guidelines for all AI agents working on Consolith.
+This file defines the mandatory operating guidelines for all AI agents working on CONVELINA.
 
 ## Core Rules
 

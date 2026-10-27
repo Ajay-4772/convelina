@@ -1,4 +1,4 @@
-"""Consolith - Citizen Case Submission & Tracking Router
+"""CONVELINA - Citizen Case Submission & Tracking Router
 
 Provides citizen-facing endpoints for:
 - Submitting an identified conflict and correction draft for verification.

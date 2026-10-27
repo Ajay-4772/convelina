@@ -1,4 +1,4 @@
-"""Consolith - Module 7 Correction Drafts Router
+"""CONVELINA - Module 7 Correction Drafts Router
 
 Provides secure endpoints for citizens to create, view, update, delete, regenerate,
 and download (PDF/DOCX) correction application drafts.
@@ -323,7 +323,7 @@ def delete_correction_draft(
 @router.get("/{draft_id}/download")
 def download_correction_draft(
     draft_id: UUID,
-    format: str = Query("pdf", regex="^(pdf|docx)$"),
+    format: str = Query("pdf", pattern="^(pdf|docx)$"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):

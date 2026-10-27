@@ -1,4 +1,4 @@
-"""Consolith - Officer Verification Workflow Router
+"""CONVELINA - Officer Verification Workflow Router
 
 Provides secure endpoints for authorized verification officers:
 - Access only assigned discrepancy cases.

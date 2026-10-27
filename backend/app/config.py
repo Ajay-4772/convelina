@@ -1,9 +1,10 @@
 import os
 from typing import Optional
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Consolith API"
+    PROJECT_NAME: str = "CONVELINA API"
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
     
@@ -35,11 +36,19 @@ class Settings(BaseSettings):
     # Fernet at-rest sensitive payload encryption key (derived or configured)
     ENCRYPTION_KEY: Optional[str] = "consolith_dev_fernet_secret_key_32_bytes_len="
     
+    # Resend Email Configuration for OTP Verification
+    RESEND_API_KEY: Optional[str] = None
+    RESEND_FROM_EMAIL: str = "onboarding@resend.dev"
+    EMAIL_OTP_EXPIRY_SECONDS: int = 300
+    EMAIL_OTP_RESEND_COOLDOWN_SECONDS: int = 60
+    EMAIL_OTP_MAX_ATTEMPTS: int = 5
+
     # CORS
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://frontend:3000",
+        "http://admin.localhost:3000",
     ]
 
     # Module 6 & 7: Google Gemini LLM & RAG Knowledge Base
@@ -53,6 +62,16 @@ class Settings(BaseSettings):
     RAG_MAX_CONTEXT_TOKENS: int = 4000
     RAG_SOURCE_MAX_AGE_DAYS: int = 365
 
+    @model_validator(mode="after")
+    def validate_production_security(self) -> "Settings":
+        if self.ENVIRONMENT.lower() == "production":
+            if self.DEBUG:
+                raise ValueError("Security violation: DEBUG must be set to False in production.")
+            if self.ENCRYPTION_KEY == "consolith_dev_fernet_secret_key_32_bytes_len=":
+                raise ValueError("Security violation: Default development ENCRYPTION_KEY is forbidden in production.")
+            if self.TEST_MODE_ALLOW_SIMULATED_TOKENS:
+                raise ValueError("Security violation: TEST_MODE_ALLOW_SIMULATED_TOKENS must be False in production.")
+        return self
 
     model_config = SettingsConfigDict(
         env_file=".env",

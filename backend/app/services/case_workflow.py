@@ -1,4 +1,4 @@
-"""Consolith - Module 8 Case Workflow State Machine
+"""CONVELINA - Module 8 Case Workflow State Machine
 
 Enforces strict, validated state transitions for verification cases.
 Permissible states:

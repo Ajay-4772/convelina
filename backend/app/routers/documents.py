@@ -18,7 +18,7 @@ from app.schemas.document import DocumentUploadResponse, DocumentResponse, Docum
 from app.ocr.engine import default_ocr_engine
 from app.ocr.parsers.factory import get_document_parser
 
-logger = logging.getLogger("consolith.documents")
+logger = logging.getLogger("convelina.documents")
 router = APIRouter(prefix="/api/v1/documents", tags=["Documents"])
 
 @router.post("/upload", response_model=DocumentUploadResponse, status_code=status.HTTP_201_CREATED)
@@ -42,13 +42,29 @@ async def upload_document(
     # 2. Sanitize filename
     safe_filename = sanitize_filename(file.filename or "uploaded_document")
 
-    # 3. Read uploaded bytes
+    # 3. Read uploaded bytes with bounded streaming to prevent memory-exhaustion DoS
     try:
-        content = await file.read()
+        max_bytes = settings.MAX_UPLOAD_SIZE_BYTES
+        chunk_size = 1024 * 1024  # 1 MB chunks
+        content_buffer = bytearray()
+        while True:
+            chunk = await file.read(chunk_size)
+            if not chunk:
+                break
+            content_buffer.extend(chunk)
+            if len(content_buffer) > max_bytes:
+                max_mb = max_bytes / (1024 * 1024)
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"File exceeds maximum allowed size of {max_mb:.1f} MB.",
+                )
+        content = bytes(content_buffer)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to read uploaded file stream."
+            detail="Failed to read uploaded file stream.",
         )
 
     # 4. Deep file validation: magic bytes, size, and corruption checks
