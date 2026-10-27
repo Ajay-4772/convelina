@@ -215,6 +215,50 @@ def create_report():
             run_cap.font.bold = True
             run_cap.font.color.rgb = RGBColor(0, 0, 0)
 
+    def setup_section_footer(section, is_roman=False):
+        section.top_margin = Inches(1)
+        section.bottom_margin = Inches(1)
+        section.left_margin = Inches(1)
+        section.right_margin = Inches(1)
+        section.header.is_linked_to_previous = False
+        section.footer.is_linked_to_previous = False
+
+        # Clean existing pgNumType in _sectPr to prevent duplicate or conflicting tags
+        sectPr = section._sectPr
+        for pnt in list(sectPr.findall(qn('w:pgNumType'))):
+            sectPr.remove(pnt)
+        pgNumType = OxmlElement('w:pgNumType')
+        pgNumType.set(qn('w:fmt'), 'lowerRoman' if is_roman else 'decimal')
+        pgNumType.set(qn('w:start'), '1')
+        sectPr.append(pgNumType)
+
+        # Clear existing paragraphs in footer
+        p_footer = section.footer.paragraphs[0]
+        p_footer.text = ""
+        p_footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        # Clean OpenXML PAGE field directly under w:p
+        fld = OxmlElement('w:fldSimple')
+        fld.set(qn('w:instr'), r'PAGE \* roman' if is_roman else 'PAGE')
+
+        r = OxmlElement('w:r')
+        rPr = OxmlElement('w:rPr')
+        rFonts = OxmlElement('w:rFonts')
+        rFonts.set(qn('w:ascii'), 'Times New Roman')
+        rFonts.set(qn('w:hAnsi'), 'Times New Roman')
+        rPr.append(rFonts)
+        sz = OxmlElement('w:sz')
+        sz.set(qn('w:val'), '22')  # 11 pt
+        rPr.append(sz)
+        r.append(rPr)
+
+        t = OxmlElement('w:t')
+        t.text = 'i' if is_roman else '1'
+        r.append(t)
+        fld.append(r)
+
+        p_footer._p.append(fld)
+
     # ==============================================================================
     # SECTION 1: TITLE PAGE (1 inch margins, no footer)
     # ==============================================================================
@@ -223,6 +267,9 @@ def create_report():
     sec_title.bottom_margin = Inches(1)
     sec_title.left_margin = Inches(1)
     sec_title.right_margin = Inches(1)
+    sec_title.footer.paragraphs[0].text = ""
+    for pnt in list(sec_title._sectPr.findall(qn('w:pgNumType'))):
+        sec_title._sectPr.remove(pnt)
 
     p_t1 = doc.add_paragraph()
     p_t1.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -314,30 +361,10 @@ def create_report():
     r_t12.font.size = Pt(11)
 
     # ==============================================================================
-    # SECTION 2: FRONT MATTER (lowerRoman: i - x)
+    # SECTION 2: FRONT MATTER (lowerRoman: i - x, 10 pages)
     # ==============================================================================
     sec_front = doc.add_section()
-    sec_front.top_margin = Inches(1)
-    sec_front.bottom_margin = Inches(1)
-    sec_front.left_margin = Inches(1)
-    sec_front.right_margin = Inches(1)
-    sec_front.header.is_linked_to_previous = False
-    sec_front.footer.is_linked_to_previous = False
-
-    p_front_footer = sec_front.footer.paragraphs[0]
-    p_front_footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run_f = p_front_footer.add_run()
-    run_f.font.name = 'Times New Roman'
-    run_f.font.size = Pt(11)
-    fld = OxmlElement('w:fldSimple')
-    fld.set(qn('w:instr'), 'PAGE')
-    run_f._r.append(fld)
-
-    sectPr_f = sec_front._sectPr
-    pgNumType_f = OxmlElement('w:pgNumType')
-    pgNumType_f.set(qn('w:fmt'), 'lowerRoman')
-    pgNumType_f.set(qn('w:start'), '1')
-    sectPr_f.append(pgNumType_f)
+    setup_section_footer(sec_front, is_roman=True)
 
     # Page i: Bonafide Certificate
     p_b1 = doc.add_paragraph()
@@ -819,27 +846,7 @@ def create_report():
     # SECTION 3: CHAPTERS 1 TO 7 + REFERENCES (decimal 1 to ~50)
     # ==============================================================================
     sec_body = doc.add_section()
-    sec_body.top_margin = Inches(1)
-    sec_body.bottom_margin = Inches(1)
-    sec_body.left_margin = Inches(1)
-    sec_body.right_margin = Inches(1)
-    sec_body.header.is_linked_to_previous = False
-    sec_body.footer.is_linked_to_previous = False
-
-    p_body_footer = sec_body.footer.paragraphs[0]
-    p_body_footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run_bf = p_body_footer.add_run()
-    run_bf.font.name = 'Times New Roman'
-    run_bf.font.size = Pt(11)
-    fld_b = OxmlElement('w:fldSimple')
-    fld_b.set(qn('w:instr'), 'PAGE')
-    run_bf._r.append(fld_b)
-
-    sectPr_b = sec_body._sectPr
-    pgNumType_b = OxmlElement('w:pgNumType')
-    pgNumType_b.set(qn('w:fmt'), 'decimal')
-    pgNumType_b.set(qn('w:start'), '1')
-    sectPr_b.append(pgNumType_b)
+    setup_section_footer(sec_body, is_roman=False)
 
     # --------------------------------------------------------------------------
     # CHAPTER 1: INTRODUCTION
@@ -1760,8 +1767,42 @@ def create_report():
         add_body(ref, space_after=6, line_spacing=1.3)
 
     output_docx = "CONVELINA_Project_Report.docx"
+    output_pdf = "CONVELINA_Project_Report.pdf"
     doc.save(output_docx)
     print(f"Report built and saved to: {output_docx}")
+
+    # Synchronize Word COM native properties and generate PDF
+    try:
+        import win32com.client
+        word = win32com.client.Dispatch("Word.Application")
+        word.Visible = False
+        docx_abs = os.path.abspath(output_docx)
+        pdf_abs = os.path.abspath(output_pdf)
+        wd_doc = word.Documents.Open(docx_abs)
+        
+        # Section 2: Lowercase Roman (i, ii, iii... x)
+        wd_doc.Sections(2).Footers(1).PageNumbers.NumberStyle = 2  # wdPageNumberStyleLowercaseRoman
+        wd_doc.Sections(2).Footers(1).PageNumbers.RestartNumberingAtSection = True
+        wd_doc.Sections(2).Footers(1).PageNumbers.StartingNumber = 1
+
+        # Section 3: Arabic Decimal (1, 2, 3...)
+        wd_doc.Sections(3).Footers(1).PageNumbers.NumberStyle = 0  # wdPageNumberStyleArabic
+        wd_doc.Sections(3).Footers(1).PageNumbers.RestartNumberingAtSection = True
+        wd_doc.Sections(3).Footers(1).PageNumbers.StartingNumber = 1
+
+        # Update all fields in document & footers
+        wd_doc.Fields.Update()
+        for s in wd_doc.Sections:
+            s.Footers(1).Range.Fields.Update()
+
+        wd_doc.Save()
+        print(f"Native Word document saved: {docx_abs}")
+        wd_doc.SaveAs(pdf_abs, FileFormat=17)
+        print(f"PDF successfully exported: {pdf_abs}")
+        wd_doc.Close()
+        word.Quit()
+    except Exception as e:
+        print(f"Word COM sync notice: {e}")
 
 if __name__ == "__main__":
     create_report()
