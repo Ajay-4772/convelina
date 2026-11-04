@@ -1,11 +1,13 @@
 import re
 from typing import Dict, Any, Optional
 from app.ocr.parsers.base import BaseDocumentParser
+from app.core.validator import validate_verhoeff
 
 class AadhaarParser(BaseDocumentParser):
     """
     Parser for Aadhaar Cards following Aadhaar Act privacy standards:
     - Never retains plaintext 12-digit Aadhaar number.
+    - Validates UIDAI Verhoeff checksum if unmasked 12 digits are visible.
     - Masks to XXXX-XXXX-1234.
     - Extracts Name, DOB, Gender, and relation fields.
     """
@@ -17,6 +19,9 @@ class AadhaarParser(BaseDocumentParser):
         aadhaar_pattern = r"\b(\d{4})[\s-]?(\d{4})[\s-]?(\d{4})\b"
         match = re.search(aadhaar_pattern, raw_text)
         if match:
+            # Ephemeral checksum validation prior to discarding unmasked digits
+            full_digits = match.group(1) + match.group(2) + match.group(3)
+            fields["verhoeff_valid"] = validate_verhoeff(full_digits)
             # Mask first 8 digits, keep only last 4
             last_4 = match.group(3)
             masked_id = f"XXXX-XXXX-{last_4}"
@@ -29,6 +34,7 @@ class AadhaarParser(BaseDocumentParser):
                 last_4 = m_match.group(1)
                 masked_id = f"XXXX-XXXX-{last_4}"
                 fields["aadhaar_last_4"] = last_4
+                fields["verhoeff_valid"] = None
 
         # 2. Date of Birth / Year of Birth extraction
         dob_match = re.search(r"(?:DOB|Date of Birth|जन्म तारीख)[:\s]*([0-3]?\d[/-][0-1]?\d[/-]\d{4})", raw_text, re.IGNORECASE)

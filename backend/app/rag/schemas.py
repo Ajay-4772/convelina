@@ -1,5 +1,20 @@
+from enum import Enum
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, ConfigDict, Field
+
+# ---------------------------------------------------------------------------
+# 0. Verification Status Taxonomy (Phase P2B)
+# ---------------------------------------------------------------------------
+
+class SourceVerificationStatus(str, Enum):
+    VERIFIED = "verified"
+    NEEDS_REVIEW = "needs_review"
+    OUTDATED = "outdated"
+    RETIRED = "retired"
+
+class UpdateVerificationStatusRequest(BaseModel):
+    verification_status: SourceVerificationStatus
+    review_notes: Optional[str] = None
 
 # ---------------------------------------------------------------------------
 # 1. Knowledge Sources
@@ -107,6 +122,8 @@ class GroundedAnswer(BaseModel):
     citations: List[SourceCitation] = Field(default_factory=list)
     requires_clarification: bool = False
     confidence: str = Field("supported", description="supported, partially_supported, or insufficient_evidence")
+    is_fallback: bool = False
+    provider_status: str = Field("operational", description="operational, fallback_offline, or insufficient_evidence")
 
 # ---------------------------------------------------------------------------
 # 5. Assistant Conversations & Messages
@@ -161,3 +178,58 @@ class MessageHistoryItem(BaseModel):
 class MessageListResponse(BaseModel):
     total: int
     messages: List[MessageHistoryItem]
+
+# ---------------------------------------------------------------------------
+# 6. Resolution Context Grounding & Workflow Mapping (Phase P2A & P2B)
+# ---------------------------------------------------------------------------
+
+class MappedFormRef(BaseModel):
+    form_id: str
+    form_name: str
+    issuing_authority: str
+    official_download_url: str
+    purpose: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+class ResolutionProcedureMapping(BaseModel):
+    target_document_category: str
+    authority_name: str
+    authority_portal: str
+    procedure_name: str
+    procedure_type: str  # "minor_correction", "major_name_change", "statutory_linkage", "manual_review"
+    prescribed_forms: List[MappedFormRef] = Field(default_factory=list)
+    document_checklist: List[str] = Field(default_factory=list)
+    submission_channel: str  # "online_portal", "physical_center", "joint_employer_physical", "court_gazette"
+    statutory_rules: List[str] = Field(default_factory=list)
+    official_fee_guidance: Optional[str] = None
+    sla_guidance: Optional[str] = None
+    action_priority: str = "medium"  # "high", "medium", "low"
+
+    model_config = ConfigDict(from_attributes=True)
+
+class ResolutionContext(BaseModel):
+    conflict_id: str
+    user_id: str
+    field_name: str
+    conflict_type: str
+    severity: str
+    status: str
+    document_types: List[str] = Field(default_factory=list)
+    document_ids: List[str] = Field(default_factory=list)
+    value_a: str = ""
+    value_b: str = ""
+    deterministic_classification: str
+    overall_classification: str
+    confidence_score: float = 1.0
+    requires_manual_review: bool = False
+    possible_causes: List[str] = Field(default_factory=list)
+    recommended_action: Optional[str] = None
+    evidence: List[str] = Field(default_factory=list)
+    ocr_quality_warning: Optional[str] = None
+    non_latin_warning: Optional[str] = None
+    statutory_disclaimer: str = "AUTOMATED COMPARISON RESULT • NOT OFFICIAL GOVERNMENT VERIFICATION"
+    resolution_mapping: Optional[ResolutionProcedureMapping] = None
+
+    model_config = ConfigDict(from_attributes=True)
+

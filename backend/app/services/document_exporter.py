@@ -10,14 +10,6 @@ Features:
 import io
 import re
 from typing import Optional
-from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
-from reportlab.lib.units import inch
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable, Table, TableStyle
-import docx
-from docx.shared import Inches, Pt, RGBColor
-from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 DRAFT_WATERMARK_TEXT = (
     "AI-GENERATED DRAFT — REVIEW ALL INFORMATION BEFORE SUBMISSION"
@@ -30,6 +22,15 @@ class DocumentExporter:
     @staticmethod
     def export_pdf(title: str, content: str, draft_id: Optional[str] = None) -> bytes:
         """Generates a professionally formatted PDF document from draft content."""
+        try:
+            from reportlab.lib.pagesizes import letter
+            from reportlab.lib import colors
+            from reportlab.lib.units import inch
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable, Table, TableStyle
+        except ImportError:
+            raise RuntimeError("ReportLab is required for PDF export. Please install reportlab.")
+
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(
             buffer,
@@ -135,6 +136,13 @@ class DocumentExporter:
     @staticmethod
     def export_docx(title: str, content: str, draft_id: Optional[str] = None) -> bytes:
         """Generates a clean DOCX document from draft content."""
+        try:
+            import docx
+            from docx.shared import Inches, Pt, RGBColor
+            from docx.enum.text import WD_ALIGN_PARAGRAPH
+        except ImportError:
+            raise RuntimeError("python-docx is required for DOCX export. Please install python-docx.")
+
         doc = docx.Document()
 
         # Set page margins to 1 inch
@@ -201,6 +209,7 @@ class DocumentExporter:
 
 def _add_formatted_runs(paragraph, text: str):
     """Helper to highlight bracketed placeholders [Placeholder] in red bold."""
+    from docx.shared import Pt, RGBColor
     pattern = re.compile(r"(\[[^\]]+\])")
     parts = pattern.split(text)
     for part in parts:

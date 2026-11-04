@@ -136,7 +136,7 @@ export default function SignUpPage() {
       </div>
 
       {/* Main Registration Form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
         <div>
           <label className="block text-xs font-medium text-zinc-700 mb-1">Official Email Address</label>
           <input

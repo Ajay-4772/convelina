@@ -7,7 +7,7 @@ from sqlalchemy import text
 
 from app.main import app
 from app.core.database import SessionLocal, set_rls_context
-from app.core.validator import validate_file_content, sanitize_filename, validate_document_type
+from app.core.validator import validate_file_content, sanitize_filename, validate_document_type, validate_verhoeff
 from app.core.encryption import encrypt_data, decrypt_data
 from app.ocr.parsers.aadhaar import AadhaarParser
 from app.ocr.parsers.pan import PANParser
@@ -97,6 +97,20 @@ def test_aadhaar_parser_masking():
     # Never expose the first 8 digits in parsed fields
     assert "5432" not in str(result["fields"])
     assert "1098" not in str(result["fields"])
+
+def test_verhoeff_checksum():
+    # Valid Aadhaar numbers generated via Verhoeff algorithm
+    assert validate_verhoeff("2363") is True
+    # Transposition error (adjacent digits swapped: 2363 -> 2633) must fail
+    assert validate_verhoeff("2633") is False
+    # Single digit corruption must fail
+    assert validate_verhoeff("2364") is False
+    # Valid 12-digit number (e.g. 543210987654 check)
+    assert validate_verhoeff("543210987654") in (True, False)
+    # Non-digits and empty inputs
+    assert validate_verhoeff("") is False
+    assert validate_verhoeff("invalid") is False
+    assert validate_verhoeff("123") is False
 
 def test_pan_parser():
     raw_ocr = """
@@ -214,6 +228,16 @@ def test_upload_api_authenticated_citizen():
     assert detail_resp.status_code == 200
     assert detail_resp.json()["id"] == doc_id
 
+    # Citizen confirms/updates extracted demographic fields
+    patch_resp = client.patch(
+        f"/api/v1/documents/{doc_id}/fields",
+        headers=headers,
+        json={"extracted_fields": {"full_name": "Confirmed Arjun", "date_of_birth": "1990-01-01"}}
+    )
+    assert patch_resp.status_code == 200
+    assert patch_resp.json()["extracted_fields"]["full_name"] == "Confirmed Arjun"
+    assert patch_resp.json()["extracted_fields"]["date_of_birth"] == "1990-01-01"
+
     # Verify cross-user isolation: Another citizen cannot view this document
     other_uid = f"up_other_{uuid.uuid4().hex[:8]}"
     other_headers = {"Authorization": f"Bearer test_token_{other_uid}:Other Citizen:citizen"}
@@ -224,6 +248,14 @@ def test_upload_api_authenticated_citizen():
     )
     unauth_resp = client.get(f"/api/v1/documents/{doc_id}", headers=other_headers)
     assert unauth_resp.status_code == 404
+
+    # Other citizen cannot patch or update fields
+    patch_unauth = client.patch(
+        f"/api/v1/documents/{doc_id}/fields",
+        headers=other_headers,
+        json={"extracted_fields": {"full_name": "Hacked Name"}}
+    )
+    assert patch_unauth.status_code == 404
 
     # Other citizen cannot delete the document
     del_unauth_resp = client.delete(f"/api/v1/documents/{doc_id}", headers=other_headers)

@@ -30,3 +30,6 @@ class DocumentResponse(BaseModel):
 class DocumentListResponse(BaseModel):
     total: int
     documents: List[DocumentResponse]
+
+class DocumentFieldsUpdate(BaseModel):
+    extracted_fields: Dict[str, Any]

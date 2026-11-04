@@ -12,7 +12,7 @@ class User(Base):
     firebase_uid = Column(String(128), unique=True, nullable=False, index=True)
     email = Column(String(255), nullable=False)
     full_name = Column(String(255), nullable=False)
-    role = Column(String(20), nullable=False, default="citizen")
+    role = Column(String(20), nullable=False, default="user")
     phone_number = Column(String(30), nullable=True)
     date_of_birth = Column(String(30), nullable=True)
     address = Column(Text, nullable=True)

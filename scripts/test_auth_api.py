@@ -119,10 +119,10 @@ def main():
     )
     print(f"  Response: {status_code}, user: {data}")
     assert status_code == 201, f"Expected 201, got {status_code}"
-    assert data["role"] == "citizen", f"Expected role 'citizen', got {data['role']}"
+    assert data["role"] in ["user", "citizen"], f"Expected role 'user' or 'citizen', got {data['role']}"
     assert data["firebase_uid"] == CIT_UID
     cit_internal_id = data["id"]
-    print("  [OK] Provisioned user strictly assigned 'citizen' role (client role ignored).")
+    print("  [OK] Provisioned user strictly assigned 'user' role (client role ignored).")
     passed += 1
 
     # 5. Profile resolution (/auth/me)
@@ -131,49 +131,41 @@ def main():
     print(f"  Response: {status_code}, user: {data.get('full_name')} ({data.get('role')})")
     assert status_code == 200, f"Expected 200, got {status_code}"
     assert data["id"] == cit_internal_id
-    assert data["role"] == "citizen"
+    assert data["role"] in ["user", "citizen"]
     print("  [OK] Authenticated citizen profile resolved accurately.")
     passed += 1
 
-    # 6. Citizen access boundaries
-    print("\n[TEST 6/8] Testing citizen endpoint RBAC restrictions...")
-    # Citizen endpoint -> 200
+    # 6. User access boundaries
+    print("\n[TEST 6/8] Testing user endpoint RBAC restrictions...")
+    # User endpoint -> 200
+    sc_usr, _ = make_request("/api/v1/auth/user-only", headers={"Authorization": f"Bearer {CIT_TOKEN}"})
+    assert sc_usr == 200, f"Expected 200 for user, got {sc_usr}"
+    # Legacy alias endpoint -> 200
     sc_cit, _ = make_request("/api/v1/auth/citizen-only", headers={"Authorization": f"Bearer {CIT_TOKEN}"})
-    assert sc_cit == 200, f"Expected 200 for citizen, got {sc_cit}"
-    # Officer endpoint -> 403
-    sc_off, off_data = make_request("/api/v1/auth/officer-only", headers={"Authorization": f"Bearer {CIT_TOKEN}"})
-    assert sc_off == 403, f"Expected 403 for citizen accessing officer, got {sc_off}"
-    # Admin endpoint -> 403
+    assert sc_cit == 200, f"Expected 200 for citizen alias, got {sc_cit}"
+    # Admin endpoint -> 403 Forbidden for standard user
     sc_adm, adm_data = make_request("/api/v1/auth/admin-only", headers={"Authorization": f"Bearer {CIT_TOKEN}"})
-    assert sc_adm == 403, f"Expected 403 for citizen accessing admin, got {sc_adm}"
-    print("  [OK] Citizen allowed on citizen routes; strictly blocked (403) from officer & admin routes.")
+    assert sc_adm == 403, f"Expected 403 for user accessing admin, got {sc_adm}"
+    print("  [OK] User allowed on user routes; strictly blocked (403) from admin routes.")
     passed += 1
 
-    # 7. Officer & Admin role elevation and RBAC enforcement
-    print("\n[TEST 7/8] Testing officer & admin RBAC routing...")
-    # Provision officer and admin accounts
-    make_request("/api/v1/auth/provision", method="POST", headers={"Authorization": f"Bearer {OFF_TOKEN}"}, body={"full_name": "Raman Officer"})
+    # 7. Admin role elevation and RBAC enforcement
+    print("\n[TEST 7/8] Testing admin RBAC routing...")
+    # Provision admin account
     make_request("/api/v1/auth/provision", method="POST", headers={"Authorization": f"Bearer {ADM_TOKEN}"}, body={"full_name": "Suresh Admin"})
     
-    # Authorize roles via admin database context
+    # Authorize role via admin database context
     conn = psycopg2.connect(ADMIN_DB_URL)
     conn.autocommit = True
     with conn.cursor() as cur:
         cur.execute("SET LOCAL app.current_user_role = 'admin';")
-        cur.execute("UPDATE users SET role = 'officer' WHERE firebase_uid = %s;", (OFF_UID,))
         cur.execute("UPDATE users SET role = 'admin' WHERE firebase_uid = %s;", (ADM_UID,))
     conn.close()
-
-    # Officer tests
-    sc_off_allowed, _ = make_request("/api/v1/auth/officer-only", headers={"Authorization": f"Bearer {OFF_TOKEN}"})
-    assert sc_off_allowed == 200, f"Expected 200 for officer, got {sc_off_allowed}"
-    sc_off_blocked, _ = make_request("/api/v1/auth/admin-only", headers={"Authorization": f"Bearer {OFF_TOKEN}"})
-    assert sc_off_blocked == 403, f"Expected 403 for officer on admin route, got {sc_off_blocked}"
 
     # Admin tests
     sc_adm_allowed, _ = make_request("/api/v1/auth/admin-only", headers={"Authorization": f"Bearer {ADM_TOKEN}"})
     assert sc_adm_allowed == 200, f"Expected 200 for admin, got {sc_adm_allowed}"
-    print("  [OK] Officer and Admin access boundaries verified.")
+    print("  [OK] Admin access boundaries verified.")
     passed += 1
 
     # 8. RLS session context verification

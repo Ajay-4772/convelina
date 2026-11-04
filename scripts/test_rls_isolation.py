@@ -44,15 +44,14 @@ APP_DB_URL, ADMIN_DB_URL = get_db_urls()
 # Synthetic test UUIDs
 CITIZEN_A_ID = str(uuid.uuid4())
 CITIZEN_B_ID = str(uuid.uuid4())
-OFFICER_1_ID = str(uuid.uuid4())
-OFFICER_2_ID = str(uuid.uuid4())
 ADMIN_ID = str(uuid.uuid4())
 
 DOC_A_ID = str(uuid.uuid4())
 DOC_B_ID = str(uuid.uuid4())
-CASE_1_ID = str(uuid.uuid4())
-CASE_2_ID = str(uuid.uuid4())
 AUDIT_ID = str(uuid.uuid4())
+KEY_ID = str(uuid.uuid4())
+ATTESTATION_A_ID = str(uuid.uuid4())
+ATTESTATION_B_ID = str(uuid.uuid4())
 
 def seed_synthetic_fixtures():
     print("[SETUP] Seeding synthetic test fixtures via administrative connection...")
@@ -61,6 +60,9 @@ def seed_synthetic_fixtures():
     with conn.cursor() as cur:
         # Disable trigger during fixture cleanup via superuser admin session
         cur.execute("ALTER TABLE audit_log DISABLE TRIGGER trg_block_audit_log_mutation;")
+        cur.execute("DELETE FROM attestation_verifications;")
+        cur.execute("DELETE FROM document_attestations;")
+        cur.execute("DELETE FROM signing_keys;")
         cur.execute("DELETE FROM digital_signatures;")
         cur.execute("DELETE FROM case_evidence;")
         cur.execute("DELETE FROM cases;")
@@ -70,15 +72,13 @@ def seed_synthetic_fixtures():
         cur.execute("DELETE FROM users;")
         cur.execute("ALTER TABLE audit_log ENABLE TRIGGER trg_block_audit_log_mutation;")
 
-        # Insert users
+        # Insert users under 2-role model ('user' and 'admin')
         cur.execute("""
             INSERT INTO users (id, firebase_uid, email, full_name, role) VALUES
-            (%s, 'fb_cit_a', 'citizen.a@synthetic.test', 'Ajay Kumar', 'citizen'),
-            (%s, 'fb_cit_b', 'citizen.b@synthetic.test', 'Rohan Sharma', 'citizen'),
-            (%s, 'fb_off_1', 'officer.1@synthetic.test', 'Officer Raman', 'officer'),
-            (%s, 'fb_off_2', 'officer.2@synthetic.test', 'Officer Priya', 'officer'),
+            (%s, 'fb_cit_a', 'citizen.a@synthetic.test', 'Ajay Kumar', 'user'),
+            (%s, 'fb_cit_b', 'citizen.b@synthetic.test', 'Rohan Sharma', 'user'),
             (%s, 'fb_admin', 'admin.1@synthetic.test', 'Admin Suresh', 'admin');
-        """, (CITIZEN_A_ID, CITIZEN_B_ID, OFFICER_1_ID, OFFICER_2_ID, ADMIN_ID))
+        """, (CITIZEN_A_ID, CITIZEN_B_ID, ADMIN_ID))
 
         # Insert documents
         cur.execute("""
@@ -87,12 +87,19 @@ def seed_synthetic_fixtures():
             (%s, %s, 'pan', '/storage/docs/b_pan.pdf', 'hash_b_456', 'ABCDE1234F', '{"name": "Rohan Sharma"}'::jsonb);
         """, (DOC_A_ID, CITIZEN_A_ID, DOC_B_ID, CITIZEN_B_ID))
 
-        # Insert cases
+        # Insert signing key
         cur.execute("""
-            INSERT INTO cases (id, citizen_id, assigned_officer_id, title, status) VALUES
-            (%s, %s, %s, 'Ajay Father Name Correction', 'under_review'),
-            (%s, %s, %s, 'Rohan DOB Verification', 'under_review');
-        """, (CASE_1_ID, CITIZEN_A_ID, OFFICER_1_ID, CASE_2_ID, CITIZEN_B_ID, OFFICER_2_ID))
+            INSERT INTO signing_keys (id, key_id, public_key, fingerprint, algorithm, purpose, status) VALUES
+            (%s, 'test-key-1', 'pub_test_123', 'fp_test_123', 'Ed25519', 'document_attestation', 'active');
+        """, (KEY_ID,))
+
+        # Insert document attestations
+        cur.execute("""
+            INSERT INTO document_attestations (id, document_id, citizen_id, officer_id, document_type, document_fingerprint, signing_key_id, key_id, canonical_payload, signature, algorithm, status) VALUES
+            (%s, %s, %s, %s, 'aadhaar', '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef', %s, 'test-key-1', '{"test": 1}'::jsonb, 'sig_a', 'Ed25519', 'valid'),
+            (%s, %s, %s, %s, 'pan', 'fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210', %s, 'test-key-1', '{"test": 2}'::jsonb, 'sig_b', 'Ed25519', 'valid');
+        """, (ATTESTATION_A_ID, DOC_A_ID, CITIZEN_A_ID, ADMIN_ID, KEY_ID,
+              ATTESTATION_B_ID, DOC_B_ID, CITIZEN_B_ID, ADMIN_ID, KEY_ID))
 
         # Insert audit log entry
         cur.execute("""
@@ -196,32 +203,31 @@ def run_rls_security_tests():
             print("  [PASS] Privilege escalation strictly prevented by database trigger.")
             passed_tests += 1
 
-        # TEST 6: Officer Case Scoping (Assigned vs Unassigned)
-        print("\n[TEST 6/9] Testing officer case & document scoping...")
+        # TEST 6: User Attestation RLS Isolation & Deprecated Role Default-Deny
+        print("\n[TEST 6/9] Testing user attestation isolation & deprecated role rejection...")
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(f"SET LOCAL app.current_user_id = '{OFFICER_1_ID}';")
+            # 1. User A can see their own attestation
+            cur.execute(f"SET LOCAL app.current_user_id = '{CITIZEN_A_ID}';")
+            cur.execute("SET LOCAL app.current_user_role = 'user';")
+            cur.execute("SELECT id, citizen_id FROM document_attestations;")
+            attestations_a = cur.fetchall()
+            print(f"  User A queries attestations: found {len(attestations_a)} attestation(s)")
+            assert len(attestations_a) == 1, f"User A must see only their own attestation, found {len(attestations_a)}"
+            assert str(attestations_a[0]['id']) == ATTESTATION_A_ID, "User A saw incorrect attestation"
+
+            # 2. User A cannot see User B's attestation
+            cur.execute(f"SELECT * FROM document_attestations WHERE id = '{ATTESTATION_B_ID}';")
+            unauthorized_att = cur.fetchall()
+            assert len(unauthorized_att) == 0, "User A must NOT see User B's attestation"
+
+            # 3. Deprecated role 'officer' has 0 permissions on attestations (default-deny)
+            cur.execute(f"SET LOCAL app.current_user_id = '{CITIZEN_A_ID}';")
             cur.execute("SET LOCAL app.current_user_role = 'officer';")
-            
-            # Cases check
-            cur.execute("SELECT id, title FROM cases;")
-            cases = cur.fetchall()
-            print(f"  Officer 1 queries cases: found {len(cases)} case(s)")
-            assert len(cases) == 1, f"Officer 1 must see only their assigned case, found {len(cases)}"
-            assert str(cases[0]['id']) == CASE_1_ID, "Officer 1 saw incorrect case"
-            
-            # Query unassigned case
-            cur.execute(f"SELECT * FROM cases WHERE id = '{CASE_2_ID}';")
-            unassigned_cases = cur.fetchall()
-            assert len(unassigned_cases) == 0, "Officer 1 must NOT see Case 2 (assigned to Officer 2)"
-            
-            # Documents check: Officer 1 can see Citizen A's doc (Case 1 assigned to Officer 1), but NOT Citizen B's doc
-            cur.execute("SELECT id, user_id FROM documents;")
-            docs = cur.fetchall()
-            print(f"  Officer 1 queries documents: found {len(docs)} document(s)")
-            assert len(docs) == 1, "Officer 1 must see only documents associated with their assigned case citizen"
-            assert str(docs[0]['id']) == DOC_A_ID, "Officer 1 saw incorrect document"
-            
-            print("  [PASS] Officer strictly scoped to assigned cases and associated citizen documents.")
+            cur.execute("SELECT id FROM document_attestations;")
+            deprecated_role_att = cur.fetchall()
+            assert len(deprecated_role_att) == 0, "Deprecated role 'officer' must have 0 rows (default-deny)"
+
+            print("  [PASS] User attestation RLS isolation and deprecated role rejection verified.")
             passed_tests += 1
 
         # TEST 7: Admin Visibility Policy
@@ -238,9 +244,8 @@ def run_rls_security_tests():
             case_count = cur.fetchone()['count']
             
             print(f"  Admin sees {user_count} users, {doc_count} documents, {case_count} cases")
-            assert user_count == 5, f"Admin must see all 5 users, got {user_count}"
+            assert user_count == 3, f"Admin must see all 3 users, got {user_count}"
             assert doc_count == 2, f"Admin must see all 2 documents, got {doc_count}"
-            assert case_count == 2, f"Admin must see all 2 cases, got {case_count}"
             print("  [PASS] Admin has authorized full visibility across system entities.")
             passed_tests += 1
 

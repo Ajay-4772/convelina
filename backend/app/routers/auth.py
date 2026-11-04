@@ -13,8 +13,8 @@ from app.core.firebase import is_firebase_configured, get_firebase_init_error
 from app.dependencies.auth import (
     get_token_claims,
     require_authenticated_user,
+    require_user,
     require_citizen,
-    require_officer,
     require_admin,
 )
 from app.models.user import User, EmailOTP
@@ -48,6 +48,17 @@ def validate_email_address(email: str) -> None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Please provide a valid email address.",
+        )
+
+
+def validate_gmail_address(email: str) -> None:
+    """Validate that the email address is a valid Gmail address (@gmail.com or @googlemail.com)."""
+    validate_email_address(email)
+    clean = email.strip().lower()
+    if not (clean.endswith("@gmail.com") or clean.endswith("@googlemail.com")):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only official Gmail accounts (@gmail.com) are permitted for registration.",
         )
 
 
@@ -131,13 +142,15 @@ def verify_email_otp(req: VerifyOTPRequest, db: Session = Depends(get_db)):
     email = req.email.strip().lower()
     now = datetime.now(timezone.utc)
 
-    # In test mode or simulated OTP 123456
-    if req.otp_code == "123456" and (email.endswith("@gmail.com") or ".test" in email or ".in" in email or "@example.com" in email):
+    # In test mode with simulated OTP 123456 (strictly forbidden in production)
+    if settings.TEST_MODE_ALLOW_SIMULATED_TOKENS and req.otp_code == "123456" and (
+        email.endswith("@gmail.com") or ".test" in email or ".in" in email or "@example.com" in email
+    ):
         token = secrets.token_hex(16)
         return VerifyOTPResponse(
             success=True,
             verified=True,
-            message="Email verified successfully.",
+            message="Email verified successfully (Test Mode).",
             verification_token=token,
         )
 
@@ -404,21 +417,21 @@ def get_user_activity(
 
 
 # Role-specific verification routes
-@router.get("/citizen-only")
-def citizen_only_endpoint(current_user: User = Depends(require_citizen)):
-    """Protected endpoint accessible only to users with the 'citizen' role."""
+@router.get("/user-only")
+def user_only_endpoint(current_user: User = Depends(require_user)):
+    """Protected endpoint accessible to users with the 'user' role."""
     return {
-        "message": f"Welcome citizen {current_user.full_name}",
+        "message": f"Welcome user {current_user.full_name}",
         "user_id": str(current_user.id),
         "role": current_user.role,
     }
 
 
-@router.get("/officer-only")
-def officer_only_endpoint(current_user: User = Depends(require_officer)):
-    """Protected endpoint accessible only to verification officers."""
+@router.get("/citizen-only")
+def citizen_only_endpoint(current_user: User = Depends(require_user)):
+    """Transitional backward-compatible alias for /user-only."""
     return {
-        "message": f"Welcome officer {current_user.full_name}",
+        "message": f"Welcome user {current_user.full_name}",
         "user_id": str(current_user.id),
         "role": current_user.role,
     }

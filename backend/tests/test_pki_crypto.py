@@ -108,7 +108,7 @@ class TestCryptographicPrimitives:
 
 class TestPKILifecycleAndTamperDetection:
     def test_dev_signing_key_provider(self):
-        key_id = "unit-test-officer-key"
+        key_id = "unit-test-admin-key"
         priv, pub_b64, fp = DevSigningKeyProvider.create_or_get_default_dev_key(key_id)
 
         assert priv is not None
@@ -122,7 +122,7 @@ class TestPKILifecycleAndTamperDetection:
 
     def test_historical_signature_validity_after_key_rotation(self):
         """
-        Critical security test: Rotating an officer key must NOT invalidate
+        Critical security test: Rotating an administrative signing key must NOT invalidate
         historical signatures that were properly signed with the old key.
         """
         # Key 1
@@ -135,7 +135,7 @@ class TestPKILifecycleAndTamperDetection:
 
         historical_payload = {
             "attestation_id": "historical-1",
-            "key_id": "officer-key-v1",
+            "key_id": "admin-key-v1",
             "status": "approved",
         }
         historical_sig = Ed25519CryptoManager.sign_payload(priv1, historical_payload)
@@ -146,7 +146,7 @@ class TestPKILifecycleAndTamperDetection:
         # New payload signed with key2
         new_payload = {
             "attestation_id": "new-2",
-            "key_id": "officer-key-v2",
+            "key_id": "admin-key-v2",
             "status": "approved",
         }
         new_sig = Ed25519CryptoManager.sign_payload(priv2, new_payload)

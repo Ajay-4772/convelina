@@ -18,13 +18,18 @@ class BaseEmbeddingService:
         raise NotImplementedError
 
 
-class DeterministicBGEEmbeddingService(BaseEmbeddingService):
+class DeterministicHashEmbeddingService(BaseEmbeddingService):
     """
-    Deterministic 1024-dimensional semantic embedding service.
-    Produces repeatable, L2-normalized 1024-dim dense vectors.
-    Token-weighted hash projections ensure related procedural terms (e.g. 'aadhaar', 'update', 'correction')
-    produce high cosine similarity while unrelated terms produce low similarity.
-    Provides fast, deterministic execution on CPU-only infrastructure and isolated testing.
+    Deterministic 1024-dimensional token-weighted hash-projection embedding service.
+
+    NOTE: This is NOT a neural transformer model (such as BAAI/bge-m3).
+    It is a lightweight, CPU-deterministic unigram hash projection algorithm designed
+    for ultra-low-memory environments (0 MB external weights, < 1 MB RAM).
+
+    Characteristics & Trade-offs:
+    - Matches identical or overlapping keywords with high positive cosine similarity (> 0.70).
+    - Produces negative or near-zero cosine similarity (< 0.0) on semantic synonyms that share no common tokens.
+    - Yields exact reproducibility across restarts with zero external network or model downloads.
     """
 
     def __init__(self, dimension: int = VECTOR_DIMENSION):
@@ -80,6 +85,10 @@ class DeterministicBGEEmbeddingService(BaseEmbeddingService):
         return [self._embed_single(t) for t in texts]
 
 
+# Backward-compatible alias for existing tests and callers
+DeterministicBGEEmbeddingService = DeterministicHashEmbeddingService
+
+
 def get_embedding_service() -> BaseEmbeddingService:
     """Factory returning configured embedding service."""
-    return DeterministicBGEEmbeddingService(dimension=VECTOR_DIMENSION)
+    return DeterministicHashEmbeddingService(dimension=VECTOR_DIMENSION)

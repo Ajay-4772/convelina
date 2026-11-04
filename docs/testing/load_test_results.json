@@ -1,0 +1,126 @@
+{
+  "timestamp": "2026-09-30T18:40:39.739707",
+  "target_url": "http://127.0.0.1:8000",
+  "stages": [
+    {
+      "stage": "Baseline Load",
+      "concurrency": 1,
+      "total_requests": 60,
+      "successful_requests": 60,
+      "failed_requests": 0,
+      "error_rate_pct": 0.0,
+      "duration_sec": 2.59,
+      "throughput_rps": 23.15,
+      "latency_ms": {
+        "min": 12.78,
+        "avg": 43.13,
+        "p50": 34.28,
+        "p90": 87.48,
+        "p95": 98.73,
+        "p99": 147.39,
+        "max": 147.39
+      }
+    },
+    {
+      "stage": "Moderate Load",
+      "concurrency": 5,
+      "total_requests": 200,
+      "successful_requests": 200,
+      "failed_requests": 0,
+      "error_rate_pct": 0.0,
+      "duration_sec": 5.51,
+      "throughput_rps": 36.32,
+      "latency_ms": {
+        "min": 50.23,
+        "avg": 136.9,
+        "p50": 116.56,
+        "p90": 242.29,
+        "p95": 304.88,
+        "p99": 422.03,
+        "max": 436.61
+      }
+    },
+    {
+      "stage": "High Load",
+      "concurrency": 15,
+      "total_requests": 450,
+      "successful_requests": 450,
+      "failed_requests": 0,
+      "error_rate_pct": 0.0,
+      "duration_sec": 13.42,
+      "throughput_rps": 33.52,
+      "latency_ms": {
+        "min": 175.66,
+        "avg": 442.61,
+        "p50": 409.13,
+        "p90": 663.52,
+        "p95": 765.4,
+        "p99": 868.88,
+        "max": 995.93
+      }
+    },
+    {
+      "stage": "Stress Load",
+      "concurrency": 30,
+      "total_requests": 600,
+      "successful_requests": 600,
+      "failed_requests": 0,
+      "error_rate_pct": 0.0,
+      "duration_sec": 19.03,
+      "throughput_rps": 31.53,
+      "latency_ms": {
+        "min": 190.97,
+        "avg": 933.35,
+        "p50": 909.02,
+        "p90": 1382.15,
+        "p95": 1474.48,
+        "p99": 1676.78,
+        "max": 1804.33
+      }
+    },
+    {
+      "stage": "Sustained Load",
+      "concurrency": 20,
+      "total_requests": 800,
+      "successful_requests": 800,
+      "failed_requests": 0,
+      "error_rate_pct": 0.0,
+      "duration_sec": 35.35,
+      "throughput_rps": 22.63,
+      "latency_ms": {
+        "min": 238.83,
+        "avg": 874.13,
+        "p50": 753.5,
+        "p90": 1422.11,
+        "p95": 1721.54,
+        "p99": 2560.3,
+        "max": 5049.96
+      }
+    },
+    {
+      "stage": "Recovery Verification",
+      "concurrency": 1,
+      "total_requests": 40,
+      "successful_requests": 40,
+      "failed_requests": 0,
+      "error_rate_pct": 0.0,
+      "duration_sec": 1.94,
+      "throughput_rps": 20.65,
+      "latency_ms": {
+        "min": 15.98,
+        "avg": 48.35,
+        "p50": 38.36,
+        "p90": 114.17,
+        "p95": 123.67,
+        "p99": 147.41,
+        "max": 147.41
+      }
+    }
+  ],
+  "endpoints_tested": [
+    "Health Probes (/health)",
+    "PKI Public Keys (/api/v1/pki/keys)",
+    "Forms Repository (/api/v1/knowledge/forms)",
+    "Authenticated User Profile (/api/v1/auth/me)"
+  ]
+}

@@ -39,7 +39,7 @@ def get_admin_overview_stats(
     set_rls_context(db, current_user.id, current_user.role)
 
     total_users = db.query(func.count(User.id)).scalar() or 0
-    total_citizens = db.query(func.count(User.id)).filter(User.role == "citizen").scalar() or 0
+    total_platform_users = db.query(func.count(User.id)).filter(User.role.in_(["user", "citizen"])).scalar() or 0
     total_admins = db.query(func.count(User.id)).filter(User.role == "admin").scalar() or 0
 
     total_docs = db.query(func.count(Document.id)).scalar() or 0
@@ -53,7 +53,8 @@ def get_admin_overview_stats(
     return {
         "users": {
             "total": total_users,
-            "citizens": total_citizens,
+            "users": total_platform_users,
+            "citizens": total_platform_users,
             "admins": total_admins,
         },
         "documents": {
@@ -165,4 +166,53 @@ def get_system_audit_activity(
         }
         for log in logs
     ]
+
+
+@router.get("/conflicts")
+def admin_list_conflicts(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    status_filter: Optional[str] = Query(None, alias="status"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    """Allows administrators to monitor detected statutory discrepancies platform-wide."""
+    set_rls_context(db, current_user.id, current_user.role)
+
+    q = db.query(Conflict)
+    if status_filter:
+        q = q.filter(Conflict.status == status_filter)
+
+    total = q.count()
+    conflicts = q.order_by(desc(Conflict.created_at)).offset(skip).limit(limit).all()
+
+    return {
+        "total": total,
+        "items": [c.to_dict() for c in conflicts],
+    }
+
+
+@router.get("/documents")
+def admin_list_documents(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    doc_type: Optional[str] = Query(None, alias="document_type"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    """Allows administrators to monitor document upload and OCR processing states platform-wide."""
+    set_rls_context(db, current_user.id, current_user.role)
+
+    q = db.query(Document)
+    if doc_type:
+        q = q.filter(Document.document_type == doc_type)
+
+    total = q.count()
+    docs = q.order_by(desc(Document.created_at)).offset(skip).limit(limit).all()
+
+    return {
+        "total": total,
+        "items": [d.to_dict() for d in docs],
+    }
+
 

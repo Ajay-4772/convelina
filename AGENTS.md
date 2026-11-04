@@ -13,7 +13,7 @@ This file defines the mandatory operating guidelines for all AI agents working o
    - Module 5: Conflict Detection Engine
    - Module 6: RAG Knowledge Base & AI Assistant
    - Module 7: Correction Document Generator
-   - Module 8: Officer Verification Workflow
+   - Module 8: Administrative Platform Monitoring & Audit Console
    - Module 9: Document Authenticity & Ed25519 PKI/CA
    - Module 10: Security Hardening & Penetration Testing
 3. **Fail-Safe, Never Silently Wrong**:
@@ -40,3 +40,12 @@ This file defines the mandatory operating guidelines for all AI agents working o
 9. **Test Rigor**:
    - Tests must have real failure modes. Never write tests that pass regardless of logic.
    - Always run tests against live containers before declaring a module complete.
+
+<!-- openqodex:start -->
+## Review with OpenQodex before you push
+- Before any `git push`, run `npx -y openqodex@0.16.0 review` from the repository root. It can take minutes, and OpenQodex stops the reviewer after 30 minutes. Run it in the background and wait for it to exit.
+- Show the developer the receipt it prints: the verdict, one line per finding and the absolute path of `report.html`. Ask: "Fix all, or tell me which?" Fix only the findings they name (`npx -y openqodex@0.16.0 findings 1,3` prints them in full), then review again and show the new receipt. OpenQodex starts its own reviewer process, so by default the agent that wrote the code does not judge its own work.
+- Do not push on a blocked verdict unless the developer says so after seeing the findings.
+- Never add a file to `review.instructions_files` on your own. Ask the developer which files the reviewer may use, then set only what they name.
+- The report is in `.openqodex/reviews/`.
+<!-- openqodex:end -->

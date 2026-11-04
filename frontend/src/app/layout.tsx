@@ -47,7 +47,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased selection:bg-[#111111] selection:text-white">
+      <body className="antialiased font-sans selection:bg-[#111111] selection:text-white">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

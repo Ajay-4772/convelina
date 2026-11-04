@@ -17,8 +17,10 @@ from app.rag.schemas import (
     ConversationListResponse,
     MessageHistoryItem,
     MessageListResponse,
-    GroundedAnswer
+    GroundedAnswer,
+    ResolutionContext,
 )
+from app.services.resolution_context_service import ResolutionContextService
 
 logger = logging.getLogger("convelina.assistant.router")
 router = APIRouter(prefix="/api/v1/assistant", tags=["AI Resolution Assistant"])
@@ -63,6 +65,29 @@ def chat_with_assistant(
             detail="Failed to generate grounded resolution guidance."
         )
 
+@router.get("/resolution-context/{conflict_id}", response_model=ResolutionContext)
+def get_resolution_context_endpoint(
+    conflict_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Retrieves the verified, privacy-minimized ResolutionContext for a conflict belonging to the citizen.
+    Reconstructed purely server-side from database records under forced RLS.
+    """
+    set_rls_context(db, current_user.id, current_user.role)
+    try:
+        c_uuid = uuid.UUID(conflict_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid conflict ID format")
+
+    return ResolutionContextService.get_resolution_context(
+        db=db,
+        user_id=current_user.id,
+        conflict_id=c_uuid,
+        log_audit=True
+    )
+
 @router.post("/explain-conflict/{conflict_id}", response_model=ChatMessageResponse)
 def explain_conflict(
     conflict_id: str,
@@ -91,17 +116,24 @@ def explain_conflict(
         f"What does this mismatch mean and what official procedure applies?"
     )
 
-    orchestrator = RAGOrchestrator(db)
-    result = orchestrator.answer_question(
-        user_id=current_user.id,
-        question=prompt,
-        conflict_id=c_uuid
-    )
-    return ChatMessageResponse(
-        conversation_id=result["conversation_id"],
-        message_id=result["message_id"],
-        response=result["answer"]
-    )
+    try:
+        orchestrator = RAGOrchestrator(db)
+        result = orchestrator.answer_question(
+            user_id=current_user.id,
+            question=prompt,
+            conflict_id=c_uuid
+        )
+        return ChatMessageResponse(
+            conversation_id=result["conversation_id"],
+            message_id=result["message_id"],
+            response=result["answer"]
+        )
+    except Exception as e:
+        logger.error("Failed to explain conflict %s for user %s: %s", conflict_id, current_user.id, str(e), exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate grounded conflict explanation."
+        )
 
 @router.post("/resolve-conflict/{conflict_id}", response_model=ChatMessageResponse)
 def resolve_conflict(
@@ -131,17 +163,24 @@ def resolve_conflict(
         f"and the verified official form or portal."
     )
 
-    orchestrator = RAGOrchestrator(db)
-    result = orchestrator.answer_question(
-        user_id=current_user.id,
-        question=prompt,
-        conflict_id=c_uuid
-    )
-    return ChatMessageResponse(
-        conversation_id=result["conversation_id"],
-        message_id=result["message_id"],
-        response=result["answer"]
-    )
+    try:
+        orchestrator = RAGOrchestrator(db)
+        result = orchestrator.answer_question(
+            user_id=current_user.id,
+            question=prompt,
+            conflict_id=c_uuid
+        )
+        return ChatMessageResponse(
+            conversation_id=result["conversation_id"],
+            message_id=result["message_id"],
+            response=result["answer"]
+        )
+    except Exception as e:
+        logger.error("Failed to explain conflict %s for user %s: %s", conflict_id, current_user.id, str(e), exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate grounded conflict explanation."
+        )
 
 @router.get("/conversations", response_model=ConversationListResponse)
 def list_conversations(

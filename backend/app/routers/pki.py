@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db, set_rls_context
 from app.models.user import User
 from app.models.pki import SigningKey, DocumentAttestation, AttestationVerification
-from app.dependencies.auth import get_current_user, require_admin, require_officer
+from app.dependencies.auth import get_current_user, require_admin, require_user
 from app.schemas.pki import (
     SigningKeyCreate,
     SigningKeyResponse,
@@ -110,20 +110,22 @@ def revoke_signing_key(
 @router.post("/attestations", response_model=DocumentAttestationResponse, status_code=status.HTTP_201_CREATED)
 def create_document_attestation(
     req: DocumentAttestationCreate,
-    citizen_id: UUID = Query(..., description="Target citizen whose document/case is being attested"),
+    user_id: UUID = Query(..., alias="citizen_id", description="Target user whose document is being attested"),
     db: Session = Depends(get_db),
-    current_officer: User = Depends(require_officer),
+    current_admin: User = Depends(require_admin),
 ):
     """
-    Cryptographically signs an attestation for a document or verified case using Ed25519.
+    Cryptographically signs a Platform Administrative Attestation for a document using Ed25519.
     Creates a deterministic canonical signed payload and appends to the immutable audit trail.
-    Restricted to Officers and Admins."""
-    set_rls_context(db, current_officer.id, current_officer.role)
+    Restricted to Platform Administrators.
+    NOTE: Represents a CONVELINA platform verification record, not an official government attestation.
+    """
+    set_rls_context(db, current_admin.id, current_admin.role)
     attestation = PKIService.create_attestation(
         db=db,
         attestation_in=req,
-        officer_id=current_officer.id,
-        citizen_id=citizen_id,
+        signer_id=current_admin.id,
+        user_id=user_id,
     )
     return DocumentAttestationResponse(**attestation.to_dict())
 
@@ -137,9 +139,9 @@ def list_attestations(
 ):
     """
     Lists document attestations within the caller's permitted RLS scope.
-    Citizens view only their own attestations.
-    Officers view attestations they signed or cases assigned to them.
-    Admins view all platform attestations."""
+    Users view only their own attestations.
+    Admins view all platform attestations.
+    """
     set_rls_context(db, current_user.id, current_user.role)
     attestations = (
         db.query(DocumentAttestation)

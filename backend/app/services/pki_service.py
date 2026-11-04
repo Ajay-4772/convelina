@@ -45,7 +45,7 @@ class PKIVerificationStatus:
 
 
 class PKIService:
-    DEFAULT_KEY_ID = "consolith-officer-key-2026-v1"
+    DEFAULT_KEY_ID = "convelina-admin-key-2026-v1"
 
     @classmethod
     def ensure_default_signing_key(cls, db: Session) -> SigningKey:
@@ -61,14 +61,13 @@ class PKIService:
         if default_key:
             return default_key
 
-        active_key = (
+        legacy_key = (
             db.query(SigningKey)
-            .filter(SigningKey.status == "active")
-            .order_by(SigningKey.created_at.asc())
+            .filter(SigningKey.key_id == "consolith-officer-key-2026-v1", SigningKey.status == "active")
             .first()
         )
-        if active_key:
-            return active_key
+        if legacy_key:
+            return legacy_key
 
         priv, pub_b64, fingerprint = DevSigningKeyProvider.create_or_get_default_dev_key(cls.DEFAULT_KEY_ID)
         
@@ -81,12 +80,13 @@ class PKIService:
             purpose="document_attestation",
             status="active",
             valid_from=datetime.now(timezone.utc),
-            valid_until=datetime.now(timezone.utc) + timedelta(days=730),  # 2 years
+            valid_until=datetime.now(timezone.utc) + timedelta(days=730),
             created_at=datetime.now(timezone.utc),
         )
         db.add(new_key)
         db.commit()
         db.refresh(new_key)
+        return new_key
         return new_key
 
     @classmethod
@@ -224,19 +224,45 @@ class PKIService:
         cls,
         db: Session,
         attestation_in: DocumentAttestationCreate,
-        officer_id: UUID,
-        citizen_id: UUID,
+        signer_id: Optional[UUID] = None,
+        user_id: Optional[UUID] = None,
+        officer_id: Optional[UUID] = None,
+        citizen_id: Optional[UUID] = None,
     ) -> DocumentAttestation:
         """
-        Signs an eligible document or case attestation using an active Ed25519 signing key.
+        Signs a Platform Administrative Attestation using an active Ed25519 signing key.
         Builds the canonical deterministic payload, calculates signature, and audits.
+        NOTE: Represents an internal CONVELINA platform verification record, not an official government attestation.
         """
+        effective_signer_id = signer_id or officer_id
+        effective_user_id = user_id or citizen_id
+
+        if not effective_signer_id or not effective_user_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Both signer_id and user_id are required for attestation creation.",
+            )
+
         # Validate fingerprint format
         if not DocumentFingerprinter.validate_hash_format(attestation_in.document_fingerprint):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid document_fingerprint format. Must be a 64-character SHA-256 hex string.",
             )
+
+        # Tenant boundary verification
+        if attestation_in.document_id:
+            doc = db.query(Document).filter(Document.id == attestation_in.document_id).first()
+            if not doc:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Document '{attestation_in.document_id}' not found.",
+                )
+            if doc.user_id != effective_user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Attestation user_id does not match document owner.",
+                )
 
         # Select signing key
         if attestation_in.key_id:
@@ -257,7 +283,6 @@ class PKIService:
         # Retrieve private key from DevSigningKeyProvider (or HSM/KMS boundary)
         private_key = DevSigningKeyProvider.get_dev_key(signing_key.key_id)
         if not private_key:
-            # Re-generate/fetch from provider if dev key
             private_key, _, _ = DevSigningKeyProvider.create_or_get_default_dev_key(signing_key.key_id)
 
         attestation_id = uuid.uuid4()
@@ -268,6 +293,7 @@ class PKIService:
         canonical_payload = {
             "schema_version": "1.0",
             "attestation_id": str(attestation_id),
+            "attestation_type": "Platform Administrative Attestation",
             "document_type": attestation_in.document_type,
             "document_fingerprint": attestation_in.document_fingerprint.lower(),
             "hash_algorithm": "SHA-256",
@@ -277,9 +303,11 @@ class PKIService:
             "signing_purpose": attestation_in.signing_purpose,
             "issued_at": now.isoformat(),
             "expires_at": expires_at.isoformat() if expires_at else None,
-            "issuer": "CONVELINA Verification PKI",
-            "citizen_id": str(citizen_id),
-            "officer_id": str(officer_id),
+            "issuer": "CONVELINA Platform Attestation Service",
+            "user_id": str(effective_user_id),
+            "citizen_id": str(effective_user_id),
+            "signer_id": str(effective_signer_id),
+            "officer_id": str(effective_signer_id),
             "case_id": str(attestation_in.case_id) if attestation_in.case_id else None,
             "document_id": str(attestation_in.document_id) if attestation_in.document_id else None,
             "policy_version": "2026.1",
@@ -293,8 +321,8 @@ class PKIService:
             document_id=attestation_in.document_id,
             case_id=attestation_in.case_id,
             correction_draft_id=attestation_in.correction_draft_id,
-            citizen_id=citizen_id,
-            officer_id=officer_id,
+            citizen_id=effective_user_id,
+            officer_id=effective_signer_id,
             document_type=attestation_in.document_type,
             document_fingerprint=attestation_in.document_fingerprint.lower(),
             signing_key_id=signing_key.id,
@@ -312,11 +340,12 @@ class PKIService:
             action="DOCUMENT_ATTESTATION_SIGNED",
             entity_type="document_attestation",
             entity_id=attestation.id,
-            user_id=officer_id,
+            user_id=effective_signer_id,
             details={
                 "document_fingerprint": attestation.document_fingerprint,
                 "key_id": signing_key.key_id,
                 "document_type": attestation.document_type,
+                "attestation_type": "Platform Administrative Attestation",
             },
         )
         db.commit()

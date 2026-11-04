@@ -44,12 +44,18 @@ class KnowledgeIngestionService:
             "status": "success"
         }
 
+    @staticmethod
+    def compute_content_hash(content: str) -> str:
+        """Computes deterministic SHA-256 hash of content for drift detection."""
+        normalized = (content or "").strip().encode("utf-8")
+        return hashlib.sha256(normalized).hexdigest()
+
     def sync_knowledge_sources(self) -> int:
         """Upserts verified official government guidelines into PostgreSQL knowledge_sources."""
         synced_count = 0
         for src in OFFICIAL_SOURCES_DATA:
             content = src["content"].strip()
-            content_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
+            content_hash = self.compute_content_hash(content)
 
             existing = self.db.query(KnowledgeSource).filter(
                 KnowledgeSource.source_id == src["source_id"]
@@ -135,6 +141,9 @@ class KnowledgeIngestionService:
         """Extracts semantic chunks from official sources and indexes into Qdrant."""
         all_chunks: List[Dict[str, Any]] = []
         for src in OFFICIAL_SOURCES_DATA:
+            # Only index active and verified statutory sources
+            if not src.get("is_active", True) or src.get("verification_status", "verified") != "verified":
+                continue
             chunks = self.chunker.chunk_source(src)
             all_chunks.extend(chunks)
 
@@ -167,6 +176,9 @@ class KnowledgeIngestionService:
         """Indexes official forms with descriptions and conditions into Qdrant."""
         points = []
         for frm in OFFICIAL_FORMS_DATA:
+            # Only index active and verified forms
+            if not frm.get("is_active", True) or frm.get("verification_status", "verified") != "verified":
+                continue
             summary = f"{frm['form_name']} - {frm['purpose']}. Applicable for {frm['document_category']} {', '.join(frm.get('applicable_issue_types', []))}"
             emb = self.embedding_service.embed_query(summary)
             point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, frm["form_id"]))

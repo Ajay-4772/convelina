@@ -21,7 +21,7 @@ import { useAuth } from "../../context/AuthContext";
 import Logo from "../../components/ui/Logo";
 
 interface AdminStats {
-  users: { total: number; citizens: number; admins: number };
+  users: { total: number; users?: number; citizens?: number; admins: number };
   documents: { total_uploaded: number };
   conflicts: { total_detected: number };
   assistant: { total_messages: number; forms_available: number };
@@ -82,36 +82,7 @@ export default function AdminPage() {
     }
   }, [apiUrl, idToken, getAuthHeaders]);
 
-  const [isDemoMode, setIsDemoMode] = useState(false);
-
   useEffect(() => {
-    if (typeof window !== "undefined" && window.location.search.includes("demo=true")) {
-      setIsDemoMode(true);
-      setStats({
-        users: { total: 42, citizens: 39, admins: 3 },
-        documents: { total_uploaded: 148 },
-        conflicts: { total_detected: 32 },
-        assistant: { total_messages: 184, forms_available: 12 },
-        pki: { total_attestations: 28, active_signing_keys: 2 },
-        audit: { total_events: 412 },
-      });
-      setUsers([
-        { id: "u-1", email: "ajay.m@velhightech.com", full_name: "AJAY M", role: "admin", created_at: "2025-10-12T10:00:00Z" },
-        { id: "u-2", email: "adithya.b@velhightech.com", full_name: "ADITHYA B", role: "admin", created_at: "2025-10-12T10:05:00Z" },
-        { id: "u-3", email: "kamesh.g@velhightech.com", full_name: "KAMESH G", role: "citizen", created_at: "2025-10-12T10:10:00Z" },
-        { id: "u-4", email: "citizen.vikram@gmail.com", full_name: "VIKRAM RAMAN", role: "citizen", created_at: "2025-10-14T08:30:00Z" },
-        { id: "u-5", email: "citizen.priya@outlook.com", full_name: "PRIYA SUNDAR", role: "citizen", created_at: "2025-10-15T11:20:00Z" },
-      ]);
-      setActivities([
-        { id: "act-1", action: "document.ocr_parsed", entity_type: "document", details: { doc_type: "aadhaar", status: "success" }, created_at: new Date(Date.now() - 600000).toISOString() },
-        { id: "act-2", action: "conflict.detected", entity_type: "conflict", details: { field: "full_name", severity: "high" }, created_at: new Date(Date.now() - 500000).toISOString() },
-        { id: "act-3", action: "pki.attestation_signed", entity_type: "pki_cert", details: { key_algorithm: "Ed25519" }, created_at: new Date(Date.now() - 300000).toISOString() },
-      ]);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isDemoMode) return;
     if (!loading) {
       if (!firebaseUser) {
         router.replace("/login");
@@ -119,9 +90,9 @@ export default function AdminPage() {
         fetchAdminData();
       }
     }
-  }, [loading, firebaseUser, profile, router, fetchAdminData, isDemoMode]);
+  }, [loading, firebaseUser, profile, router, fetchAdminData]);
 
-  if (loading && !isDemoMode) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#faf9f6] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -135,7 +106,7 @@ export default function AdminPage() {
   }
 
   // Role Guard
-  if ((!profile || profile.role !== "admin") && !isDemoMode) {
+  if (!profile || profile.role !== "admin") {
     return (
       <div className="min-h-screen bg-[#faf9f6] flex items-center justify-center p-4">
         <div className="bg-white border border-[#e5e2dc] rounded-2xl max-w-md w-full p-8 text-center space-y-4 shadow-elevated">
@@ -193,8 +164,8 @@ export default function AdminPage() {
           </button>
 
           <div className="text-right hidden sm:block">
-            <div className="text-xs font-semibold text-zinc-900">{profile?.full_name || "AJAY M (Admin Officer)"}</div>
-            <div className="text-[10px] text-purple-700 font-mono">System Administrator</div>
+            <div className="text-xs font-semibold text-zinc-900">{profile?.full_name || "AJAY M (Platform Administrator)"}</div>
+            <div className="text-[10px] text-purple-700 font-mono">Platform Administrator</div>
           </div>
 
           <button
@@ -221,7 +192,7 @@ export default function AdminPage() {
             </div>
             <div className="text-2xl font-semibold text-zinc-900">{stats?.users?.total || users.length}</div>
             <div className="text-[11px] text-zinc-400">
-              {stats?.users?.citizens || 0} Citizens • {stats?.users?.admins || 0} Admins
+              {stats?.users?.users ?? stats?.users?.citizens ?? 0} Users • {stats?.users?.admins || 0} Admins
             </div>
           </div>
 
@@ -249,7 +220,7 @@ export default function AdminPage() {
               <Key className="w-4 h-4 text-purple-600" />
             </div>
             <div className="text-2xl font-semibold text-zinc-900">{pkiKeys.length || 1}</div>
-            <div className="text-[11px] text-zinc-400">Ed25519 PKI Attestation</div>
+            <div className="text-[11px] text-zinc-400">Ed25519 Platform Attestation</div>
           </div>
         </div>
 

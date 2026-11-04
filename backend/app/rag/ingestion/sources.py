@@ -206,6 +206,108 @@ OFFICIAL_SOURCES_DATA: List[Dict[str, Any]] = [
 - No change in the date of birth once recorded in Board certificates is permitted after examination, EXCEPT for rectifying clerical/typographical errors made by the Board/school that contradict the original school admission register.
 - Request must be submitted through the School Principal within five years of result declaration accompanied by the original school admission register extract.
 """
+    },
+    {
+        "source_id": "src_gazette_name_change_sop_2024",
+        "title": "Department of Publication Guidelines for Change of Name in The Gazette of India",
+        "issuing_authority": "Department of Publication, Ministry of Housing and Urban Affairs",
+        "document_type": "standard_operating_procedure",
+        "document_category": "gazette",
+        "source_url": "https://egazette.gov.in",
+        "jurisdiction": "India",
+        "language": "en",
+        "effective_date": "2023-01-01T00:00:00Z",
+        "last_verified_at": "2026-09-01T00:00:00Z",
+        "version": "DOP-GZ-2024",
+        "verification_status": "verified",
+        "is_active": True,
+        "content": """
+# Department of Publication — Legal Adult Name Change via The Gazette of India (Part IV)
+
+### 1. Mandatory Gazette Notification Procedure
+- Under Indian statutory practice, a major name change (complete change of first name, addition of unrelated surname, or religion conversion) becomes legally binding nationwide upon publication in Part IV of the Official Gazette of India.
+- Major government bodies (UIDAI for exceptional name changes, MEA Passport Seva for non-phonetic alterations, CBSE, and State Universities) mandate a Gazette Notification copy as primary legal proof.
+
+### 2. Mandatory Step-by-Step Requirements
+- Step 1 (Affidavit): Execute an affidavit for change of name on non-judicial stamp paper attested by a Judicial First Class Magistrate, Metropolitan Magistrate, or Sub-Divisional Magistrate (SDM).
+- Step 2 (Newspaper Advertisements): Publish the change of name advertisement in at least TWO newspapers (one leading daily English newspaper and one regional language daily newspaper circulating in the area of permanent residence). Retain original full-page newspapers.
+- Step 3 (Proforma & Digital Copy): Fill the prescribed Department of Publication Proforma with two witness signatures and prepare a compact disc (CD) containing the soft copy of the notification in MS Word format.
+- Step 4 (Government Fee): Deposit the prescribed publication fee online via Bharatkosh (Non-Tax Receipt Portal) under the Controller of Publications.
+- Step 5 (Submission & Dispatch): Submit physical dossier with original affidavit, original newspaper pages, CD, signed proforma, identity proof (self-attested Aadhaar/Voter ID), and Bharatkosh receipt to the Controller of Publications, Department of Publication, Civil Lines, Delhi - 110054.
+
+### 3. Verification & Digital Gazette Issuance
+- Upon verification, the change of name is published in the weekly digital Gazette of India Part IV.
+- The published e-Gazette copy downloaded from https://egazette.gov.in serves as statutory legal proof across all Indian authorities.
+"""
+    },
+    {
+        "source_id": "src_cbse_12th_correction_byelaws_2024",
+        "title": "CBSE Senior School Certificate Examination (Class 12) Correction and Migration Byelaws",
+        "issuing_authority": "Central Board of Secondary Education (CBSE)",
+        "document_type": "regulation",
+        "document_category": "education_12th",
+        "source_url": "https://www.cbse.gov.in/cbsenew/duplicate.html",
+        "jurisdiction": "India",
+        "language": "en",
+        "effective_date": "2022-06-01T00:00:00Z",
+        "last_verified_at": "2026-09-01T00:00:00Z",
+        "version": "CBSE-EBL-12TH-2024",
+        "verification_status": "verified",
+        "is_active": True,
+        "content": """
+# CBSE Class 12 Senior School Certificate Examination Correction Rules
+
+### 1. Harmony Between Class 10 and Class 12 Records
+- Class 10 Matriculation certificate is the root foundational record in Indian secondary education.
+- Candidate name, parents' names, and date of birth in Class 12 Senior School Examination documents MUST strictly match Class 10 records.
+- Any typographical or spelling discrepancy between Class 10 and Class 12 certificates is resolved by aligning the Class 12 record to the Class 10 certificate upon school verification.
+
+### 2. Procedure for Correction in Class 12 Certificate
+- Submit application through the Head of the Senior Secondary School to the respective CBSE Regional Office.
+- Attach certified extract of Class 10 certificate, school admission register, and prescribed fee.
+- If more than 5 years have elapsed from result declaration, candidate must submit an affidavit along with certified copies of Class 10 certificate and school records.
+
+### 3. Duplicate Documents and Migration Certificate Correction
+- Duplicate Marksheet / Pass Certificate / Migration Certificate can be obtained online via the CBSE Digital Document Portal (DADS - https://cbseit.in/cbse/web/dads/home.aspx).
+- In case of name change admitted via Gazette of India under Supreme Court ruling (Jigya Yadav), updated Class 12 certificate is issued with appropriate marginal endorsement.
+"""
+    },
+    {
+        "source_id": "src_marriage_name_change_sop_2024",
+        "title": "Inter-Agency Guidelines for Post-Marriage Surname Alignment across Indian Identity Documents",
+        "issuing_authority": "Inter-Agency Statutory Coordination Group (UIDAI, ITD, MEA, EPFO)",
+        "document_type": "guideline",
+        "document_category": "general",
+        "source_url": "https://uidai.gov.in/en/my-aadhaar/update-aadhaar.html",
+        "jurisdiction": "India",
+        "language": "en",
+        "effective_date": "2023-04-01T00:00:00Z",
+        "last_verified_at": "2026-09-01T00:00:00Z",
+        "version": "MARRIAGE-SOP-2024",
+        "verification_status": "verified",
+        "is_active": True,
+        "content": """
+# Inter-Agency Statutory Guidelines — Post-Marriage Surname Alignment
+
+### 1. Female Citizen Surname Alignment Overview
+- A married woman in India is NOT legally required to change her surname after marriage; retaining maiden surname across all identity documents is fully valid.
+- If a citizen chooses to adopt spouse's surname or a hyphenated double surname, all key statutory documents (Aadhaar, PAN, Passport, EPF) should be updated consistently to avoid demographic linking failures (such as PAN-Aadhaar seeding failure or EPF KYC rejection).
+
+### 2. Document-Specific Update Routes
+- Aadhaar (UIDAI):
+  - Requires Proof of Identity (POI) reflecting new name, OR
+  - Marriage Registration Certificate issued by Registrar of Marriages, OR
+  - Gazette Notification of name change.
+- PAN Card (Income Tax Department / Protean / UTIITSL):
+  - Form CSF can be submitted with: Marriage Certificate, Marriage Invitation Card, or copy of spouse's passport along with self-declaration.
+- Indian Passport (MEA):
+  - Apply for Re-issue under 'Change in Personal Particulars - Change of Name'.
+  - Married women adopting husband's surname only need self-declaration on plain paper alongside self-attested Marriage Certificate copy.
+  - Prior newspaper publication or gazette notification is EXEMPTED for routine post-marriage surname adoption.
+- EPFO (EPF / UAN Profile):
+  - Joint Declaration signed by member and employer.
+  - Attach Marriage Certificate and updated Aadhaar reflecting the new surname.
+"""
     }
 ]
 
@@ -326,6 +428,46 @@ OFFICIAL_FORMS_DATA: List[Dict[str, Any]] = [
         ],
         "language": "en",
         "version": "CBSE-CORR-2023",
+        "last_verified_at": "2026-09-01T00:00:00Z",
+        "verification_status": "verified",
+        "is_active": True
+    },
+    {
+        "form_id": "form_gazette_name_change",
+        "form_name": "Proforma for Change of Name Advertisement in The Gazette of India (Part IV)",
+        "document_category": "gazette",
+        "purpose": "Official statutory proforma required to publish change of name in the weekly Gazette of India",
+        "issuing_authority": "Department of Publication, Ministry of Housing and Urban Affairs",
+        "official_download_url": "https://egazette.gov.in",
+        "instructions_source_id": "src_gazette_name_change_sop_2024",
+        "applicable_issue_types": ["full_name"],
+        "applicable_conditions": [
+            "Must be accompanied by original affidavit attested by SDM or First Class Judicial Magistrate",
+            "Must include original copies of two daily newspapers (one English, one regional)",
+            "Must include CD containing notification soft copy and Bharatkosh fee receipt"
+        ],
+        "language": "en",
+        "version": "DOP-FORM-2024",
+        "last_verified_at": "2026-09-01T00:00:00Z",
+        "verification_status": "verified",
+        "is_active": True
+    },
+    {
+        "form_id": "form_epfo_digital_jd",
+        "form_name": "EPFO Member Profile Update / Online Joint Declaration Proforma",
+        "document_category": "epf",
+        "purpose": "Online Joint Declaration submitted through employer digital signature on Member Portal for demographic alignment",
+        "issuing_authority": "Employees' Provident Fund Organisation (EPFO)",
+        "official_download_url": "https://unifiedportal-mem.epfindia.gov.in",
+        "instructions_source_id": "src_epfo_joint_declaration_2024",
+        "applicable_issue_types": ["full_name", "date_of_birth", "gender", "father_name"],
+        "applicable_conditions": [
+            "Submitted directly through EPFO Unified Member Portal",
+            "Requires digital approval by the establishment authorized signatory using DSC/e-Sign",
+            "Mandatory Aadhaar demographic verification against UIDAI server"
+        ],
+        "language": "en",
+        "version": "EPFO-ONLINE-2024",
         "last_verified_at": "2026-09-01T00:00:00Z",
         "verification_status": "verified",
         "is_active": True

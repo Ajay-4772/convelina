@@ -14,9 +14,11 @@ from app.core.encryption import encrypt_data
 from app.dependencies.auth import get_current_user
 from app.models.user import User
 from app.models.document import Document
-from app.schemas.document import DocumentUploadResponse, DocumentResponse, DocumentListResponse
+from app.schemas.document import DocumentUploadResponse, DocumentResponse, DocumentListResponse, DocumentFieldsUpdate
 from app.ocr.engine import default_ocr_engine
 from app.ocr.parsers.factory import get_document_parser
+from app.services.identity_matching.models import DocumentIdentityProfile
+from app.services.identity_matching.service import DocumentComparisonService
 
 logger = logging.getLogger("convelina.documents")
 router = APIRouter(prefix="/api/v1/documents", tags=["Documents"])
@@ -205,6 +207,71 @@ def get_document(
         created_at=doc.created_at.isoformat() if doc.created_at else "",
         updated_at=doc.updated_at.isoformat() if doc.updated_at else "",
     )
+
+
+@router.get("/{document_id}/profile", response_model=DocumentIdentityProfile)
+def get_document_identity_profile(
+    document_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns the canonical DocumentIdentityProfile for a specific document.
+    Maintains clean separation between raw extracted OCR values and normalized comparison representations.
+    Enforces PostgreSQL Row-Level Security.
+    """
+    set_rls_context(db, current_user.id, current_user.role)
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    if not doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found or access denied."
+        )
+
+    return DocumentComparisonService.create_profile_from_document(doc)
+
+
+@router.patch("/{document_id}/fields", response_model=DocumentResponse)
+def update_document_fields(
+    document_id: UUID,
+    payload: DocumentFieldsUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Allows a citizen to review, correct, or confirm extracted demographic fields
+    (e.g., if OCR misread an initial, character, or format) under PostgreSQL RLS.
+    """
+    set_rls_context(db, current_user.id, current_user.role)
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    if not doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found or access denied."
+        )
+
+    updated_fields = dict(doc.extracted_fields or {})
+    for k, v in payload.extracted_fields.items():
+        if v is not None:
+            updated_fields[k] = str(v).strip()
+
+    doc.extracted_fields = updated_fields
+    
+    response = DocumentResponse(
+        id=str(doc.id),
+        user_id=str(doc.user_id),
+        document_type=doc.document_type,
+        file_hash=doc.file_hash,
+        ocr_status=doc.ocr_status,
+        masked_id=doc.masked_id,
+        extracted_fields=updated_fields,
+        created_at=doc.created_at.isoformat() if doc.created_at else "",
+        updated_at=doc.updated_at.isoformat() if doc.updated_at else "",
+    )
+    db.commit()
+
+    return response
+
 
 @router.delete("/{document_id}", status_code=status.HTTP_200_OK)
 def delete_document(

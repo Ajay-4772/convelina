@@ -89,8 +89,10 @@ class RoleChecker:
             )
         return user
 
-# Role-specific dependencies
-require_citizen = RoleChecker(["citizen"])
-require_officer = RoleChecker(["officer"])
+# Two-Role RBAC model: USER and ADMIN
+# 'user' is the primary platform role; 'citizen' is accepted for transitional backward compatibility
+require_user = RoleChecker(["user", "citizen"])
 require_admin = RoleChecker(["admin"])
-require_officer_or_admin = RoleChecker(["officer", "admin"])
+
+# Backward-compatibility alias during role migration
+require_citizen = require_user

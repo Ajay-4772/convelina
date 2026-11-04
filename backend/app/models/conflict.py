@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, DateTime, ForeignKey, Text, Numeric
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -22,6 +22,7 @@ class Conflict(Base):
     status = Column(String(20), nullable=False, default="detected")
     comparison_method = Column(String(50), nullable=True, default="exact")
     similarity_score = Column(Numeric(5, 2), nullable=True)
+    metadata_ = Column("metadata", JSONB, nullable=True, default=dict)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
@@ -44,6 +45,7 @@ class Conflict(Base):
             "status": self.status,
             "comparison_method": self.comparison_method,
             "similarity_score": float(self.similarity_score) if self.similarity_score is not None else None,
+            "metadata": self.metadata_ or {},
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

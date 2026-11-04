@@ -14,12 +14,39 @@ from app.conflicts.schemas import (
     ConflictListResponse,
     ConflictReviewUpdate,
     ConflictDetectResponse,
+    DocumentCompareRequest,
+    DocumentCompareResponse,
 )
+from app.services.identity_matching import DocumentComparisonService
 
 logger = logging.getLogger("convelina.conflicts.router")
 router = APIRouter(prefix="/api/v1/conflicts", tags=["Conflicts"])
 
 VALID_STATUSES = {"detected", "in_review", "resolved", "ignored"}
+
+
+@router.post("/compare", response_model=DocumentCompareResponse, status_code=status.HTTP_200_OK)
+def compare_documents(
+    payload: DocumentCompareRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Executes Phase P1 deterministic, multi-field comparison between selected credentials.
+    Enforces:
+    - User authentication and PostgreSQL RLS.
+    - Strict document ownership (cross-user comparison attempts rejected with 404/403).
+    - Minimum 2 completed documents required.
+    - Deterministic P0 matching intelligence (gender-pair defense, initial ambiguity, transliterations, truncations).
+    - Idempotent discrepancy persistence in conflicts table.
+    - Append-only cryptographic audit logging.
+    """
+    set_rls_context(db, current_user.id, current_user.role)
+    return DocumentComparisonService.compare_documents_for_user(
+        db=db,
+        user_id=current_user.id,
+        document_ids=payload.document_ids,
+    )
 
 
 @router.post("/detect", response_model=ConflictDetectResponse, status_code=status.HTTP_200_OK)

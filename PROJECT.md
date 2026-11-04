@@ -32,11 +32,10 @@ CONVELINA is an AI-powered statutory document reconciliation and verification pl
 
 ---
 
-## 4. Target Users
+## 4. Product Roles
 
-- **Citizens**: upload and check their own documents.
-- **Officers**: review verification cases where citizen lacks proof to self-correct.
-- **Admins**: manage the knowledge base of official correction procedures.
+- **User**: The primary citizen/customer using the CONVELINA application to upload documents, extract OCR fields, compare records, detect statutory discrepancies, receive AI guidance, access official forms, and generate legal correction affidavits.
+- **Admin**: Manages, monitors, and administers the CONVELINA platform, including system telemetry, user directory management, platform-wide discrepancy monitoring, document processing status, and cryptographic audit log inspection.
 
 ---
 

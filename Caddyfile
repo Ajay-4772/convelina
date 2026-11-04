@@ -1,0 +1,40 @@
+# CONVELINA Production Edge Reverse Proxy Configuration (Caddy)
+
+{
+    admin off
+    auto_https off
+}
+
+:80 {
+    encode zstd gzip
+
+    # Request body limit for DoS mitigation (files allowed up to 10MB)
+    request_body {
+        max_size 15MB
+    }
+
+    # FastAPI Backend APIs & Docs
+    handle /api/* {
+        reverse_proxy backend:8000 {
+            flush_interval -1
+        }
+    }
+
+    handle /health {
+        reverse_proxy backend:8000
+    }
+
+    handle /docs* {
+        reverse_proxy backend:8000
+    }
+
+    handle /openapi.json {
+        reverse_proxy backend:8000
+    }
+
+    # Next.js Frontend Citizen Workspace
+    handle {
+        reverse_proxy frontend:3000
+    }
+}
+

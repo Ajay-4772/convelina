@@ -52,9 +52,8 @@ def setup_users():
         with conn.cursor() as cur:
             cur.execute("""
                 INSERT INTO users (firebase_uid, email, full_name, role) VALUES
-                (%s, %s, 'Citizen Alpha PKI', 'citizen'),
-                (%s, %s, 'Citizen Beta PKI', 'citizen'),
-                (%s, %s, 'Officer Verification Lead', 'officer'),
+                (%s, %s, 'User Alpha PKI', 'user'),
+                (%s, %s, 'User Beta PKI', 'user'),
                 (%s, %s, 'Admin PKI Authority', 'admin')
                 ON CONFLICT (firebase_uid) DO UPDATE
                 SET role = EXCLUDED.role, full_name = EXCLUDED.full_name
@@ -62,14 +61,13 @@ def setup_users():
             """, (
                 CITIZEN_A_UID, CITIZEN_A_EMAIL,
                 CITIZEN_B_UID, CITIZEN_B_EMAIL,
-                OFFICER_UID, OFFICER_EMAIL,
                 ADMIN_UID, ADMIN_EMAIL,
             ))
             rows = {r[1]: r[0] for r in cur.fetchall()}
             cit_a_id = rows[CITIZEN_A_UID]
             cit_b_id = rows[CITIZEN_B_UID]
-            off_id = rows[OFFICER_UID]
             adm_id = rows[ADMIN_UID]
+            off_id = adm_id
     finally:
         conn.close()
 
@@ -121,7 +119,7 @@ def run_tests():
     assert reg_key["status"] == "active"
     print(f"  [PASS] 4. Admin successfully registered new signing key ({new_key_id})")
 
-    # Test 5: Officer signs a document attestation for Citizen A
+    # Test 5: Admin signs a Platform Administrative Attestation for User A
     doc_raw = b"Sample Verified Aadhaar Document Content for Citizen A"
     doc_fingerprint = hashlib.sha256(doc_raw).hexdigest()
 
@@ -134,7 +132,7 @@ def run_tests():
     res = client.post(
         f"/api/v1/attestations?citizen_id={cit_a_id}",
         json=attestation_payload,
-        headers={"Authorization": f"Bearer {OFFICER_TOKEN}"},
+        headers={"Authorization": f"Bearer {ADMIN_TOKEN}"},
     )
     assert res.status_code == 201, f"Expected 201, got {res.status_code}: {res.text}"
     attestation = res.json()
@@ -142,9 +140,9 @@ def run_tests():
     assert attestation["document_fingerprint"] == doc_fingerprint
     assert attestation["algorithm"] == "Ed25519"
     assert len(attestation["signature"]) > 60
-    print(f"  [PASS] 5. Officer cryptographically signed document attestation (ID: {attestation_id})")
+    print(f"  [PASS] 5. Admin cryptographically signed Platform Attestation (ID: {attestation_id})")
 
-    # Test 6: Citizen cannot sign attestations directly
+    # Test 6: User cannot sign attestations directly (requires ADMIN)
     res = client.post(
         f"/api/v1/attestations?citizen_id={cit_a_id}",
         json=attestation_payload,

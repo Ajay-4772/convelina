@@ -74,6 +74,11 @@ class HybridRetriever:
 
         for hit in search_results:
             payload = hit.payload or {}
+            # Enforce strictly active and verified status filter
+            if str(payload.get("verification_status", "")).lower() != "verified":
+                continue
+            if payload.get("is_active", True) is False:
+                continue
             content = payload.get("content", "")
             title = payload.get("title", "")
             heading = payload.get("heading", "")
@@ -154,7 +159,12 @@ class HybridRetriever:
                 limit=top_k,
                 score_threshold=0.05
             )
-            return [hit.payload for hit in results if hit.payload]
+            return [
+                hit.payload for hit in results
+                if hit.payload
+                and str(hit.payload.get("verification_status", "")).lower() == "verified"
+                and hit.payload.get("is_active", True) is not False
+            ]
         except Exception as e:
             logger.error("Qdrant form search failed: %s", str(e))
             return []

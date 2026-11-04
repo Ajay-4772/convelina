@@ -17,7 +17,8 @@ from app.rag.schemas import (
     KnowledgeSourceListResponse,
     OfficialFormResponse,
     OfficialFormListResponse,
-    KnowledgeIngestionJobResponse
+    KnowledgeIngestionJobResponse,
+    UpdateVerificationStatusRequest,
 )
 
 logger = logging.getLogger("convelina.knowledge.router")
@@ -32,7 +33,7 @@ def list_knowledge_sources(
 ):
     """
     Returns verified official government knowledge sources.
-    Open to all authenticated citizens and officers.
+    Open to all authenticated users.
     """
     set_rls_context(db, current_user.id, current_user.role)
     query = db.query(KnowledgeSource).filter(
@@ -119,6 +120,54 @@ def trigger_knowledge_ingestion(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Knowledge ingestion failed: {str(e)}"
         )
+
+@router.get("/admin/sources", response_model=KnowledgeSourceListResponse)
+def admin_list_all_sources(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+    verification_status: Optional[str] = Query(None, description="Filter by status (verified, needs_review, outdated, retired)"),
+    category: Optional[str] = Query(None)
+):
+    """
+    Admin-only endpoint to inspect all knowledge sources across all lifecycle states.
+    """
+    set_rls_context(db, current_user.id, current_user.role)
+    query = db.query(KnowledgeSource)
+    if verification_status:
+        query = query.filter(KnowledgeSource.verification_status == verification_status.lower())
+    if category:
+        query = query.filter(KnowledgeSource.document_category == category.lower())
+    sources = query.order_by(KnowledgeSource.title.asc()).all()
+    return KnowledgeSourceListResponse(
+        total=len(sources),
+        sources=[KnowledgeSourceResponse(**s.to_dict()) for s in sources]
+    )
+
+@router.put("/admin/sources/{source_id}/verification", response_model=KnowledgeSourceResponse)
+def admin_update_source_verification(
+    source_id: str,
+    body: UpdateVerificationStatusRequest,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Admin-only endpoint to update verification state of a statutory source.
+    """
+    set_rls_context(db, current_user.id, current_user.role)
+    src = db.query(KnowledgeSource).filter(
+        or_(KnowledgeSource.source_id == source_id, KnowledgeSource.id == source_id if _is_valid_uuid(source_id) else False)
+    ).first()
+    if not src:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Knowledge source not found")
+    
+    src.verification_status = body.verification_status.value
+    if body.review_notes:
+        meta = dict(src.metadata_payload or {})
+        meta["review_notes"] = body.review_notes
+        src.metadata_payload = meta
+    db.commit()
+    db.refresh(src)
+    return KnowledgeSourceResponse(**src.to_dict())
 
 def _is_valid_uuid(val: str) -> bool:
     try:

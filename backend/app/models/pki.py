@@ -67,9 +67,19 @@ class DocumentAttestation(Base):
 
     citizen = relationship("User", foreign_keys=[citizen_id])
     officer = relationship("User", foreign_keys=[officer_id])
+    user = relationship("User", foreign_keys=[citizen_id], overlaps="citizen")
+    signer = relationship("User", foreign_keys=[officer_id], overlaps="officer")
     signing_key = relationship("SigningKey", back_populates="attestations")
     document = relationship("Document", foreign_keys=[document_id])
     verifications = relationship("AttestationVerification", back_populates="attestation", cascade="all, delete-orphan")
+
+    @property
+    def user_id(self):
+        return self.citizen_id
+
+    @property
+    def signer_id(self):
+        return self.officer_id
 
     def to_dict(self):
         return {
@@ -77,7 +87,9 @@ class DocumentAttestation(Base):
             "document_id": str(self.document_id) if self.document_id else None,
             "case_id": str(self.case_id) if self.case_id else None,
             "correction_draft_id": str(self.correction_draft_id) if self.correction_draft_id else None,
+            "user_id": str(self.citizen_id),
             "citizen_id": str(self.citizen_id),
+            "signer_id": str(self.officer_id),
             "officer_id": str(self.officer_id),
             "document_type": self.document_type,
             "document_fingerprint": self.document_fingerprint,

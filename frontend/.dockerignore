@@ -3,4 +3,13 @@ node_modules
 out
 .git
 .gitignore
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.json_service_account*
+serviceAccountKey*.json
+firebase-adminsdk*.json
 README.md

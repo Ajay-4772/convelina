@@ -5,10 +5,18 @@ from sqlalchemy.orm import sessionmaker, Session, declarative_base
 
 from app.config import settings
 
+connect_args = {}
+if settings.DB_PREPARE_THRESHOLD is not None:
+    connect_args["prepare_threshold"] = settings.DB_PREPARE_THRESHOLD
+
 engine = create_engine(
     settings.DATABASE_URL,
+    connect_args=connect_args,
     pool_pre_ping=True,
     pool_recycle=300,
+    pool_size=settings.DB_POOL_SIZE,
+    max_overflow=settings.DB_MAX_OVERFLOW,
+    pool_timeout=settings.DB_POOL_TIMEOUT,
     echo=False
 )
 
@@ -34,9 +42,12 @@ def set_rls_context(session: Session, user_id: Optional[uuid.UUID], role: Option
     )
 
 def get_db() -> Generator[Session, None, None]:
-    """FastAPI dependency for database sessions."""
+    """FastAPI dependency for database sessions with automatic rollback on exception."""
     db = SessionLocal()
     try:
         yield db
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()

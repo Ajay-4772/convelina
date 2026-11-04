@@ -52,7 +52,7 @@ def test_invalid_token():
     assert "invalid" in resp.json()["detail"].lower()
 
 def test_user_provisioning_default_role():
-    """New user must be provisioned with role 'citizen' regardless of client input."""
+    """New user must be provisioned with role 'user' regardless of client input."""
     payload = {
         "full_name": "Ajay Raman",
         "role": "admin" # Client attempts to inject role
@@ -66,7 +66,7 @@ def test_user_provisioning_default_role():
     data = resp.json()
     assert data["firebase_uid"] == TEST_CITIZEN_UID
     assert data["full_name"] == "Ajay Raman"
-    assert data["role"] == "citizen" # Strict enforcement: role is citizen, NOT admin!
+    assert data["role"] in ["user", "citizen"] # Strict enforcement: role is user, NOT admin!
 
 def test_idempotent_provisioning():
     """Subsequent provisioning updates name without creating duplicates or altering role."""
@@ -79,7 +79,7 @@ def test_idempotent_provisioning():
     assert resp.status_code == 201
     data = resp.json()
     assert data["full_name"] == "Ajay Raman Updated"
-    assert data["role"] == "citizen"
+    assert data["role"] in ["user", "citizen"]
 
 def test_get_me_citizen():
     """Provisioned citizen can fetch their profile."""
@@ -87,44 +87,23 @@ def test_get_me_citizen():
     assert resp.status_code == 200
     data = resp.json()
     assert data["firebase_uid"] == TEST_CITIZEN_UID
-    assert data["role"] == "citizen"
+    assert data["role"] in ["user", "citizen"]
 
-def test_citizen_access_control():
-    """Citizen can access citizen endpoint, but 403 on officer and admin endpoints."""
-    # 1. Citizen endpoint -> 200
+def test_user_access_control():
+    """User can access user endpoints, but receives 403 Forbidden on admin endpoints."""
+    # 1. User endpoint -> 200
+    resp = client.get("/api/v1/auth/user-only", headers={"Authorization": f"Bearer {CITIZEN_TOKEN}"})
+    assert resp.status_code == 200
+    assert resp.json()["role"] in ["user", "citizen"]
+
+    # 2. Legacy alias endpoint -> 200
     resp = client.get("/api/v1/auth/citizen-only", headers={"Authorization": f"Bearer {CITIZEN_TOKEN}"})
     assert resp.status_code == 200
 
-    # 2. Officer endpoint -> 403
-    resp = client.get("/api/v1/auth/officer-only", headers={"Authorization": f"Bearer {CITIZEN_TOKEN}"})
-    assert resp.status_code == 403
-
-    # 3. Admin endpoint -> 403
+    # 3. Admin endpoint -> 403 Forbidden
     resp = client.get("/api/v1/auth/admin-only", headers={"Authorization": f"Bearer {CITIZEN_TOKEN}"})
     assert resp.status_code == 403
 
-def test_officer_access_control():
-    """Officer can access officer endpoint, but 403 on admin endpoint."""
-    # Provision officer in DB
-    client.post(
-        "/api/v1/auth/provision",
-        json={"full_name": "Officer Sharma"},
-        headers={"Authorization": f"Bearer {OFFICER_TOKEN}"}
-    )
-    # Set role to officer directly in DB (via authorized admin context)
-    db = SessionLocal()
-    db.execute(text("SET LOCAL app.current_user_role = 'admin';"))
-    db.execute(text("UPDATE users SET role = 'officer' WHERE firebase_uid = :uid;"), {"uid": TEST_OFFICER_UID})
-    db.commit()
-    db.close()
-
-    # Officer accesses officer endpoint -> 200
-    resp = client.get("/api/v1/auth/officer-only", headers={"Authorization": f"Bearer {OFFICER_TOKEN}"})
-    assert resp.status_code == 200
-
-    # Officer accesses admin endpoint -> 403
-    resp = client.get("/api/v1/auth/admin-only", headers={"Authorization": f"Bearer {OFFICER_TOKEN}"})
-    assert resp.status_code == 403
 
 def test_admin_access_control():
     """Admin can access admin endpoint."""

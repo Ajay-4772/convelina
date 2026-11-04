@@ -1,6 +1,32 @@
 # Consolith Tasks & Build Tracker
 
-- [x] **Module 1: Foundation**
+- [x] **Phase P2C: Real LLM Integration, Grounded Answers & Citation Validation**
+  - [x] Deliver Step 1 Implementation Audit across `llm_provider.py`, `output_validator.py`, `retriever.py`, and `orchestrator.py`
+  - [x] Hardened `GoogleGeminiProvider` with configurable timeout (`GEMINI_TIMEOUT_SECONDS=15`), retry limits (`GEMINI_MAX_RETRIES=2`), exponential backoff (`GEMINI_BACKOFF_FACTOR=2.0`), and non-retryable 401/403 auth error traps
+  - [x] Implemented rich structured statutory offline fallback (`is_fallback=True`, `provider_status="fallback_offline"`) synthesizing Layer A, Layer B, and Layer C from deterministic resolution mappings and verified citations
+  - [x] Enforced strict verified source filtering in `HybridRetriever` (`verification_status == "verified"`, `is_active is not False`, excluding `needs_review`, `outdated`, and `retired` sources)
+  - [x] Enforced relevance score floor (>= 0.55) with explicit evidence abstention (`confidence="insufficient_evidence"`, `provider_status="insufficient_evidence"`)
+  - [x] Strengthened `GroundedOutputValidator` with authoritative official URL correspondence, non-existent citation stripping, and mandatory statutory disclaimer enforcement (`AUTOMATED COMPARISON RESULT • NOT OFFICIAL GOVERNMENT VERIFICATION`)
+  - [x] Verified zero unmasked raw Aadhaar numbers or raw sensitive IDs leaked into case contexts or LLM prompts
+  - [x] Enhanced frontend `AssistantWorkspace.tsx` and `frontend/src/lib/api.ts` with real-time provider mode pills ("AI Grounded (Gemini)" vs "Offline Statutory Resolution"), verified portal external links, and insufficient evidence alerts
+  - [x] Authored dedicated test suite `backend/tests/test_p2c_llm_grounding.py` (14/14 tests passing)
+  - [x] Full regression verification: Backend pytest **153/153 passed (100%)**, RLS isolation **9/9 passed (100%)**, E2E audit **12/12 stages passed (100%)**, Next.js build **15/15 routes compiled with 0 errors**
+
+- [x] **Phase P2B: Official Knowledge Base & Conflict-to-Resolution Mapping**
+  - [x] Deliver Step 1 Knowledge Base Inventory & Gap Report (8 official circulars, 8 verified forms, hash embedding transparency, skill search response)
+  - [x] Define structured knowledge taxonomy across all 6 document types (`aadhaar`, `pan`, `passport`, `education_10th`, `education_12th`, `epf`, and `gazette`)
+  - [x] Define knowledge source lifecycle states: `SourceVerificationStatus` (`verified`, `needs_review`, `outdated`, `retired`), SHA-256 content hashes, and version tracking
+  - [x] Implement deterministic `ResolutionMappingService` in `backend/app/services/resolution_mapping_service.py` mapping conflict fields, classifications, and document pairs to official procedures and forms
+  - [x] Implement fail-safe protections: low OCR confidence (< 60%) routes to manual inspection; non-Latin/Indic scripts mandate certified translation
+  - [x] Expand official forms catalog to 8 verified forms with authentic government URLs (`egazette.gov.in`, `epfindia.gov.in`, etc.)
+  - [x] Enhance Qdrant knowledge and form ingestion with content hashing, drift detection, and verification status filtering
+  - [x] Integrate resolution mapping into `ResolutionContextService` and `RAGOrchestrator` enforcing 3-layer explanations and statutory disclaimers
+  - [x] Enhance frontend UX in `AssistantWorkspace.tsx` and `api.ts` to display procedure cards, downloadable form pills, checklists, and portal links
+  - [x] Implement admin knowledge management endpoints: `GET /api/v1/knowledge/admin/sources` and `PUT /api/v1/knowledge/admin/sources/{id}/verification` with strict admin RBAC
+  - [x] Authored dedicated test suite `backend/tests/test_p2b_knowledge_mapping.py` with 12/12 passing tests
+  - [x] Full regression verification: Backend pytest **139/139 passed**, RLS isolation **9/9 passed**, E2E audit **12/12 stages passed**, Next.js build **15/15 routes compiled**
+
+- [x] **Phase P2A: AI Resolution Assistant Context Grounding**
   - [x] Docker Compose multi-service architecture
   - [x] PostgreSQL 16 container with healthcheck
   - [x] Qdrant container with healthcheck
@@ -126,6 +152,148 @@
   - [x] Administrator Console: Protected management workspace featuring real-time operational telemetry (registered citizens, total uploads, conflicts detected, SHA-256 audit trail events), user account search/removal, and hash-chained audit log viewer
   - [x] Module 9 PKI integration: Ed25519 digital signature verification directly connected into discrepancy review and activity history
   - [x] Full production build & live browser verification: 100% responsive, zero console errors, 14 live screenshots captured in `docs/screenshots/`
-- [ ] **Module 10: Security Hardening Pass**
+- [x] **Module 10: Security Hardening Pass & Production Readiness**
+  - [x] Safe parallel audit delegation across 3 subagents (Security, DevOps, QA)
+  - [x] Database & host network isolation: PostgreSQL (`127.0.0.1:5432`) and Qdrant (`127.0.0.1:6333`/`6334`)
+  - [x] Non-root container execution: `appuser` (UID 10001) in backend, `nextjs` (UID 1001) in frontend
+  - [x] Production Docker Compose topology (`docker-compose.prod.yml`) with dual network separation (`internal-net`, `public-net`)
+  - [x] Edge TLS reverse proxy (`Caddyfile` + Caddy 2.8 container)
+  - [x] Connection pool scaling: `DB_POOL_SIZE=8`, `DB_MAX_OVERFLOW=12` (max 80 across 4 workers < 100 Postgres limit)
+  - [x] Safe transaction rollback in `get_db()` on unhandled exceptions
+  - [x] Sanitized `/health` endpoint to prevent database credential or system path disclosure
+  - [x] Global exception handler with sanitized 500 JSON and server-side traceback logging
+  - [x] Security headers: CSP `default-src 'self'`, `X-Permitted-Cross-Domain-Policies: none`, `nosniff`, `DENY`
+  - [x] Verhoeff checksum algorithm (UIDAI standard) for ephemeral Aadhaar validation
+  - [x] Cross-tenant attestation IDOR protection in `PKIService`
+  - [x] Gmail authentication validation fix (`validate_gmail_address`) and OTP simulation guard
+  - [x] RAG conflict inquiry fix (`doc_type` -> `document_type`)
+  - [x] Full regression verification: 76/76 backend tests, 9/9 RLS tests, 8/8 auth tests, 8/8 OCR tests, 11/11 drafts tests, 12/12 PKI tests, 0 TypeScript errors, 15/15 Next.js build routes compiled
+
+- [x] **Sprint 2: Post-Change Verification, Security Review & Release Readiness**
+  - [x] Multi-agent audit evidence validation (Security, DevOps, QA)
+  - [x] Verhoeff checksum algorithm unit test suite (77/77 pytest passing)
+  - [x] Reverse proxy upload body limit (`request_body { max_size 15MB }` in `Caddyfile`)
+  - [x] Production settings fail-closed verification
+  - [x] End-to-end regression validation across all suites (100% pass)
+
+- [x] **Sprint 3: Production Staging Preparation & Deployment Safety**
+  - [x] Pinned deterministic dependencies in `backend/requirements.txt`
+  - [x] Multi-stage production container images built: `convelina-prod-backend:latest` and `convelina-prod-frontend:latest`
+  - [x] Container unprivileged execution verified (`appuser` UID 10001, `nextjs` UID 1001)
+  - [x] Strict fail-closed validator in `backend/app/config.py` including `FIREBASE_PROJECT_ID` checks
+  - [x] Production network isolation in `docker-compose.prod.yml` (`internal-net` for DB/vector store, Caddy gateway)
+  - [x] Automated database & vector snapshot backup script (`scripts/backup_database.sh`) with SHA-256 integrity checksums
+  - [x] Zero credential leakage verified via `.gitignore` and `git status`
+
+- [x] **Sprint 4: Safe Staging Launch Gate**
+  - [x] Verified existing production images (`convelina-prod-backend:latest` 297MB, `convelina-prod-frontend:latest` 179MB)
+  - [x] Implemented deliberate containerized migration runner `backend/app/core/migrate.py` and synced `scripts/run_migrations.py`
+  - [x] Added `migrate` one-shot service with profile `tools` in `docker-compose.prod.yml` to prevent concurrent worker migration execution
+  - [x] Verified non-superuser `consolith_app` role permissions (`rolsuper=f`) and FORCED RLS on all 18 tables
+  - [x] Verified append-only trigger on `audit_log` and role escalation block on `users`
+  - [x] Fixed host string parsing bug in `backend/app/config.py` using `urllib.parse.urlparse` for superuser validation
+  - [x] Rebuilt `convelina-prod-backend:latest` with cached layer in 1.8s
+  - [x] Validated Caddy edge proxy configuration (`caddy:2.8-alpine caddy validate`) with `flush_interval -1` for streaming
+  - [x] Hardened `scripts/backup_database.sh` with `chmod 600`, retention pruning, and error traps
+  - [x] Executed end-to-end full database restore in an isolated disposable PostgreSQL container (`convelina-restore-verify`) with 0 errors
+  - [x] Documented role dependency prerequisite in `docs/operations/BACKUP_AND_RECOVERY.md`
+
+- [x] **Sprint 5: End-to-End Staging Verification**
+  - [x] Verified production image startup with non-root users (`appuser` UID 10001, `nextjs` UID 1001)
+  - [x] Verified outbound internet connectivity from production backend to Google Gemini and OAuth endpoints
+  - [x] Executed migrations against disposable staging database with idempotency verification (9 applied, 9 skipped on re-run)
+  - [x] Verified complete citizen workflow via live integration suites (Auth 8/8, Upload/OCR 8/8, Conflicts 10/10, RAG 8/8, Drafts 11/11, PKI 12/12)
+  - [x] Verified discrepancy framing integrity (non-accusatory, no automated presumption of fraud)
+  - [x] Verified failure scenario handling (unauthenticated rejection 401, cross-tenant IDOR 404, bad magic bytes 400, unconfigured Gemini graceful degradation)
+  - [x] Full test pass: 77/77 backend pytest unit tests passing
+  - [x] Frontend verification: 0 TypeScript errors (`tsc --noEmit`), 15/15 production pages compiled (`npm run build`)
+  - [x] Preserved product boundary and confirmed zero public deployment actions occurred
+
+- [x] **Sprint 6: Final Pre-Launch Security and Configuration Review**
+  - [x] Hardened Docker build context boundaries: updated `backend/.dockerignore` and `frontend/.dockerignore` with defense-in-depth secret ignores (`.env*`, `*.pem`, `*.key`, `serviceAccountKey*.json`)
+  - [x] Verified zero tracked or committed secrets (`git status --ignored`)
+  - [x] Audited Firebase authentication token verification and confirmed database role override protection
+  - [x] Audited Gemini & RAG architecture: verified 0.55 relevance floor, source citation validation, safe degradation fallback, and confirmed complete independence of deterministic conflict engine
+  - [x] Documented emergency rollback protocol in `docs/operations/DEPLOYMENT.md`
+  - [x] Re-verified foundation health: 4/4 services up and healthy
+  - [x] Ranked remaining blockers for controlled public staging review
+  - [x] Confirmed zero public actions, zero DNS changes, zero key rotations, and zero production data alterations
+
+- [x] **Sprint 7: Zero-Cost / Ultra-Low-Cost Deployment Feasibility Audit**
+  - [x] Comprehensive architectural and codebase inspection of all components against free and usage-based cloud tiers
+  - [x] Audited dependencies: verified CPU-only semantic embeddings (`DeterministicBGEEmbeddingService`) and deterministic conflict engine
+  - [x] Verified ephemeral document storage lifecycle (`delete_after_ocr`) eliminating persistent S3/GCS object storage costs
+  - [x] Evaluated providers: Vercel Hobby, Cloudflare Pages, Google Cloud Run, Supabase, Neon, Render, Qdrant Cloud, Firebase Auth, Resend
+  - [x] Formulated detailed cost models for ₹0, ₹100, and ₹200 INR/month scenarios ($0.00, $1.18, $2.35 USD at ₹85/USD)
+  - [x] Authored feasibility report `docs/deployment/FREE_TIER_DEPLOYMENT_FEASIBILITY.md` with 16 sections, 2 Mermaid diagrams, and answers to all 10 acceptance criteria
+  - [x] Conclusively recommended Architecture B (Scenario 2: ₹100 INR/mo Prototype) with paid private Gemini API and amortized `.in` domain
+  - [x] Documented non-executed commands, external prerequisites, and Sprint 8 preparation checklist
+
+- [x] **Sprint 10: End-to-End Product Validation, Browser Automation & Functional Hardening**
+  - [x] Implemented comprehensive Playwright E2E browser test suite (16 tests across 9 operational domains)
+  - [x] Verified full citizen journey: Registration, Email verification, Login, Profile editing, Multi-credential upload, OCR stage 5 attribute review, Deterministic conflict detection, AI Assistant RAG, Correction draft petition generation, Binary PDF/DOCX export, and RBAC / Tenant isolation
+  - [x] Executed Playwright E2E test suite against live production frontend: **16/16 passed in 2.9m (100%)**
+  - [x] Hardened `AuthContext.tsx`: implemented `createSimulatedUser` returning typed `FirebaseUser`, added failsafe timer, resolved navigation race conditions
+  - [x] Fixed native HTML5 form interference: added `noValidate` to signup and login forms
+  - [x] Resolved strict-mode Playwright selector collisions in `profile.spec.ts` and `discrepancy.spec.ts`
+  - [x] Fixed `Pt` NameError in `backend/app/services/document_exporter.py` for DOCX exports
+  - [x] Re-verified backend pytest suite in container: **85/85 passed in 35.50s (100%)**
+  - [x] Re-verified PostgreSQL RLS isolation suite in container: **9/9 passed (100%)**
+  - [x] Re-verified Next.js production build: **15/15 routes compiled, 0 TypeScript errors (Exit code: 0)**
+  - [x] Maintained Docker backend daemon and cleanly terminated ephemeral test tasks
+  - [x] Delivered completion report `docs/development/SPRINT_10_COMPLETION_REPORT.md`
+
+- [x] **Sprint 9: Functional Product Development & Implementation Audit**
+  - [x] Restored Docker Desktop daemon and verified 4/4 containers healthy (`convelina-frontend`, `convelina-backend`, `convelina-postgres`, `convelina-qdrant`)
+  - [x] Reconciled test suite failure root causes (host dependencies, container `pytest.ini` with `pythonpath = .`, isolated OTP test emails)
+  - [x] Implemented Stage 5 Demographic Attribute Review: `PATCH /api/v1/documents/{document_id}/fields` under forced RLS, interactive frontend review modal
+  - [x] Fixed discrepancy stream bug: updated `ConflictItem` in `api.ts` to `value_a`/`value_b` and rendered comparison methods, descriptions, and severity badges
+  - [x] Integrated Module 7 Legal Correction Drafts: wired `fetchCorrectionDrafts`, `createCorrectionDraft`, `updateCorrectionDraft`, `deleteCorrectionDraft`, and `downloadCorrectionDraft`
+  - [x] Added interactive petition viewer/editor modal and direct browser PDF/DOCX binary downloads
+  - [x] Verified backend pytest: **85/85 passed in 124.04s (Exit code: 0)**
+  - [x] Verified frontend production build: **15/15 routes compiled, 0 TypeScript errors (Exit code: 0)**
+  - [x] Verified container integration test scripts: Auth (8/8), OCR (8/8), Conflicts (10/10), RAG (8/8), Drafts (11/11), PKI (12/12), RLS (9/9), Foundation Health (4/4)
+  - [x] Delivered completion report `docs/development/SPRINT_9_COMPLETION_REPORT.md`
+
+- [x] **Sprint 8B: Cloud Staging Packaging & Local Dry-Run Gate**
+  - [x] Updated `backend/Dockerfile` with dynamic `${PORT:-8080}`, removed `--reload`, set default `WEB_CONCURRENCY=1`, and preserved UID 10001
+  - [x] Preserved local Compose development workflow on port 8000 with hot reloading and external Qdrant container
+  - [x] Implemented in-process Qdrant with automatic `ensure_knowledge_indexed()` self-seeding (25 chunks + 6 forms in < 200ms) and healthcheck inspection
+  - [x] Renamed embedding class to `DeterministicHashEmbeddingService` with `EMBEDDING_MODEL="deterministic-hash-1024"` and verified unigram hash projection properties
+  - [x] Enforced `STORAGE_RETENTION_POLICY == "delete_after_ocr"` in production settings validator for zero raw document disk persistence
+  - [x] Added connection pooling `prepare_threshold` support for external poolers (Supavisor) in database configuration
+  - [x] Re-verified live PostgreSQL RLS isolation: executed `scripts/test_rls_isolation.py` (9/9 passed)
+  - [x] Added `GEMINI_ENABLED=False` default with safe graceful degradation to `"Assistant service is not currently available. Please try again later."`
+  - [x] Created `backend/tests/test_sprint8b_packaging.py` (8/8 passed); ran full backend test suite: **85/85 passed**
+  - [x] Validated standalone container build `convelina-backend-test:sprint8b` on `PORT=8080` with in-process vector search
+  - [x] Verified frontend TypeScript check (`tsc --noEmit`, 0 errors) and Next.js production build (15/15 routes compiled)
+  - [x] Verified 4/4 foundation services healthy via `scripts/verify_module1.py`
+  - [x] Authored dry-run report `docs/deployment/SPRINT_8B_LOCAL_DRY_RUN.md` with **PASS** completion gate verdict
+
+- [x] **Sprint 8A: Free-Tier Assumption Validation & Deployment Gate**
+  - [x] Verified official vendor pricing, free tiers, and dormancy terms (Qdrant 1-wk pause / 4-wk delete, Supabase 7-day pause, Cloud Run regional free tier limits)
+  - [x] Recalculated cost scenarios: separated confirmed zero-cost tiers from variable costs, applied statutory 18% GST and exchange rate
+  - [x] Inspected actual embeddings: unmasked `DeterministicBGEEmbeddingService` as hash projection; measured live cosine similarities (+0.7665 keywords vs -0.1287 synonyms); passed 4/4 RAG unit tests
+  - [x] Verified ephemeral document storage cleanup in `finally:` block; identified configuration validation gap
+  - [x] Verified PostgreSQL 16 compatibility: executed live `test_rls_isolation.py` (9/9 passed); verified non-superuser role, forced RLS, and triggers
+  - [x] Audited Cloud Run container compatibility: identified `--reload` flag, port 8080 mapping requirement, and worker memory bounds
+  - [x] Verified Gemini API privacy: debunked "zero logging" claim on paid tier; confirmed Free Tier model training prohibition on real PII
+  - [x] Formulated robust in-process Qdrant solution eliminating fragile external vector DB
+  - [x] Verified native Spend Caps and API quotas over informational budget alerts
+  - [x] Authored validation report `docs/deployment/SPRINT_8A_VALIDATION.md` and issued CONDITIONAL-GO verdict
 
 
+
+- [x] **Phase 1: Architecture, App Router & Google Stitch Design System**
+  - [x] Route decomposition: `/app` (Overview), `/app/inconsistencies`, `/app/assistant`, `/app/assistant/[conversationId]`, `/app/forms`, `/app/forms/[formId]`, `/app/profile`
+  - [x] Shared workspace layout (`frontend/src/app/app/layout.tsx`): Google Stitch desktop sidebar, mobile drawer, persistent WORKSPACE badge, header with user avatar dropdown
+  - [x] Design token system: `#FAF9F6` warm off-white, `#111111` near-black, `#FFFFFF` surface, hairline 1px borders, Merriweather serif headings, Inter sans body
+  - [x] Privacy protection: Removed global search by Aadhaar/PAN
+  - [x] Real API wiring: Document uploads, deterministic conflict engine, Gemini RAG, form catalog, profile editing, account deletion modal
+  - [x] Compilation & build verification: `tsc --noEmit` (0 errors), `npm run build` (15/15 pages generated cleanly)
+
+- [x] **Phase 0: Repository Audit & Controlled Engineering Plan**
+  - [x] Diagnostic inspection of all codebase layers (Frontend, Backend, Database, AI/RAG, Infrastructure, Security, QA)
+  - [x] Generation of 10 architectural, security, operational, and testing specification documents
+  - [x] Prioritized engineering backlog (P0 to P4) with risk assessment and acceptance criteria
+  - [x] Line-by-line persistent memory synchronization in `docs/memory/`

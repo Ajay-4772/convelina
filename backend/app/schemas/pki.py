@@ -56,6 +56,8 @@ class DocumentAttestationResponse(BaseModel):
     correction_draft_id: Optional[str] = None
     citizen_id: str
     officer_id: str
+    user_id: Optional[str] = None
+    signer_id: Optional[str] = None
     document_type: str
     document_fingerprint: str
     signing_key_id: str

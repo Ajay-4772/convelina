@@ -73,11 +73,11 @@ def check_frontend():
         with urllib.request.urlopen(req, timeout=5.0) as resp:
             if resp.status == 200:
                 body = resp.read().decode('utf-8', errors='ignore')
-                if "Consolith" in body:
-                    print("  [OK] Frontend is running and serving Consolith application (HTTP 200).")
+                if "CONVELINA" in body or "Consolith" in body:
+                    print("  [OK] Frontend is running and serving CONVELINA application (HTTP 200).")
                     return True
                 else:
-                    print("  [FAIL] Frontend returned 200 but 'Consolith' not found in HTML.")
+                    print("  [FAIL] Frontend returned 200 but 'CONVELINA' not found in HTML.")
                     return False
             else:
                 print(f"  [FAIL] Frontend returned status {resp.status}")

@@ -32,6 +32,7 @@ build/
 .pytest_cache/
 .coverage
 htmlcov/
+*.tsbuildinfo
 
 # IDE / System
 .vscode/
@@ -48,3 +49,9 @@ postgres_data/
 
 # Test outputs
 docs/load_test_results.json
+frontend/test-results/
+frontend/playwright-report/
+
+# Temporary MS Word lock files & exports
+~$*.docx
+README.docx

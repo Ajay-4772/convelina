@@ -1,12 +1,16 @@
+import logging
 import time
 from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
 from qdrant_client import QdrantClient
 
+logger = logging.getLogger("convelina.api")
+
+from app.core.database import engine as db_engine
 from app.config import settings
 from app.core.firebase import initialize_firebase, is_firebase_configured
 from app.routers.auth import router as auth_router
@@ -22,6 +26,12 @@ from app.routers.pki import router as pki_router
 async def lifespan(app: FastAPI):
     # Startup: Initialize Firebase Admin SDK
     initialize_firebase()
+    # Startup: Ensure Qdrant knowledge base and collections are indexed
+    try:
+        from app.rag.qdrant import ensure_knowledge_indexed
+        ensure_knowledge_indexed()
+    except Exception as e:
+        logger.error("Failed to initialize Qdrant knowledge index on startup: %s", e)
     yield
 
 is_prod = settings.ENVIRONMENT.lower() == "production"
@@ -45,9 +55,21 @@ async def add_security_headers(request, call_next):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none';"
+    response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
     if is_prod:
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
+
+# Global Exception Handler (prevents leaking internal stack traces or environment variables)
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    logger.error(f"Unhandled server error on {request.method} {request.url.path}: {exc}", exc_info=True)
+    detail = str(exc) if settings.DEBUG else "Internal server error. Please try again."
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": detail}
+    )
 
 # Configure CORS
 app.add_middleware(
@@ -94,10 +116,9 @@ def health_check():
         }
     }
     
-    # 1. Check PostgreSQL (via non-superuser consolith_app connection)
+    # 1. Check PostgreSQL (via shared application connection pool)
     try:
-        engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True)
-        with engine.connect() as connection:
+        with db_engine.connect() as connection:
             result = connection.execute(text("SELECT 1;")).scalar()
             if result == 1:
                 health_status["services"]["postgres"] = {"status": "up"}
@@ -105,21 +126,35 @@ def health_check():
                 health_status["services"]["postgres"] = {"status": "down", "error": "Query returned unexpected result"}
                 health_status["status"] = "degraded"
     except Exception as e:
-        health_status["services"]["postgres"] = {"status": "down", "error": str(e)}
+        logger.error(f"Healthcheck failed to connect to PostgreSQL: {e}")
+        error_msg = str(e) if settings.DEBUG else "Database connection failed or unreachable."
+        health_status["services"]["postgres"] = {"status": "down", "error": error_msg}
         health_status["status"] = "degraded"
 
     # 2. Check Qdrant
     try:
-        qdrant_url = f"http://{settings.QDRANT_HOST}:{settings.QDRANT_PORT}"
-        with httpx.Client(timeout=2.0) as http_client:
-            resp = http_client.get(f"{qdrant_url}/healthz")
-            if resp.status_code == 200:
-                health_status["services"]["qdrant"] = {"status": "up"}
-            else:
-                health_status["services"]["qdrant"] = {"status": "down", "code": resp.status_code}
-                health_status["status"] = "degraded"
+        if settings.QDRANT_IN_PROCESS or settings.QDRANT_LOCATION:
+            from app.rag.qdrant import get_qdrant_client
+            client = get_qdrant_client()
+            cols = [c.name for c in client.get_collections().collections]
+            health_status["services"]["qdrant"] = {
+                "status": "up",
+                "mode": "in_process",
+                "collections": cols
+            }
+        else:
+            qdrant_url = f"http://{settings.QDRANT_HOST}:{settings.QDRANT_PORT}"
+            with httpx.Client(timeout=2.0) as http_client:
+                resp = http_client.get(f"{qdrant_url}/healthz")
+                if resp.status_code == 200:
+                    health_status["services"]["qdrant"] = {"status": "up", "mode": "external"}
+                else:
+                    health_status["services"]["qdrant"] = {"status": "down", "code": resp.status_code}
+                    health_status["status"] = "degraded"
     except Exception as e:
-        health_status["services"]["qdrant"] = {"status": "down", "error": str(e)}
+        logger.error(f"Healthcheck failed to connect to Qdrant: {e}")
+        error_msg = str(e) if settings.DEBUG else "Vector database connection failed or unreachable."
+        health_status["services"]["qdrant"] = {"status": "down", "error": error_msg}
         health_status["status"] = "degraded"
 
     http_code = status.HTTP_200_OK if health_status["status"] == "healthy" else status.HTTP_503_SERVICE_UNAVAILABLE

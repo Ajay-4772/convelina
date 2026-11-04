@@ -12,8 +12,8 @@ def test_otp_send_and_verify_flow():
     res = client.post("/api/v1/auth/otp/send", json={"email": "invalid-email"})
     assert res.status_code == 400
 
-    # 2. Valid email dispatches OTP
-    test_email = "citizen_verify_test@gmail.com"
+    # 2. Valid email dispatches OTP (timestamped to ensure test isolation across rapid runs)
+    test_email = f"citizen_verify_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S%f')}@gmail.com"
     res = client.post("/api/v1/auth/otp/send", json={"email": test_email})
     assert res.status_code == 200
     data = res.json()

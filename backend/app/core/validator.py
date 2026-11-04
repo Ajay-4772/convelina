@@ -25,6 +25,45 @@ SUPPORTED_DOC_TYPES = {
     "other",
 }
 
+# Verhoeff Algorithm Tables for Official Aadhaar Checksum Validation
+VERHOEFF_D = [
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    [1, 2, 3, 4, 0, 6, 7, 8, 9, 5],
+    [2, 3, 4, 0, 1, 7, 8, 9, 5, 6],
+    [3, 4, 0, 1, 2, 8, 9, 5, 6, 7],
+    [4, 0, 1, 2, 3, 9, 5, 6, 7, 8],
+    [5, 6, 7, 8, 9, 0, 1, 2, 3, 4],
+    [6, 7, 8, 9, 5, 1, 2, 3, 4, 0],
+    [7, 8, 9, 5, 6, 2, 3, 4, 0, 1],
+    [8, 9, 5, 6, 7, 3, 4, 0, 1, 2],
+    [9, 5, 6, 7, 8, 4, 0, 1, 2, 3],
+]
+
+VERHOEFF_P = [
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    [1, 5, 7, 6, 2, 8, 3, 0, 9, 4],
+    [5, 8, 0, 3, 7, 9, 6, 1, 4, 2],
+    [8, 9, 1, 6, 0, 4, 3, 5, 2, 7],
+    [9, 4, 5, 3, 1, 2, 6, 8, 7, 0],
+    [4, 2, 8, 6, 5, 7, 3, 9, 0, 1],
+    [2, 7, 9, 3, 8, 0, 6, 4, 1, 5],
+    [7, 0, 4, 6, 9, 1, 3, 2, 5, 8],
+]
+
+
+def validate_verhoeff(num_str: str) -> bool:
+    """
+    Validates a numeric string using the Verhoeff checksum algorithm (UIDAI Aadhaar standard).
+    """
+    cleaned = "".join(c for c in num_str if c.isdigit())
+    if not cleaned:
+        return False
+    c = 0
+    for i, char in enumerate(reversed(cleaned)):
+        c = VERHOEFF_D[c][VERHOEFF_P[i % 8][int(char)]]
+    return c == 0
+
+
 def sanitize_filename(filename: str) -> str:
     """
     Prevents path traversal, null byte injections, and preserves safe basenames.
