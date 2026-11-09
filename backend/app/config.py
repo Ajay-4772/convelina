@@ -74,6 +74,9 @@ class Settings(BaseSettings):
     QDRANT_LOCATION: Optional[str] = None  # None defaults to ":memory:" when QDRANT_IN_PROCESS is True
     QDRANT_KNOWLEDGE_COLLECTION: str = "consolith_knowledge"
     QDRANT_FORMS_COLLECTION: str = "consolith_forms"
+    QDRANT_CORE_COLLECTION: str = "convelina_core_operational"
+    QDRANT_REFERENCE_COLLECTION: str = "convelina_reference_secondary"
+    RETRIEVAL_MODE: str = "lexical_only"  # "lexical_only" (default) or "hybrid_experimental"
     RAG_TOP_K: int = 5
     RAG_MIN_RELEVANCE: float = 0.55  # Minimum similarity score floor per project rule
     RAG_MAX_CONTEXT_TOKENS: int = 4000

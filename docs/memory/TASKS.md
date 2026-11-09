@@ -27,7 +27,18 @@
     - [x] Sub-Phase P3G.4: Multilingual Translation Engine & Document Exporter (DOCX/PDF, Tamil/Indic translation, ReportLab LohitTamil Unicode, A4 NumberedCanvas watermarking, strict token preservation invariants, confirmation invalidation workflow, 15/15 acceptance tests passed, 263/263 backend regression passed, Next.js build clean)
     - [x] Sub-Phase P3G.4.1: Independent Multilingual Quality & Export Acceptance Audit (Completed & Verified: FreeSans TrueType integration, ReportLab bold font bug resolved, 0 tofu boxes, 15/15 Playwright E2E browser tests passed, 15/15 backend acceptance tests passed, 263/263 full backend regression passed, 9/9 RLS isolation passed, comprehensive acceptance report authored)
     - [x] Sub-Phase P3G.5: End-to-End Independent Validation & Acceptance Audit (Completed & Verified: 16-step complete workflow automated validation 16/16 passed, ASGI Latin-1 header bug fixed, 7 verified circulars audited, 9/9 RLS tests passed, 263/263 backend regression passed, 34/34 browser E2E passed, acceptance report authored at P3G5_ACCEPTANCE_REPORT.md)
-  - [ ] Execute Sub-Phase P3H: Document Repository & Citizen Profile Polish (Field guidance checklists, preferences)
+  - [x] **Execute Sub-Phase P3H.5: Knowledge Base Implementation & Controlled Ingestion**
+    - [x] Validated 47-document reconciled official corpus (8 Core Operational, 12 Reference Secondary, 27 Quarantined) with 100% SHA-256 disk hash match
+    - [x] Implemented Candidate Strategy 6 (Procedure-Aware Hierarchical Chunking) outputting deterministic chunk counts (167 Core, 28 Reference, 195 Total)
+    - [x] Enforced strict metadata allowlist contract ensuring zero citizen PII or OCR payloads in vector store
+    - [x] Enforced strict DOC_043 statutory governance (all 21 chunks flagged with `SOURCE_METADATA_CONFLICT` and `human_review_required=True`, runtime disclaimer attached, unverified claims intercepted)
+    - [x] Built staged Qdrant ingestion engine with isolated version staging, concurrency mutex, deterministic UUIDv5 IDs, automated smoke test, and atomic promotion/rollback
+    - [x] Implemented Okapi BM25 lexical engine (`lexical_only` primary, `hybrid_experimental` optional) with query term coverage threshold (0.34) and calibrated score floor (4.5)
+    - [x] Validated retrieval quality with 60-query expanded benchmark: Recall@3 0.6889 (+19.2%), MRR 0.5841 (+34.0%), nDCG@3 0.7682 (+50.0%), 15/15 (100.0%) negative abstention, 6.97 ms mean latency
+    - [x] Implemented 7 administrative and retrieval diagnostics endpoints with strict RBAC (HTTP 403 for citizens)
+    - [x] Authored 9/9 passing pytest battery in `backend/tests/test_p3h5_knowledge_ingestion.py`
+    - [x] Verified zero regressions across 28 Firebase auth security tests
+  - [ ] Execute Sub-Phase P3H.6: Document Repository & Citizen Profile Polish
 - [x] **Phase P4: Verification, Security Hardening & Penetration Testing Gate**
   - [x] Comprehensive 37-test platform penetration testing harness authored & passing (`scripts/run_p4_security_audit.py`, 37/37 tests passed, 100%)
   - [x] Audit log concurrency race condition remediated via Migration 018 (`pg_advisory_xact_lock`)

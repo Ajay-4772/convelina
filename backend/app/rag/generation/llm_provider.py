@@ -86,7 +86,10 @@ class GoogleGeminiProvider(BaseLLMProvider):
             return GEMINI_UNAVAILABLE_MESSAGE
         try:
             full_prompt = f"System Instruction: {system_instruction}\n\nPrompt:\n{prompt}" if system_instruction else prompt
-            response = self.raw_client.generate_content(full_prompt)
+            response = self.raw_client.generate_content(
+                full_prompt,
+                request_options={"timeout": float(self.timeout_seconds)}
+            )
             if response and response.text and response.text.strip():
                 return response.text.strip()
             return GEMINI_UNAVAILABLE_MESSAGE
@@ -112,17 +115,77 @@ class GoogleGeminiProvider(BaseLLMProvider):
         # 1. Build verified citations from retrieved chunks
         citations: List[SourceCitation] = []
         for c in retrieved_chunks:
-            sid = c.get("source_id")
-            if sid and str(c.get("verification_status", "verified")).lower() == "verified":
+            sid = c.get("source_id") or c.get("document_id")
+            title = c.get("document_title") or c.get("title", "Official Guidance")
+            if sid and str(c.get("verification_status", "verified")).lower() in ("verified", "needs_review"):
                 citations.append(
                     SourceCitation(
                         source_id=sid,
-                        title=c.get("title", "Official Guidance"),
+                        title=title,
                         authority=c.get("issuing_authority", "Government Authority"),
                         url=c.get("source_url", ""),
                         verification_status=c.get("verification_status", "verified")
                     )
                 )
+
+        attachments = case_context.get("attachments") or []
+        for att in attachments:
+            fname = att.get("file_name", "Uploaded Document")
+            citations.append(
+                SourceCitation(
+                    source_id=f"attachment_{att.get('id', '')}",
+                    title=f"Uploaded Evidence: {fname}",
+                    authority="Citizen Submitted Document",
+                    url="",
+                    verification_status="unverified"
+                )
+            )
+
+        # 2. Build Document Analysis Section if attachments are present
+        att_section = ""
+        has_low_confidence = False
+        if attachments:
+            att_blocks = []
+            for att in attachments:
+                fname = att.get("file_name", "Uploaded Document")
+                dtype = att.get("detected_type", "supporting_document").replace("_", " ").title()
+                conf = att.get("ocr_confidence")
+                conf_pct = f"{int(conf * 100)}%" if conf is not None else "N/A"
+                ocr_st = att.get("ocr_status", "completed")
+
+                block = [
+                    f"### [Document Evidence: {fname}]",
+                    f"• **Detected Document Category**: {dtype}",
+                    f"• **OCR Recognition Quality**: {conf_pct} ({ocr_st.replace('_', ' ').title()})"
+                ]
+
+                if ocr_st == "low_confidence" or (conf is not None and conf < 0.60):
+                    has_low_confidence = True
+                    block.append("⚠️ **OCR Quality Warning**: Recognition confidence is below 60%. Certain characters, numerals, or stamps may be degraded. Official manual verification is required.")
+
+                dates = att.get("dates_found", [])
+                if dates:
+                    block.append(f"• **Relevant Dates Identified**: {', '.join(dates)}")
+
+                reasons = att.get("rejection_reasons", [])
+                if reasons:
+                    block.append(f"• **Stated Rejection / Deficiency Observations**:\n  - " + "\n  - ".join(reasons))
+
+                masked_ids = att.get("masked_identifiers", {})
+                if masked_ids:
+                    id_strs = [f"{k.replace('_', ' ').title()}: {v}" for k, v in masked_ids.items()]
+                    block.append(f"• **Protected Identifiers Detected**: {', '.join(id_strs)}")
+
+                txt = (att.get("extracted_text") or "").strip()
+                if txt:
+                    snip = txt[:350].replace("\n", " ").strip()
+                    if len(txt) > 350:
+                        snip += "..."
+                    block.append(f"• **Extracted Content Excerpt**:\n  > \"{snip}\"")
+
+                att_blocks.append("\n".join(block))
+
+            att_section = "\n\n".join(att_blocks)
 
         # 2. Case with active conflict and resolution mapping
         if res_mapping:
@@ -168,7 +231,25 @@ class GoogleGeminiProvider(BaseLLMProvider):
                 f"CONVELINA does not perform direct government filing."
             )
 
-            full_answer = f"{layer_a}\n\n{layer_b}\n\n{layer_c}\n\n---\n{MANDATORY_STATUTORY_DISCLAIMER}"
+            if att_section:
+                full_answer = f"{att_section}\n\n---\n\n{layer_a}\n\n{layer_b}\n\n{layer_c}\n\n---\n{MANDATORY_STATUTORY_DISCLAIMER}"
+            else:
+                full_answer = f"{layer_a}\n\n{layer_b}\n\n{layer_c}\n\n---\n{MANDATORY_STATUTORY_DISCLAIMER}"
+
+            # Check for Tamil or Hindi translation request
+            q_lower = question.lower()
+            if "tamil" in q_lower or "தமிழ்" in q_lower or case_context.get("language") == "ta":
+                full_answer += (
+                    f"\n\n**[தமிழ் மொழிபெயர்ப்பு / Tamil Summary]**\n"
+                    f"அடையாள ஆவண முரண்பாடு: '{field_name}' விவரத்தில் முரண்பாடு கண்டறியப்பட்டுள்ளது. "
+                    f"சம்பந்தப்பட்ட {authority} துறையின் '{proc_name}' நடைமுறை மூலம் சரிபார்க்கப்பட்ட படிவத்தை சமர்ப்பித்து திருத்தம் செய்யவும்."
+                )
+            elif "hindi" in q_lower or "हिन्दी" in q_lower or case_context.get("language") == "hi":
+                full_answer += (
+                    f"\n\n**[हिन्दी अनुवाद / Hindi Summary]**\n"
+                    f"पहचान दस्तावेज़ विसंगति: '{field_name}' में विसंगति पाई गई है। "
+                    f"कृपया {authority} के आधिकारिक पोर्टल पर '{proc_name}' के माध्यम से सुधार हेतु आवेदन करें।"
+                )
 
             # Build resolution steps
             resolution_steps = []
@@ -238,26 +319,62 @@ class GoogleGeminiProvider(BaseLLMProvider):
         # 3. Generic question with retrieved chunks
         top_chunk = retrieved_chunks[0] if retrieved_chunks else {}
         authority = top_chunk.get("issuing_authority", "Official Authority")
-        title = top_chunk.get("title", "Official Guidance")
-        content = top_chunk.get("content", "")
+        title = top_chunk.get("document_title") or top_chunk.get("title", "Official Guidance")
+        content = top_chunk.get("chunk_text") or top_chunk.get("content", "")
+        doc043_disclaimer = top_chunk.get("disclaimer")
 
-        answer_text = (
-            f"**[Verified Statutory Guidance — {authority}]**\n\n"
-            f"Based on official documentation for *{title}*:\n\n"
-            f"{content[:500]}...\n\n"
-            f"For complete official procedures, consult the verified source at {top_chunk.get('source_url')}.\n\n"
-            f"---\n{MANDATORY_STATUTORY_DISCLAIMER}"
-        )
+        # 3. Document Attachment question or generic question
+        q_lower = question.lower()
+        if att_section:
+            answer_text = (
+                f"**[Citizen Document Analysis & Evidence Review]**\n\n"
+                f"{att_section}\n\n"
+            )
+            if top_chunk and content:
+                answer_text += (
+                    f"**[Statutory Cross-Reference — {authority}]**\n"
+                    f"Based on official documentation for *{title}*:\n"
+                    f"{content[:400]}...\n\n"
+                    f"Verified source portal: {top_chunk.get('source_url')}\n\n"
+                )
+
+            # Multilingual response
+            if "tamil" in q_lower or "தமிழ்" in q_lower or case_context.get("language") == "ta":
+                answer_text += (
+                    f"**[தமிழ் வழிகாட்டல் / Tamil Guidance]**\n"
+                    f"நீங்கள் பதிவேற்றிய ஆவணம் பகுப்பாய்வு செய்யப்பட்டது. "
+                    f"அதில் உள்ள தகவல்களை சரிபார்த்து அதிகாரப்பூர்வ நடைமுறைப்படி விண்ணப்பிக்கவும்.\n\n"
+                )
+            elif "hindi" in q_lower or "हिन्दी" in q_lower or case_context.get("language") == "hi":
+                answer_text += (
+                    f"**[हिन्दी मार्गदर्शन / Hindi Guidance]**\n"
+                    f"आपके द्वारा अपलोड किए गए दस्तावेज़ का विश्लेषण किया गया है। "
+                    f"कृपया आधिकारिक प्रक्रिया के अनुसार उचित कदम उठाएं।\n\n"
+                )
+
+            answer_text += f"---\n{MANDATORY_STATUTORY_DISCLAIMER}"
+            issue_title = "Document Analysis & Evidence Review"
+        else:
+            disclaimer_block = f"\n\n> ⚠️ **{doc043_disclaimer}**\n\n" if doc043_disclaimer else ""
+            answer_text = (
+                f"**[Verified Statutory Guidance — {authority}]**\n\n"
+                f"Based on official documentation for *{title}*:\n\n"
+                f"{content[:500]}...\n\n"
+                f"{disclaimer_block}"
+                f"For complete official procedures, consult the verified source at {top_chunk.get('source_url', 'official portal')}.\n\n"
+                f"---\n{MANDATORY_STATUTORY_DISCLAIMER}"
+            )
+            issue_title = title
 
         return GroundedAnswer(
             answer=answer_text,
-            issue_summary=title,
+            issue_summary=issue_title,
             resolution_steps=[],
             relevant_forms=relevant_forms,
             potential_future_implications=[],
-            uncertainties=["Live AI synthesis offline; response presented from verified statutory circular."],
+            uncertainties=["Live AI synthesis offline; response presented from verified statutory circular."] if not att_section else ([] if not has_low_confidence else ["OCR confidence below 60%; manual review required."]),
             citations=citations[:3],
-            requires_clarification=False,
+            requires_clarification=has_low_confidence,
             confidence="supported" if citations else "partially_supported",
             is_fallback=True,
             provider_status="fallback_offline"
@@ -271,11 +388,11 @@ class GoogleGeminiProvider(BaseLLMProvider):
         relevant_forms: List[Dict[str, Any]],
         conversation_history: List[Dict[str, str]]
     ) -> GroundedAnswer:
-        # 1. First check relevance floor on retrieved evidence: explicit abstention if empty AND no deterministic mapping
-        if not retrieved_chunks and not case_context.get("resolution_mapping"):
+        # 1. First check relevance floor on retrieved evidence: explicit abstention if empty AND no deterministic mapping AND no attachments
+        if not retrieved_chunks and not case_context.get("resolution_mapping") and not case_context.get("attachments"):
             return GroundedAnswer(
                 answer=(
-                    "No official procedural guidance could be verified for this specific question above "
+                    "NO_VERIFIED_PROCEDURE_AVAILABLE: No official procedural guidance could be verified for this specific question above "
                     "the relevance threshold (>= 0.55). Please ensure the inquiry pertains to supported Indian "
                     f"identity documents (Aadhaar, PAN, Passport, Class 10/12, or EPF).\n\n---\n{MANDATORY_STATUTORY_DISCLAIMER}"
                 ),
@@ -283,7 +400,7 @@ class GoogleGeminiProvider(BaseLLMProvider):
                 resolution_steps=[],
                 relevant_forms=[],
                 potential_future_implications=[],
-                uncertainties=["Official government circular or procedure not found in verified knowledge repository."],
+                uncertainties=["NO_VERIFIED_PROCEDURE_AVAILABLE", "Official government circular or procedure not found in verified knowledge repository."],
                 citations=[],
                 requires_clarification=False,
                 confidence="insufficient_evidence",
