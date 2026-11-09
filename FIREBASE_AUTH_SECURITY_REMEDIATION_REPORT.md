@@ -117,3 +117,4 @@ As mandated by CONVELINA operating rules:
   1. Real Firebase Web API Key and Firebase Admin Service Account JSON are not populated in the local `.env` and `frontend/.env.local` files.
   2. Docker Desktop daemon is not currently active on the host machine (`open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified`).
 - **Integrity Guarantee**: Mocked or simulated tests have **not** been substituted or mislabeled as live cloud tests.
+

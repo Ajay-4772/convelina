@@ -105,3 +105,4 @@ Historical Supersession                Unverified Claims                     Ill
 2. **Default to Lexical BM25 (`lexical_only`)**: BM25 delivers sub-10ms response times, 100% negative abstention, and zero dependency on heavy dense embedding inference servers.
 3. **Keep `hybrid_experimental` as Opt-In**: Maintain dense vector fusion as a configurable experimental toggle for future embedding evaluations.
 4. **Maintain DOC_043 Governance**: The runtime disclaimer attachment and mandatory human review flag must remain non-bypassable.
+

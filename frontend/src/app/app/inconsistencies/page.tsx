@@ -8,10 +8,12 @@ import {
   FileText,
   Trash2,
   AlertCircle,
+  AlertTriangle,
   CheckCircle2,
   Scale,
   Sparkles,
   ChevronDown,
+  ChevronUp,
   ArrowRight,
   RefreshCw,
   X,
@@ -21,13 +23,17 @@ import {
   Save,
   Check,
   FileSpreadsheet,
+  Shield,
+  ExternalLink,
 } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
+import AdministrativeDraftingModal from "../../../components/drafting/AdministrativeDraftingModal";
 import {
   fetchDocuments,
   uploadDocument,
   deleteDocument,
   updateDocumentFields,
+  confirmDocumentFields,
   fetchConflicts,
   detectConflicts,
   fetchCorrectionDrafts,
@@ -36,10 +42,12 @@ import {
   deleteCorrectionDraft,
   downloadCorrectionDraft,
   compareDocuments,
+  fetchResolutionContext,
   DocumentItem,
   ConflictItem,
   CorrectionDraftItem,
   DocumentCompareResponse,
+  ResolutionContextData,
 } from "../../../lib/api";
 
 const CLASSIFICATION_BADGES: Record<string, { label: string; textClass: string; bgClass: string; borderClass: string }> = {
@@ -157,6 +165,60 @@ export default function InconsistenciesPage() {
   const [draftTitle, setDraftTitle] = useState("");
   const [savingDraft, setSavingDraft] = useState(false);
 
+  // Administrative Drafting Modal State (Phase P3G)
+  const [draftingModalOpen, setDraftingModalOpen] = useState(false);
+  const [draftingConflict, setDraftingConflict] = useState<ConflictItem | null>(null);
+  const [draftingSelectedDraft, setDraftingSelectedDraft] = useState<CorrectionDraftItem | null>(null);
+
+  const handleOpenDraftingForConflict = (conflict: ConflictItem) => {
+    setDraftingConflict(conflict);
+    setDraftingSelectedDraft(null);
+    setDraftingModalOpen(true);
+  };
+
+  const handleOpenDraftingForExistingDraft = (dft: CorrectionDraftItem) => {
+    const matchedConflict = conflicts.find((c) => c.id === dft.conflict_id) || null;
+    setDraftingConflict(matchedConflict);
+    setDraftingSelectedDraft(dft);
+    setDraftingModalOpen(true);
+  };
+
+  const handleDraftSaved = (savedDraft: CorrectionDraftItem) => {
+    setDrafts((prev) => {
+      const idx = prev.findIndex((d) => d.id === savedDraft.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = savedDraft;
+        return copy;
+      }
+      return [savedDraft, ...prev];
+    });
+  };
+
+  // Discrepancy In-Place AI Resolution Context Preview (Phase P3C)
+  const [expandedPreviewId, setExpandedPreviewId] = useState<string | null>(null);
+  const [previewContexts, setPreviewContexts] = useState<Record<string, ResolutionContextData>>({});
+  const [loadingPreviewId, setLoadingPreviewId] = useState<string | null>(null);
+
+  const handleTogglePreviewContext = async (conflictId: string) => {
+    if (expandedPreviewId === conflictId) {
+      setExpandedPreviewId(null);
+      return;
+    }
+    setExpandedPreviewId(conflictId);
+    if (!previewContexts[conflictId] && idToken) {
+      try {
+        setLoadingPreviewId(conflictId);
+        const ctx = await fetchResolutionContext(idToken, conflictId);
+        setPreviewContexts((prev) => ({ ...prev, [conflictId]: ctx }));
+      } catch (err) {
+        console.warn("Could not load preview context:", err);
+      } finally {
+        setLoadingPreviewId(null);
+      }
+    }
+  };
+
   // Load documents, conflicts, and drafts
   const loadAllData = useCallback(async () => {
     if (!idToken) return;
@@ -245,7 +307,36 @@ export default function InconsistenciesPage() {
   // Open Extracted Fields Review Modal
   const handleOpenReview = (doc: DocumentItem) => {
     setReviewingDoc(doc);
-    setEditedFields(doc.extracted_fields ? { ...doc.extracted_fields } : {});
+    const initialFields = doc.is_user_confirmed && doc.confirmed_fields && Object.keys(doc.confirmed_fields).length > 0
+      ? { ...doc.confirmed_fields }
+      : doc.extracted_fields
+      ? { ...doc.extracted_fields }
+      : {};
+    setEditedFields(initialFields);
+  };
+
+  const [confirmingFields, setConfirmingFields] = useState(false);
+
+  // Confirm Extracted & Corrected Demographic Fields (Citizen Confirmation)
+  const handleConfirmFields = async () => {
+    if (!reviewingDoc || !idToken) return;
+    setConfirmingFields(true);
+    try {
+      const updated = await confirmDocumentFields(idToken, reviewingDoc.id, editedFields);
+      setDocuments((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+      setStatusMessage({
+        type: "success",
+        text: `Demographic fields for ${DOC_TYPE_LABELS[reviewingDoc.document_type] || "document"} verified and confirmed by citizen. Ready for deterministic comparison.`,
+      });
+      setReviewingDoc(null);
+    } catch (err: any) {
+      setStatusMessage({
+        type: "error",
+        text: err.message || "Failed to confirm document fields.",
+      });
+    } finally {
+      setConfirmingFields(false);
+    }
   };
 
   // Save Extracted Fields Changes
@@ -629,10 +720,22 @@ export default function InconsistenciesPage() {
                       </div>
                       <span
                         className={`font-sans text-[10px] px-1.5 py-0.5 rounded-[2px] shrink-0 font-medium ${
-                          isReady ? "bg-[#E6F4EA] text-[#0D652D]" : "bg-[#F4F3EF] text-[#5E5E5E]"
+                          doc.is_user_confirmed
+                            ? "bg-[#E6F4EA] text-[#0D652D] border border-[#CEEAD6]"
+                            : doc.ocr_status === "needs_review"
+                            ? "bg-[#FEF7E0] text-[#B06000] border border-[#FEEFC3]"
+                            : isReady
+                            ? "bg-[#E8F0FE] text-[#1A73E8]"
+                            : "bg-[#F4F3EF] text-[#5E5E5E]"
                         }`}
                       >
-                        {isReady ? "Ready" : doc.ocr_status}
+                        {doc.is_user_confirmed
+                          ? "Confirmed"
+                          : doc.ocr_status === "needs_review"
+                          ? "Needs Review"
+                          : isReady
+                          ? "Ready"
+                          : doc.ocr_status}
                       </span>
                     </div>
 
@@ -944,22 +1047,29 @@ export default function InconsistenciesPage() {
 
               return (
                 <article key={conflict.id} className="py-6 space-y-4">
-                  {/* Meta indicator */}
-                  <div className="flex items-baseline justify-between text-[11px] font-sans">
-                    <span className="uppercase tracking-wider text-[#777777] font-medium">
-                      {conflict.conflict_type.replace(/_/g, " ")} • Severity:{" "}
+                  {/* Meta indicator & Classification Badges */}
+                  <div className="flex items-center justify-between text-[11px] font-sans flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 text-zinc-800 font-semibold">
+                        {conflict.conflict_type.replace(/[-_]/g, " ")}
+                      </span>
                       <span
                         className={
-                          conflict.severity === "high"
-                            ? "text-[#BA1A1A] font-semibold uppercase"
-                            : "text-[#111111] font-medium uppercase"
+                          conflict.severity === "high" || conflict.severity === "critical"
+                            ? "font-mono text-[10px] uppercase px-2 py-0.5 rounded bg-[#FCE8E6] border border-[#FAD2CF] text-[#BA1A1A] font-semibold"
+                            : "font-mono text-[10px] uppercase px-2 py-0.5 rounded bg-[#FAF9F6] border border-[#E7E5E0] text-[#111111] font-medium"
                         }
                       >
-                        {conflict.severity}
+                        Severity: {conflict.severity}
                       </span>
-                    </span>
+                      {conflict.similarity_score !== undefined && conflict.similarity_score !== null && (
+                        <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-[#E6F4EA] border border-[#CEEAD6] text-[#0D652D] font-medium">
+                          Match Score: {conflict.similarity_score}%
+                        </span>
+                      )}
+                    </div>
                     {conflict.comparison_method && (
-                      <span className="text-[#777777] text-[10px]">
+                      <span className="text-[#777777] text-[10px] font-mono">
                         Method: {conflict.comparison_method}
                       </span>
                     )}
@@ -980,16 +1090,18 @@ export default function InconsistenciesPage() {
                   {/* Two-Column Side-by-Side Comparison */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
                     <div className="p-3.5 bg-white border border-[#E7E5E0] rounded-[4px] space-y-1">
-                      <div className="font-sans text-[11px] text-[#777777] uppercase tracking-wide">
-                        {docAName}
+                      <div className="font-sans text-[11px] text-[#777777] uppercase tracking-wide flex items-center justify-between">
+                        <span>{docAName}</span>
+                        <span className="font-mono text-[10px] text-[#999999]">Record A</span>
                       </div>
                       <div className="font-sans text-base text-[#111111] font-medium tracking-tight">
                         {conflict.value_a || "—"}
                       </div>
                     </div>
                     <div className="p-3.5 bg-white border border-[#E7E5E0] rounded-[4px] space-y-1">
-                      <div className="font-sans text-[11px] text-[#777777] uppercase tracking-wide">
-                        {docBName}
+                      <div className="font-sans text-[11px] text-[#777777] uppercase tracking-wide flex items-center justify-between">
+                        <span>{docBName}</span>
+                        <span className="font-mono text-[10px] text-[#999999]">Record B</span>
                       </div>
                       <div className="font-sans text-base text-[#111111] font-medium tracking-tight">
                         {conflict.value_b || "—"}
@@ -997,33 +1109,153 @@ export default function InconsistenciesPage() {
                     </div>
                   </div>
 
-                  {/* Actions: AI Assistant, Forms, and Draft Generation */}
-                  <div className="pt-2 flex flex-wrap items-center gap-3">
-                    <button
-                      onClick={() => handleGenerateDraft(conflict)}
-                      disabled={isGenerating}
-                      className="h-9 px-3.5 bg-[#111111] text-white rounded-[4px] text-xs font-sans font-medium hover:bg-black/90 active:bg-black disabled:opacity-50 transition-colors flex items-center gap-1.5"
-                    >
-                      {isGenerating ? (
-                        <>
+                  {/* OCR Warning if detected */}
+                  {conflict.metadata?.ocr_warning && (
+                    <div className="text-[11px] text-[#B06000] bg-[#FEF7E0] border border-[#FEEFC3] px-3 py-1.5 rounded-[4px] flex items-center gap-1.5 font-sans">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{conflict.metadata.ocr_warning}</span>
+                    </div>
+                  )}
+
+                  {/* Mandatory Statutory Disclaimer */}
+                  <div className="text-[11px] font-mono text-[#777777] bg-[#FAF9F6] border border-[#E7E5E0] px-3 py-1.5 rounded-[4px] flex items-center gap-2">
+                    <AlertCircle className="w-3.5 h-3.5 text-[#777777] shrink-0" />
+                    <span>AUTOMATED COMPARISON RESULT — NOT OFFICIAL GOVERNMENT VERIFICATION.</span>
+                  </div>
+
+                  {/* In-Place Context Preview Accordion (Phase P3C) */}
+                  {expandedPreviewId === conflict.id && (
+                    <div className="p-4 bg-[#FAF9F6] border border-[#E7E5E0] rounded-[4px] space-y-3 animate-in fade-in duration-150">
+                      <div className="flex items-center justify-between border-b border-[#E7E5E0] pb-2">
+                        <div className="flex items-center gap-2">
+                          <Shield className="w-4 h-4 text-[#111111]" />
+                          <span className="font-serif text-sm font-medium text-[#111111]">
+                            Verified Statutory Resolution Preview
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setExpandedPreviewId(null)}
+                          className="text-xs text-[#777777] hover:text-[#111111]"
+                        >
+                          Close Preview
+                        </button>
+                      </div>
+
+                      {loadingPreviewId === conflict.id ? (
+                        <div className="py-4 text-center text-xs text-[#777777] flex items-center justify-center gap-2">
                           <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          <span>Generating Petition...</span>
+                          <span>Retrieving statutory precedents from knowledge base...</span>
+                        </div>
+                      ) : previewContexts[conflict.id] ? (
+                        <div className="space-y-3 text-xs font-sans">
+                          {previewContexts[conflict.id].recommended_action && (
+                            <div className="p-2.5 bg-white border border-[#E7E5E0] rounded space-y-1">
+                              <span className="text-[10px] font-semibold uppercase text-[#777777] block">
+                                Recommended Action
+                              </span>
+                              <p className="text-[#111111] leading-relaxed">
+                                {previewContexts[conflict.id].recommended_action}
+                              </p>
+                            </div>
+                          )}
+
+                          {previewContexts[conflict.id].resolution_mapping && (
+                            <div className="p-2.5 bg-white border border-[#E7E5E0] rounded space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium text-[#111111]">
+                                  {previewContexts[conflict.id].resolution_mapping?.procedure_name}
+                                </span>
+                                <span className="font-mono text-[10px] text-[#0D652D] bg-[#E6F4EA] px-2 py-0.5 rounded">
+                                  {previewContexts[conflict.id].resolution_mapping?.procedure_type.replace(/_/g, " ")}
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-[#777777]">
+                                Authority: <strong className="text-[#111111]">{previewContexts[conflict.id].resolution_mapping?.authority_name}</strong>
+                              </div>
+                              {previewContexts[conflict.id].resolution_mapping?.prescribed_forms && previewContexts[conflict.id].resolution_mapping!.prescribed_forms.length > 0 && (
+                                <div className="pt-1.5 border-t border-[#E7E5E0] space-y-1">
+                                  <span className="text-[10px] uppercase font-semibold text-[#777777] block">
+                                    Official Prescribed Forms:
+                                  </span>
+                                  <div className="space-y-1">
+                                    {previewContexts[conflict.id].resolution_mapping!.prescribed_forms.map((f) => (
+                                      <a
+                                        key={f.form_id}
+                                        href={f.official_download_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[#0066CC] hover:underline flex items-center justify-between py-0.5"
+                                      >
+                                        <span>• {f.form_name}</span>
+                                        <ExternalLink className="w-3 h-3 text-[#777777]" />
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="pt-1 flex items-center justify-between">
+                            <span className="text-[11px] text-[#777777]">
+                              Ready for comprehensive guidance?
+                            </span>
+                            <Link
+                              href={`/app/assistant?conflictId=${conflict.id}`}
+                              className="text-xs font-medium text-[#C96442] hover:underline inline-flex items-center gap-1"
+                            >
+                              <span>Open In CONVELINA AI Workspace</span>
+                              <ArrowRight className="w-3 h-3" />
+                            </Link>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-[#777777]">
+                          Unable to load statutory preview. You can discuss this directly in the AI workspace.
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Actions: AI Assistant, Forms, Preview, and Draft Generation */}
+                  <div className="pt-2 flex flex-wrap items-center gap-3">
+                    {/* Discuss with CONVELINA AI button */}
+                    <Link
+                      href={`/app/assistant?conflictId=${conflict.id}`}
+                      className="h-9 px-3.5 bg-[#FAF9F5] border border-[#C96442]/40 text-[#C96442] hover:bg-[#C96442]/10 rounded-[4px] text-xs font-sans font-medium transition-colors flex items-center gap-1.5 shadow-sm"
+                      title="Launch conversational AI inquiry pre-linked to this discrepancy"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-[#C96442]" />
+                      <span>Discuss with CONVELINA AI</span>
+                    </Link>
+
+                    {/* In-Place Context Preview toggle */}
+                    <button
+                      type="button"
+                      onClick={() => handleTogglePreviewContext(conflict.id)}
+                      className="h-9 px-3 bg-white border border-[#E7E5E0] text-[#111111] hover:bg-[#F4F3EF] rounded-[4px] text-xs font-sans font-medium transition-colors flex items-center gap-1.5"
+                    >
+                      {expandedPreviewId === conflict.id ? (
+                        <>
+                          <ChevronUp className="w-3.5 h-3.5 text-[#777777]" />
+                          <span>Hide AI Preview</span>
                         </>
                       ) : (
                         <>
-                          <Edit3 className="w-3.5 h-3.5" />
-                          <span>Generate Correction Draft</span>
+                          <ChevronDown className="w-3.5 h-3.5 text-[#777777]" />
+                          <span>Quick AI Preview</span>
                         </>
                       )}
                     </button>
 
-                    <Link
-                      href={`/app/assistant?conflictId=${conflict.id}`}
-                      className="h-9 px-3.5 bg-white border border-[#E7E5E0] text-[#111111] rounded-[4px] text-xs font-sans font-medium hover:bg-[#F4F3EF] transition-colors flex items-center gap-1.5"
+                    <button
+                      onClick={() => handleOpenDraftingForConflict(conflict)}
+                      className="h-9 px-3.5 bg-[#111111] text-white rounded-[4px] text-xs font-sans font-medium hover:bg-black/90 active:bg-black transition-colors flex items-center gap-1.5"
                     >
-                      <Sparkles className="w-3.5 h-3.5 text-[#5E5E5E]" />
-                      <span>Get Resolution Guidance</span>
-                    </Link>
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Generate Correction Draft</span>
+                    </button>
 
                     <Link
                       href="/app/forms"
@@ -1101,7 +1333,7 @@ export default function InconsistenciesPage() {
 
                     <div className="flex flex-wrap items-center gap-2">
                       <button
-                        onClick={() => handleOpenEditDraft(draft)}
+                        onClick={() => handleOpenDraftingForExistingDraft(draft)}
                         className="h-8 px-3 bg-white border border-[#E7E5E0] text-[#111111] rounded-[4px] text-xs font-sans font-medium hover:bg-[#F4F3EF] transition-colors flex items-center gap-1.5"
                       >
                         <Edit3 className="w-3.5 h-3.5 text-[#5E5E5E]" />
@@ -1185,27 +1417,68 @@ export default function InconsistenciesPage() {
               </button>
             </div>
 
-            <p className="font-sans text-xs text-[#5E5E5E] leading-relaxed">
-              Verify that the OCR extraction matches your physical document accurately. If any character, initial, or date was misread by OCR, edit the field below and save before re-running discrepancy detection.
-            </p>
+            {reviewingDoc.is_user_confirmed ? (
+              <div className="p-3 bg-[#E6F4EA] border border-[#CEEAD6] rounded text-xs text-[#0D652D] flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-[#0D652D]" />
+                <span>
+                  <strong>Demographic Data Confirmed:</strong> Citizen confirmed these values on {reviewingDoc.confirmed_at ? new Date(reviewingDoc.confirmed_at).toLocaleDateString() : "record"}. These confirmed values are prioritized for deterministic identity comparison.
+                </span>
+              </div>
+            ) : (
+              <div className="p-3 bg-[#FAF9F6] border border-[#E7E5E0] rounded text-xs text-[#5E5E5E] leading-relaxed">
+                Review machine-extracted values below. Low-confidence extractions (&lt;60%) are highlighted with warning indicators. Confirm your demographic data to finalize it for deterministic comparison.
+              </div>
+            )}
 
             <div className="space-y-3.5">
               {Object.keys(editedFields).length > 0 ? (
-                Object.entries(editedFields).map(([key, val]) => (
-                  <div key={key} className="space-y-1">
-                    <label className="font-sans text-xs font-medium text-[#111111] capitalize">
-                      {key.replace(/_/g, " ")}
-                    </label>
-                    <input
-                      type="text"
-                      value={typeof val === "string" ? val : JSON.stringify(val)}
-                      onChange={(e) =>
-                        setEditedFields((prev) => ({ ...prev, [key]: e.target.value }))
-                      }
-                      className="w-full h-9 px-3 bg-white text-[#111111] font-sans text-sm border border-[#E7E5E0] rounded-[4px] focus:border-[#111111] focus:outline-none"
-                    />
-                  </div>
-                ))
+                Object.entries(editedFields).map(([key, val]) => {
+                  const extraction = reviewingDoc.field_extractions?.[key];
+                  const conf = extraction?.confidence !== undefined ? extraction.confidence : 1.0;
+                  const isLowConf = conf < 0.60;
+                  const isFormatWarning = extraction?.validation_status === "invalid_format";
+
+                  return (
+                    <div key={key} className="space-y-1.5 p-3 rounded border border-[#E7E5E0] bg-[#FAF9F6]">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <label className="font-sans text-xs font-semibold text-[#111111] capitalize">
+                          {key.replace(/_/g, " ")}
+                        </label>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {isLowConf && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#FEF7E0] border border-[#FEEFC3] text-[#B06000]">
+                              <AlertTriangle className="w-3 h-3 text-[#B06000]" />
+                              Poor OCR Quality ({Math.round(conf * 100)}%)
+                            </span>
+                          )}
+                          {!isLowConf && extraction && (
+                            <span className="text-[10px] font-mono text-[#0D652D] bg-[#E6F4EA] px-1.5 py-0.5 rounded border border-[#CEEAD6]">
+                              {Math.round(conf * 100)}% OCR
+                            </span>
+                          )}
+                          {isFormatWarning && (
+                            <span className="text-[10px] font-medium text-[#C5221F] bg-[#FCE8E6] px-1.5 py-0.5 rounded border border-[#FAD2CF]">
+                              Format Discrepancy
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <input
+                        type="text"
+                        value={typeof val === "string" ? val : JSON.stringify(val)}
+                        onChange={(e) =>
+                          setEditedFields((prev) => ({ ...prev, [key]: e.target.value }))
+                        }
+                        className="w-full h-9 px-3 bg-white text-[#111111] font-sans text-sm border border-[#E7E5E0] rounded-[4px] focus:border-[#111111] focus:outline-none"
+                      />
+                      {extraction?.raw_value && extraction.raw_value !== val && (
+                        <div className="text-[10px] text-[#777777] font-mono">
+                          Raw OCR: {extraction.raw_value}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
               ) : (
                 <div className="space-y-3">
                   <div className="space-y-1">
@@ -1240,7 +1513,7 @@ export default function InconsistenciesPage() {
               )}
             </div>
 
-            <div className="pt-3 border-t border-[#E7E5E0] flex items-center justify-end gap-2.5">
+            <div className="pt-3 border-t border-[#E7E5E0] flex items-center justify-end gap-2.5 flex-wrap">
               <button
                 type="button"
                 onClick={() => setReviewingDoc(null)}
@@ -1251,8 +1524,8 @@ export default function InconsistenciesPage() {
               <button
                 type="button"
                 onClick={handleSaveFields}
-                disabled={savingFields}
-                className="h-9 px-4 bg-[#111111] text-white rounded-[4px] text-xs font-sans font-medium hover:bg-black/90 active:bg-black disabled:opacity-50 flex items-center gap-1.5"
+                disabled={savingFields || confirmingFields}
+                className="h-9 px-4 bg-white border border-[#111111] text-[#111111] rounded-[4px] text-xs font-sans font-medium hover:bg-[#FAF9F6] disabled:opacity-50 flex items-center gap-1.5"
               >
                 {savingFields ? (
                   <>
@@ -1262,7 +1535,25 @@ export default function InconsistenciesPage() {
                 ) : (
                   <>
                     <Save className="w-3.5 h-3.5" />
-                    <span>Save & Confirm Fields</span>
+                    <span>Save Edits</span>
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmFields}
+                disabled={confirmingFields || savingFields}
+                className="h-9 px-4 bg-[#0D652D] text-white rounded-[4px] text-xs font-sans font-medium hover:bg-[#0B5324] active:bg-[#083E1B] disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
+              >
+                {confirmingFields ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Confirming...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Confirm & Verify Demographic Data</span>
                   </>
                 )}
               </button>
@@ -1352,6 +1643,17 @@ export default function InconsistenciesPage() {
           </div>
         </div>
       )}
+
+      {/* Comprehensive Administrative Drafting Modal (Phase P3G) */}
+      <AdministrativeDraftingModal
+        isOpen={draftingModalOpen}
+        onClose={() => setDraftingModalOpen(false)}
+        token={idToken}
+        initialConflict={draftingConflict}
+        initialDraft={draftingSelectedDraft}
+        documents={documents}
+        onDraftSaved={handleDraftSaved}
+      />
     </div>
   );
 }

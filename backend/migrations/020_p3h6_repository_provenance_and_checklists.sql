@@ -61,3 +61,4 @@ END $$;
 -- 4. Create index for fast multi-attribute repository filtering
 CREATE INDEX IF NOT EXISTS idx_official_forms_category_provenance_status
     ON official_forms(document_category, provenance, verification_status, is_active);
+

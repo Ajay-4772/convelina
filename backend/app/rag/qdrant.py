@@ -134,7 +134,7 @@ def ensure_knowledge_indexed(force_reindex: bool = False) -> Dict[str, int]:
         emb_svc = get_embedding_service()
         form_points = []
         for frm in OFFICIAL_FORMS_DATA:
-            if not frm.get("is_active", True) or frm.get("verification_status", "verified") != "verified":
+            if not frm.get("is_active", True) or frm.get("verification_status") in ("revoked", "retired"):
                 continue
             summary = f"{frm['form_name']} - {frm['purpose']}. Applicable for {frm['document_category']} {', '.join(frm.get('applicable_issue_types', []))}"
             emb = emb_svc.embed_query(summary)

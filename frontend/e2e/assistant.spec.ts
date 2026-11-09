@@ -7,11 +7,11 @@ test.describe("4.6 AI Assistant & RAG Verification", () => {
     await page.goto("/app/assistant");
 
     // 1. Verify chat interface components
-    await expect(page.locator("text=New Inquiry").first()).toBeVisible({ timeout: 15000 });
-    await expect(page.locator("text=Inquiry History")).toBeVisible();
+    await expect(page.locator("button:has-text('New')").first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator("text=Chats").or(page.locator("text=Inquiry History")).first()).toBeVisible();
 
     // 2. Verify input box exists
-    const input = page.locator("input[placeholder*='Ask about document precedence']");
+    const input = page.locator("textarea").first();
     await expect(input).toBeVisible();
 
     // 3. Send an inquiry
@@ -24,7 +24,7 @@ test.describe("4.6 AI Assistant & RAG Verification", () => {
 
     // 5. Response should arrive (either grounded RAG answer or graceful notice)
     await expect(
-      page.locator("text=Statutory Notice").or(page.locator("text=Verified Statutory Sources")).or(page.locator("text=Precedents"))
+      page.locator("text=Statutory Notice").or(page.locator("text=Verified Statutory Sources")).or(page.locator("text=Precedents")).first()
     ).toBeVisible({ timeout: 25000 });
   });
 });

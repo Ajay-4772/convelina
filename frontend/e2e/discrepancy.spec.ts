@@ -32,14 +32,14 @@ test.describe("4.5 Deterministic Conflict Detection", () => {
     await expect(page.locator("span.truncate:has-text('PAN Card')")).toBeVisible({ timeout: 20000 });
 
     // 4. Trigger conflict detection button
-    const detectBtn = page.locator("button:has-text('Detect Conflicts')");
+    const detectBtn = page.locator("button:has-text('Detect All Inconsistencies')").or(page.locator("button:has-text('Detect Conflicts')"));
     await expect(detectBtn).toBeEnabled();
     await detectBtn.click();
 
     // 5. Verify discrepancy section and status
     await expect(page.locator("h2:has-text('Detected Discrepancies')")).toBeVisible();
     await expect(
-      page.locator("text=Analysis complete").or(page.locator("text=Deterministic cross-verification"))
+      page.locator("text=Analysis complete").or(page.locator("text=Deterministic cross-verification")).first()
     ).toBeVisible({ timeout: 20000 });
   });
 });

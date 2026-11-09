@@ -209,3 +209,4 @@ Content-Type: application/json
 ### 6.3 HTTP 503 on Administrative Endpoints
 - **Cause**: Firebase Admin SDK uncredentialed and `settings.TEST_MODE_ALLOW_SIMULATED_TOKENS` is False.
 - **Resolution**: Provide valid Firebase Admin credentials in `.env` or run in test mode.
+

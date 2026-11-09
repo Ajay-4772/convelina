@@ -3,12 +3,14 @@ import uuid
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
 
-from app.models.assistant import AssistantConversation, AssistantMessage
+from app.models.assistant import AssistantConversation, AssistantMessage, MessageAttachment
 from app.models.conflict import Conflict
 from app.models.document import Document
+from app.core.sanitizer import sanitize_pii
 from app.rag.retrieval.retriever import HybridRetriever
 from app.rag.generation.llm_provider import get_llm_provider
 from app.rag.schemas import GroundedAnswer, OfficialFormResponse
+from app.services.form_retrieval_service import FormRetrievalService
 
 logger = logging.getLogger("consolith.rag.orchestrator")
 
@@ -88,11 +90,17 @@ class RAGOrchestrator:
         question: str,
         conversation_id: Optional[uuid.UUID] = None,
         conflict_id: Optional[uuid.UUID] = None,
-        document_category: Optional[str] = None
+        document_category: Optional[str] = None,
+        message_type: Optional[str] = "chat",
+        language: Optional[str] = None,
+        attachment_ids: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """
-        Full RAG pipeline for citizen conversation.
+        Full RAG pipeline for citizen conversation with pre-persistence PII sanitization.
         """
+        # 0. Pre-sanitize question to prevent raw PII in database, prompts, and logs
+        clean_question, was_redacted, pii_summary = sanitize_pii(question)
+
         # 1. Resolve or create conversation
         conversation = None
         if conversation_id:
@@ -102,18 +110,22 @@ class RAGOrchestrator:
             ).first()
 
         if not conversation:
-            conv_title = question[:50] + ("..." if len(question) > 50 else "")
+            conv_title = clean_question[:50] + ("..." if len(clean_question) > 50 else "")
             conversation = AssistantConversation(
                 user_id=user_id,
                 title=conv_title,
                 active_case_id=None,
-                active_conflict_id=conflict_id
+                active_conflict_id=conflict_id,
+                response_language=language or "en"
             )
             self.db.add(conversation)
             self.db.flush()
         else:
             if conflict_id and not getattr(conversation, "active_conflict_id", None):
                 setattr(conversation, "active_conflict_id", conflict_id)
+                self.db.flush()
+            if language and getattr(conversation, "response_language", None) != language:
+                setattr(conversation, "response_language", language)
                 self.db.flush()
 
         active_conflict_id: Optional[uuid.UUID] = conflict_id
@@ -124,6 +136,41 @@ class RAGOrchestrator:
 
         # 2. Build minimal case context
         case_context = self._build_minimal_case_context(user_id, active_conflict_id)
+
+        # Resolve attachments if attachment_ids provided
+        attachments = []
+        if attachment_ids:
+            parsed_ids = []
+            for a in attachment_ids:
+                try:
+                    parsed_ids.append(uuid.UUID(str(a)))
+                except (ValueError, TypeError):
+                    pass
+            if parsed_ids:
+                attachments = self.db.query(MessageAttachment).filter(
+                    MessageAttachment.id.in_(parsed_ids),
+                    MessageAttachment.user_id == user_id,
+                    MessageAttachment.deleted_at.is_(None)
+                ).all()
+
+        attachment_contexts = []
+        for att in attachments:
+            attachment_contexts.append({
+                "id": str(att.id),
+                "file_name": att.file_name,
+                "mime_type": att.mime_type,
+                "status": att.status,
+                "ocr_status": att.ocr_status,
+                "ocr_confidence": float(att.ocr_confidence) if att.ocr_confidence is not None else None,
+                "detected_type": (att.extracted_fields or {}).get("document_type_indicator", "supporting_document"),
+                "dates_found": (att.extracted_fields or {}).get("dates_found", []),
+                "rejection_reasons": (att.extracted_fields or {}).get("rejection_reasons", []),
+                "masked_identifiers": (att.extracted_fields or {}).get("masked_identifiers", {}),
+                "extracted_text": att.extracted_text or "",
+            })
+
+        case_context["attachments"] = attachment_contexts
+        case_context["language"] = language or getattr(conversation, "response_language", "en")
 
         # Log resolution guidance audit event if active discrepancy is addressed
         if active_conflict_id:
@@ -162,37 +209,75 @@ class RAGOrchestrator:
             for m in history_msgs
         ]
 
-        # 5. Hybrid Retrieval from Qdrant
+        # 5. Hybrid Retrieval from Qdrant Knowledge & Deterministic Forms Repository
         retrieved_chunks = self.retriever.retrieve(
-            query=question,
+            query=clean_question,
             document_category=inferred_category,
             top_k=5
         )
 
-        relevant_forms = self.retriever.retrieve_forms(
-            query=question,
+        form_retrieval_res = FormRetrievalService.retrieve_applicable_forms(
+            db=self.db,
+            query=clean_question,
             document_category=inferred_category,
-            top_k=3
+            issue_type=case_context.get("field_name"),
+            conflict_context=case_context,
+            top_k=4
         )
+        relevant_forms_payload = [f.model_dump() for f in form_retrieval_res.forms]
 
         # 6. Generate Grounded Answer
         grounded_answer: GroundedAnswer = self.provider.generate_answer(
-            question=question,
+            question=clean_question,
             case_context=case_context,
             retrieved_chunks=retrieved_chunks,
-            relevant_forms=relevant_forms,
+            relevant_forms=relevant_forms_payload,
             conversation_history=conversation_history
         )
 
-        # 7. Persist turn in PostgreSQL
+        # Enforce verified forms and no_verified_form_available flag
+        if form_retrieval_res.forms:
+            grounded_answer.relevant_forms = form_retrieval_res.forms
+        if form_retrieval_res.no_verified_form_available:
+            grounded_answer.no_verified_form_available = True
+            notice_text = (
+                f"\n\n> ⚠️ **Statutory Notice:** No verified official government form is currently registered "
+                f"in the repository for this specific category or correction requirement. "
+                f"Please consult the {form_retrieval_res.suggested_authority or 'competent authority'} portal directly."
+            )
+            if "no verified" not in grounded_answer.answer.lower():
+                grounded_answer.answer += notice_text
+
+        # 7. Persist turn in PostgreSQL with sanitized content and message_type
         user_msg = AssistantMessage(
             id=uuid.uuid4(),
             conversation_id=conversation.id,
             user_id=user_id,
             role="user",
-            content=question
+            content=clean_question,
+            message_type=message_type or "chat"
         )
         self.db.add(user_msg)
+        self.db.flush()
+
+        # Link attachments to user message and conversation
+        for att in attachments:
+            att.message_id = user_msg.id
+            att.conversation_id = conversation.id
+
+        if was_redacted:
+            try:
+                from app.services.audit_service import AuditService
+                AuditService.log_event(
+                    db=self.db,
+                    action="pii_masked_in_chat",
+                    entity_type="chat_message",
+                    entity_id=user_msg.id,
+                    user_id=user_id,
+                    details=pii_summary
+                )
+            except Exception as e:
+                logger.warning("Failed to log PII redaction audit event: %s", str(e))
 
         assistant_msg_id = uuid.uuid4()
         assistant_msg = AssistantMessage(
@@ -201,6 +286,7 @@ class RAGOrchestrator:
             user_id=user_id,
             role="assistant",
             content=grounded_answer.answer,
+            message_type=message_type or "chat",
             structured_response=grounded_answer.model_dump(),
             citations=[c.model_dump() for c in grounded_answer.citations],
             tokens_used=0

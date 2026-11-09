@@ -1,27 +1,31 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Any, Dict, Optional
 from sqlalchemy import Column, String, DateTime, Text, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.core.database import Base
 
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    firebase_uid = Column(String(128), unique=True, nullable=False, index=True)
-    email = Column(String(255), nullable=False)
-    full_name = Column(String(255), nullable=False)
-    role = Column(String(20), nullable=False, default="user")
-    phone_number = Column(String(30), nullable=True)
-    date_of_birth = Column(String(30), nullable=True)
-    address = Column(Text, nullable=True)
-    father_name = Column(String(255), nullable=True)
-    mother_name = Column(String(255), nullable=True)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    id: Any = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    firebase_uid: Any = Column(String(128), unique=True, nullable=False, index=True)
+    email: Any = Column(String(255), nullable=False)
+    full_name: Any = Column(String(255), nullable=False)
+    role: Any = Column(String(20), nullable=False, default="user")
+    phone_number: Any = Column(String(30), nullable=True)
+    date_of_birth: Any = Column(String(30), nullable=True)
+    address: Any = Column(Text, nullable=True)
+    father_name: Any = Column(String(255), nullable=True)
+    mother_name: Any = Column(String(255), nullable=True)
+    created_at: Any = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at: Any = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "id": str(self.id),
             "firebase_uid": self.firebase_uid,
@@ -46,4 +50,4 @@ class EmailOTP(Base):
     otp_code = Column(String(6), nullable=False)
     expires_at = Column(DateTime(timezone=True), nullable=False)
     is_verified = Column(Boolean, nullable=False, default=False)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)

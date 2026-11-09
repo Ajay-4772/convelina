@@ -1,8 +1,9 @@
 import io
 import logging
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import Optional, List, Tuple, Dict, Any
 from PIL import Image, ImageEnhance, ImageFilter
+import numpy as np
 import pytesseract
 import pypdf
 
@@ -16,11 +17,16 @@ class BaseOCREngine(ABC):
     def extract_text(self, file_path: str, is_pdf: bool = False) -> str:
         pass
 
+    def extract_text_and_confidence(self, file_path: str, is_pdf: bool = False) -> Tuple[str, float]:
+        text = self.extract_text(file_path, is_pdf=is_pdf)
+        return text, 0.85
+
 class TesseractOCREngine(BaseOCREngine):
     """
-    Production-oriented Tesseract OCR engine with image preprocessing and PDF rasterization.
+    Production-oriented Tesseract OCR engine with image preprocessing, projection deskewing,
+    PDF rasterization, and multilingual Tamil/Hindi/English support.
     """
-    def __init__(self, languages: str = "eng+hin"):
+    def __init__(self, languages: str = "eng+hin+tam"):
         self.languages = languages
         self._verify_tesseract_available()
 
@@ -31,40 +37,257 @@ class TesseractOCREngine(BaseOCREngine):
         except Exception as e:
             logger.warning("Tesseract binary not found or not in PATH: %s. Fallback modes enabled.", str(e))
 
+    def deskew_image(self, image: Image.Image) -> Image.Image:
+        """
+        Detects orientation skew using horizontal projection profile variance
+        and rotates the image to align text lines horizontally.
+        """
+        try:
+            thumb = image.convert("L")
+            thumb.thumbnail((500, 500), Image.Resampling.BILINEAR)
+            arr = np.array(thumb)
+            thresh = np.mean(arr)
+            binary = (arr < thresh).astype(np.float32)
+
+            best_score = -1.0
+            best_angle = 0.0
+            # Sweep -15 to +15 degrees in 0.5 degree steps
+            for angle in np.arange(-15.0, 15.5, 0.5):
+                rot = Image.fromarray(binary).rotate(float(angle), resample=Image.Resampling.NEAREST, fillcolor=0)
+                proj = np.sum(np.array(rot), axis=1)
+                score = np.sum(np.diff(proj)**2)
+                if score > best_score:
+                    best_score = score
+                    best_angle = float(angle)
+
+            if abs(best_angle) >= 0.5:
+                logger.info("Deskewing image by correction angle: %.1f deg", best_angle)
+                return image.rotate(best_angle, resample=Image.Resampling.BICUBIC, expand=True, fillcolor=(255, 255, 255))
+            return image
+        except Exception as e:
+            logger.warning("Deskewing failed, proceeding with original orientation: %s", str(e))
+            return image
+
     def preprocess_image(self, image: Image.Image) -> Image.Image:
         """
         Preprocesses image for optimal OCR extraction:
-        - Upscales small scans/images to optimal OCR resolution.
+        - Normalizes resolution: upscales small images, downscales oversized images.
+        - Applies automatic deskewing.
         - Converts to grayscale, enhances contrast, and applies light sharpening.
         """
         try:
-            # 1. Upscale if image is smaller than optimal OCR resolution (~1500px)
-            if image.width < 1200 or image.height < 800:
-                scale = min(3.0, max(1.5, 1600.0 / max(image.width, 1)))
-                new_dim = (int(image.width * scale), int(image.height * scale))
-                image = image.resize(new_dim, Image.Resampling.LANCZOS)
+            working_img = image
 
-            # 2. Convert to Grayscale
-            gray = image.convert("L")
-            # 3. Enhance Contrast
+            # 1. Normalize resolution
+            if working_img.width < 1000 or working_img.height < 600:
+                scale = min(3.0, max(1.5, 1400.0 / max(working_img.width, 1)))
+                new_dim = (int(working_img.width * scale), int(working_img.height * scale))
+                working_img = working_img.resize(new_dim, Image.Resampling.LANCZOS)
+            elif working_img.width > 2200 or working_img.height > 1800:
+                scale = 1600.0 / float(working_img.width)
+                new_dim = (1600, int(working_img.height * scale))
+                working_img = working_img.resize(new_dim, Image.Resampling.BILINEAR)
+
+            # 2. Deskew
+            working_img = self.deskew_image(working_img)
+
+            # 3. Convert to Grayscale
+            gray = working_img.convert("L")
+
+            # 4. Enhance Contrast
             enhancer = ImageEnhance.Contrast(gray)
-            enhanced = enhancer.enhance(1.8)
-            # 4. Apply subtle sharpening filter
+            enhanced = enhancer.enhance(1.6)
+
+            # 5. Apply subtle sharpening filter
             sharpened = enhanced.filter(ImageFilter.SHARPEN)
             return sharpened
         except Exception as e:
             logger.warning("Image preprocessing failed, using original: %s", str(e))
             return image
 
-
     def _extract_from_image(self, image: Image.Image) -> str:
         processed = self.preprocess_image(image)
+        for lang_spec in [self.languages, "eng+tam", "eng+hin", "eng"]:
+            try:
+                text = pytesseract.image_to_string(processed, lang=lang_spec, config="--psm 4")
+                if text and text.strip():
+                    return text
+            except pytesseract.TesseractError:
+                continue
+        return pytesseract.image_to_string(processed, lang="eng")
+
+    def compute_image_quality_metrics(self, image: Image.Image) -> Dict[str, float]:
+        """
+        Computes objective image quality metrics to calibrate OCR confidence:
+        - Laplacian variance (sharpness / blur detection)
+        - Intensity standard deviation (contrast assessment)
+        - Resolution adequacy
+        """
         try:
-            text = pytesseract.image_to_string(processed, lang=self.languages)
-        except pytesseract.TesseractError:
-            # Fall back to English if Hindi language pack is missing in current environment
-            text = pytesseract.image_to_string(processed, lang="eng")
-        return text
+            gray = image.convert("L")
+            arr = np.array(gray, dtype=np.float32)
+
+            # 1. Laplacian Variance (Sharpness) via discrete 2D convolution
+            # Kernel: [[0, 1, 0], [1, -4, 1], [0, 1, 0]]
+            lap = (
+                np.roll(arr, 1, axis=0) + np.roll(arr, -1, axis=0) +
+                np.roll(arr, 1, axis=1) + np.roll(arr, -1, axis=1) -
+                4.0 * arr
+            )
+            # Clip borders to avoid edge roll artifacts
+            lap_inner = lap[2:-2, 2:-2] if arr.shape[0] > 4 and arr.shape[1] > 4 else lap
+            lap_var = float(np.var(lap_inner))
+
+            # Blur penalty: sharp documents have lap_var > 120. Below 55 indicates significant blur
+            if lap_var < 55.0:
+                blur_penalty = min(0.35, max(0.0, (55.0 - lap_var) / 55.0 * 0.35))
+            else:
+                blur_penalty = 0.0
+
+            # 2. Contrast (Intensity Standard Deviation)
+            intensity_std = float(np.std(arr))
+            # Standard documents have contrast std > 45. Below 35 indicates low contrast or heavy shading
+            if intensity_std < 35.0:
+                contrast_penalty = min(0.25, max(0.0, (35.0 - intensity_std) / 35.0 * 0.25))
+            else:
+                contrast_penalty = 0.0
+
+            # 3. Resolution deficiency
+            w, h = image.size
+            min_dim = min(w, h)
+            if min_dim < 600:
+                res_penalty = min(0.20, max(0.0, (600.0 - min_dim) / 600.0 * 0.20))
+            else:
+                res_penalty = 0.0
+
+            total_penalty = round(blur_penalty + contrast_penalty + res_penalty, 3)
+            return {
+                "laplacian_variance": round(lap_var, 2),
+                "intensity_std": round(intensity_std, 2),
+                "blur_penalty": round(blur_penalty, 3),
+                "contrast_penalty": round(contrast_penalty, 3),
+                "resolution_penalty": round(res_penalty, 3),
+                "total_quality_penalty": total_penalty,
+            }
+        except Exception as e:
+            logger.warning("Quality metric computation failed: %s", str(e))
+            return {
+                "laplacian_variance": 150.0,
+                "intensity_std": 50.0,
+                "blur_penalty": 0.0,
+                "contrast_penalty": 0.0,
+                "resolution_penalty": 0.0,
+                "total_quality_penalty": 0.0,
+            }
+
+    def _extract_from_image_with_confidence(self, image: Image.Image) -> Tuple[str, float]:
+        # Compute image quality metrics on raw input image before enhancement
+        quality_metrics = self.compute_image_quality_metrics(image)
+        quality_penalty = quality_metrics["total_quality_penalty"]
+
+        processed = self.preprocess_image(image)
+        data = None
+        for lang_spec in [self.languages, "eng+tam", "eng+hin", "eng"]:
+            try:
+                data = pytesseract.image_to_data(
+                    processed,
+                    lang=lang_spec,
+                    config="--psm 4",
+                    output_type=pytesseract.Output.DICT
+                )
+                break
+            except Exception:
+                continue
+
+        if not data:
+            try:
+                data = pytesseract.image_to_data(processed, lang="eng", output_type=pytesseract.Output.DICT)
+            except Exception as e:
+                logger.warning("pytesseract image_to_data failed: %s, falling back to basic extraction", str(e))
+                text = self._extract_from_image(image)
+                return text, 0.70
+
+        lines = []
+        current_line = []
+        last_line_key = None
+        confidences = []
+
+        num_items = len(data.get("text", []))
+        for i in range(num_items):
+            w = str(data["text"][i]).strip()
+            c = float(data["conf"][i]) if data.get("conf") else -1.0
+            line_key = (data.get("block_num", [0])[i], data.get("par_num", [0])[i], data.get("line_num", [0])[i])
+
+            if line_key != last_line_key and last_line_key is not None:
+                if current_line:
+                    lines.append(" ".join(current_line))
+                    current_line = []
+            last_line_key = line_key
+
+            if w:
+                current_line.append(w)
+                if c >= 0:
+                    confidences.append(c)
+
+        if current_line:
+            lines.append(" ".join(current_line))
+
+        text = "\n".join(lines).strip()
+        if not text:
+            text = self._extract_from_image(image)
+
+        avg_conf = (sum(confidences) / len(confidences) / 100.0) if confidences else 0.75
+        calibrated_conf = max(0.30, avg_conf - quality_penalty)
+        return text, round(calibrated_conf, 4)
+
+    def extract_text_and_confidence(self, file_path: str, is_pdf: bool = False) -> Tuple[str, float]:
+        """
+        Extracts textual content and computes an overall OCR confidence score (0.0 to 1.0).
+        """
+        if not is_pdf:
+            with Image.open(file_path) as img:
+                return self._extract_from_image_with_confidence(img)
+
+        # PDF processing
+        extracted_text_chunks: List[str] = []
+        try:
+            reader = pypdf.PdfReader(file_path)
+            for page in reader.pages:
+                t = page.extract_text()
+                if t and t.strip():
+                    extracted_text_chunks.append(t.strip())
+
+            combined_digital_text = "\n".join(extracted_text_chunks).strip()
+            if len(combined_digital_text) > 50:
+                logger.info("Extracted direct text from digital PDF (%d chars)", len(combined_digital_text))
+                # Dynamic calibrated confidence for digital PDFs based on density and character validity
+                printable_chars = sum(1 for c in combined_digital_text if c.isprintable())
+                total_chars = max(len(combined_digital_text), 1)
+                clean_ratio = printable_chars / total_chars
+                has_structure = any(kw in combined_digital_text.lower() for kw in ["name", "date", "number", "certificate", "record", "passbook", "authority", "government"])
+                struct_bonus = 0.05 if has_structure else 0.0
+                digital_conf = round(min(0.93, max(0.75, 0.84 + 0.05 * clean_ratio + struct_bonus)), 3)
+                return combined_digital_text, digital_conf
+        except Exception as e:
+            logger.warning("Direct PDF text extraction failed: %s", str(e))
+
+        try:
+            from pdf2image import convert_from_path
+            images = convert_from_path(file_path, first_page=1, last_page=3)
+            ocr_chunks = []
+            page_confs = []
+            for img in images:
+                page_text, conf = self._extract_from_image_with_confidence(img)
+                if page_text.strip():
+                    ocr_chunks.append(page_text.strip())
+                    page_confs.append(conf)
+            avg_conf = (sum(page_confs) / len(page_confs)) if page_confs else 0.70
+            return "\n\n--- Page Break ---\n\n".join(ocr_chunks), round(avg_conf, 4)
+        except Exception as e:
+            logger.error("PDF rasterization OCR failed: %s", str(e))
+            if extracted_text_chunks:
+                return "\n".join(extracted_text_chunks), 0.75
+            raise RuntimeError(f"OCR extraction failed for PDF: {str(e)}")
 
     def extract_text(self, file_path: str, is_pdf: bool = False) -> str:
         """

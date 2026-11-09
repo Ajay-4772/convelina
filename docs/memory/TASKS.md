@@ -58,6 +58,15 @@
     - [x] Statutory & Legal Integrity Audit: Grounded UIDAI 2-lifetime update limit under Regulation 10; strictly governed DOC_043 with honest statutory abstention; verified ReportLab synthetic sample rejection gate.
     - [x] Security & Privacy Verification: Zero raw Aadhaar storage, in-memory byte buffers, Fernet AES-256 field encryption, two-role RBAC enforcement, and append-only audit triggers verified.
     - [x] Six Required Documentation Deliverables authored in `docs/` (`P3H7_FULL_APPLICATION_EXPLORATION.md`, `P3H7_ROUTE_AND_FEATURE_INVENTORY.md`, `P3H7_PRODUCT_ALIGNMENT_MATRIX.md`, `P3H7_END_TO_END_TEST_REPORT.md`, `P3H7_SECURITY_AND_LEGAL_GAPS.md`, `P3H7_REMEDIATION_BACKLOG.md`).
+  - [x] **Execute Sub-Phase P3H.7.1: CONVELINA Acceptance Verification, Product Integrity & Interactive Application Walkthrough**
+    - [x] Claim Verification & Technical Reconciliation: Audited all P3H.7 claims against live codebase; corrected narrative errors regarding secondary documents (Voter ID/DL are supporting proofs, not primary categories).
+    - [x] Statutory Grounding & DOC_043 Remediation: Traced 2-lifetime name update and 1-lifetime DOB limit to Regulation 10 and DOC_039; debunked "counter reset" as non-statutory myth; fixed DOC_043 checklist categorization in `checklist_service.py`; replaced download button with advisory badge on DOC_043 detail view.
+    - [x] Privacy Pre-Masking Remediation: Enforced `sanitize_pii` pre-masking on `raw_text` before Fernet AES-256 encryption at rest in `documents.py`.
+    - [x] OTP vs. Link Verification Audit: Distinct application-level 6-digit OTP engine (`EmailOTP` table, rate limits, cooldown, single-use invalidation) audited and documented.
+    - [x] Cryptographic Subsystem Audit: Ed25519 canonical JSON digest signing and tamper detection verified; clear statutory boundary established separating internal platform attestation from government eSign.
+    - [x] Live Application Exploration Guide: Authored `docs/CONVELINA_APPLICATION_EXPLORATION_GUIDE.md` with 20-step interactive browser walkthrough, exact commands, and service health checks.
+    - [x] Five Specialized Audit Deliverables authored: `P3H7_1_ACCEPTANCE_VERIFICATION.md`, `P3H7_1_LEGAL_AND_PROVENANCE_AUDIT.md`, `P3H7_1_AUTH_AND_PRIVACY_AUDIT.md`, `P3H7_1_CRYPTOGRAPHIC_AUDIT.md`, `P3H7_1_PRODUCT_INTEGRATION_TESTS.md`.
+    - [x] Regression & Acceptance Test Verification: 25/25 backend pytest tests passing; frontend TypeScript typecheck clean (0 errors); Playwright E2E browser exploration suite passing (8/8 tests).
 - [x] **Phase P4: Verification, Security Hardening & Penetration Testing Gate**
   - [x] Comprehensive 37-test platform penetration testing harness authored & passing (`scripts/run_p4_security_audit.py`, 37/37 tests passed, 100%)
   - [x] Audit log concurrency race condition remediated via Migration 018 (`pg_advisory_xact_lock`)

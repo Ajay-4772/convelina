@@ -113,6 +113,16 @@ startxref
 }
 
 /**
+ * Creates a valid synthetic 1x1 PNG image buffer for testing.
+ */
+export function generateSyntheticPngBuffer(): Buffer {
+  return Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "base64"
+  );
+}
+
+/**
  * Programmatically uploads a synthetic document via the FastAPI backend under forced RLS.
  */
 export async function uploadDocumentApi(

@@ -27,7 +27,7 @@ def get_document_parser(document_type: str) -> BaseDocumentParser:
         return PassportParser()
     elif normalized in ("education_10th", "education_12th"):
         return EducationCertificateParser(doc_type=normalized)
-    elif normalized == "epf_record":
+    elif normalized in ("epf", "epf_record", "epfo"):
         return EPFRecordParser()
     else:
         return GenericDocumentParser()

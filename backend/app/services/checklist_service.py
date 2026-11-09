@@ -81,13 +81,13 @@ STATUTORY_CHECKLISTS: Dict[str, Dict[str, Any]] = {
                 description="Document demonstrating the correspondence between abbreviation/initial and full name.",
                 category="aadhaar",
                 procedure_id="aadhaar_name_update",
-                supporting_source_id="DOC_043",
-                supporting_source_title="Standard Operating Procedure (SOP) to be Followed for Updating Name in Aadhaar",
+                supporting_source_id="DOC_034",
+                supporting_source_title="List of Acceptable Supporting Documents for Aadhaar Enrolment & Update",
                 source_verification_state="VERIFIED",
                 status=RequirementStatus.VERIFIED_CONDITIONAL,
                 is_mandatory=False,
-                explanation="Required specifically when expanding an initial (e.g., 'K. Sharma' to 'Kumar Sharma'). Must be supported by School Leaving Certificate, Passport, or PAN.",
-                source_citation="DOC_043, Section 3.2 (Expansion of Initials & Typographical Errors)",
+                explanation="Required conditionally when expanding an initial (e.g., 'K. Sharma' to 'Kumar Sharma'). Must be supported by School Leaving Certificate, Passport, or PAN per UIDAI verified document matrix.",
+                source_citation="DOC_034, Section 1 (Table 1: Supported PoI Documents with expanded legal name)",
                 is_completed=False,
             ),
         ],
@@ -709,3 +709,4 @@ class ChecklistService:
             return cls.get_checklist_for_procedure("aadhaar_address_update")
 
         return None
+

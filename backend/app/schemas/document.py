@@ -1,6 +1,19 @@
 from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
+
+class FieldExtractionSchema(BaseModel):
+    field_name: str
+    raw_value: Optional[str] = None
+    normalized_value: Optional[str] = None
+    confidence: float = 1.0
+    page_number: int = 1
+    bounding_box: Optional[Dict[str, float]] = None
+    validation_status: str = "valid"
+    review_required: bool = False
+    source_document_id: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 class DocumentUploadResponse(BaseModel):
     id: str
@@ -8,7 +21,11 @@ class DocumentUploadResponse(BaseModel):
     file_hash: str
     ocr_status: str
     masked_id: Optional[str] = None
-    extracted_fields: Dict[str, Any]
+    extracted_fields: Dict[str, Any] = Field(default_factory=dict)
+    field_extractions: Dict[str, Any] = Field(default_factory=dict)
+    confirmed_fields: Dict[str, Any] = Field(default_factory=dict)
+    is_user_confirmed: bool = False
+    confirmed_at: Optional[str] = None
     message: str
     created_at: str
 
@@ -21,7 +38,11 @@ class DocumentResponse(BaseModel):
     file_hash: str
     ocr_status: str
     masked_id: Optional[str] = None
-    extracted_fields: Dict[str, Any]
+    extracted_fields: Dict[str, Any] = Field(default_factory=dict)
+    field_extractions: Dict[str, Any] = Field(default_factory=dict)
+    confirmed_fields: Dict[str, Any] = Field(default_factory=dict)
+    is_user_confirmed: bool = False
+    confirmed_at: Optional[str] = None
     created_at: str
     updated_at: str
 
@@ -33,3 +54,7 @@ class DocumentListResponse(BaseModel):
 
 class DocumentFieldsUpdate(BaseModel):
     extracted_fields: Dict[str, Any]
+
+class DocumentConfirmRequest(BaseModel):
+    confirmed_fields: Dict[str, Any]
+

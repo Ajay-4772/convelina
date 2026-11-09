@@ -19,6 +19,9 @@ cryptography==43.0.1
 rapidFuzz==3.9.7
 jellyfish==1.1.0
 google-ai-generativelanguage==0.6.15
+google-generativeai==0.8.6
+fastembed>=0.4.0
+onnxruntime>=1.19.0
 google-api-core==2.33.0
 googleapis-common-protos==1.75.0
 grpcio==1.84.0

@@ -136,3 +136,4 @@ flowchart LR
 - **Cryptographic Chaining**: Each audit row computes:
   $$\text{hash}_n = \text{SHA256}(\text{hash}_{n-1} \,\|\, \text{action} \,\|\, \text{user\_id} \,\|\, \text{timestamp} \,\|\, \text{details})$$
   Any retrofitted insertion or truncation breaks the hash chain, verifiable via `/api/v1/admin/audit-integrity`.
+

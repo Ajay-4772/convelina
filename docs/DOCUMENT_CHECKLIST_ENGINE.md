@@ -118,3 +118,4 @@ The checklist engine is accessible through standardized REST endpoints:
 - `GET /api/v1/repository/checklists/{procedure_id}`: Retrieves evidence-backed checklist for a specific procedure.
 - `GET /api/v1/repository/checklists/category/{category}`: Aggregates all checklists applicable to a specific identity category.
 - `RepositoryResourceDetail.supporting_document_checklist`: Embedded directly into document detail responses.
+

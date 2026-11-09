@@ -78,8 +78,8 @@ const config: Config = {
           "sans-serif",
         ],
         serif: [
-          "Merriweather",
           "Newsreader",
+          "Merriweather",
           "Charter",
           "Georgia",
           "serif",

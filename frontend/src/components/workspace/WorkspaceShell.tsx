@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import WorkspaceSidebar from "./WorkspaceSidebar";
 import WorkspaceHeader from "./WorkspaceHeader";
@@ -12,6 +12,7 @@ interface WorkspaceShellProps {
 
 export default function WorkspaceShell({ children }: WorkspaceShellProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { firebaseUser, loading } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
@@ -36,6 +37,16 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
         <span className="font-sans text-xs text-[#777777] tracking-wider uppercase">
           Loading workspace...
         </span>
+      </div>
+    );
+  }
+
+  // Full-bleed Claude-inspired conversational workspace on /app/assistant routes
+  const isAssistant = pathname?.startsWith("/app/assistant");
+  if (isAssistant) {
+    return (
+      <div className="h-screen w-screen overflow-hidden bg-[#FAF9F5] text-[#1F1E1D]">
+        {children}
       </div>
     );
   }

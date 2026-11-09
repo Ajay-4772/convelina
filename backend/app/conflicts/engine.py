@@ -81,17 +81,28 @@ class ConflictDetectionEngine:
                 else:
                     doc_a, doc_b = doc_2, doc_1
 
+                # Prioritize citizen confirmed fields over raw machine proposals
+                fields_a = dict(doc_a.extracted_fields or {})
+                if doc_a.is_user_confirmed and doc_a.confirmed_fields:
+                    fields_a.update(doc_a.confirmed_fields)
+
+                fields_b = dict(doc_b.extracted_fields or {})
+                if doc_b.is_user_confirmed and doc_b.confirmed_fields:
+                    fields_b.update(doc_b.confirmed_fields)
+
                 dict_a = {
                     "id": str(doc_a.id),
                     "document_type": doc_a.document_type,
                     "masked_id": doc_a.masked_id,
-                    "extracted_fields": doc_a.extracted_fields or {},
+                    "extracted_fields": fields_a,
+                    "is_user_confirmed": bool(doc_a.is_user_confirmed),
                 }
                 dict_b = {
                     "id": str(doc_b.id),
                     "document_type": doc_b.document_type,
                     "masked_id": doc_b.masked_id,
-                    "extracted_fields": doc_b.extracted_fields or {},
+                    "extracted_fields": fields_b,
+                    "is_user_confirmed": bool(doc_b.is_user_confirmed),
                 }
 
                 pair_conflicts = evaluate_document_pair(dict_a, dict_b)

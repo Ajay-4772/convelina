@@ -53,6 +53,8 @@ class DocumentIdentityProfile(BaseModel):
     is_non_latin: bool = False
     extraction_status: str = "completed"
     source_document_reference: Optional[str] = None
+    is_user_confirmed: bool = False
+    confirmed_field_names: List[str] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -65,6 +67,8 @@ class DocumentIdentityProfile(BaseModel):
         overall_ocr_confidence: float = 1.0,
         raw_text: Optional[str] = None,
         source_ref: Optional[str] = None,
+        is_user_confirmed: bool = False,
+        confirmed_field_names: Optional[List[str]] = None,
     ) -> "DocumentIdentityProfile":
         """
         Constructs a canonical DocumentIdentityProfile from OCR parser output,
@@ -131,6 +135,8 @@ class DocumentIdentityProfile(BaseModel):
             overall_ocr_confidence=overall_ocr_confidence,
             is_non_latin=has_non_latin,
             source_document_reference=source_ref,
+            is_user_confirmed=is_user_confirmed,
+            confirmed_field_names=confirmed_field_names or [],
         )
 
 

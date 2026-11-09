@@ -70,3 +70,4 @@ To prevent administrative privilege escalation or silent tampering:
 1. **Evidentiary Requirement**: Moving a document to `VERIFIED` requires explicit submission of evidentiary grounds (e.g., gazette notification reference, ministerial URL, and verifier remarks).
 2. **Two System Roles Only**: Centralized authorization enforces strictly two roles: `USER` and `ADMIN`. No intermediate or unvetted "officer" roles exist.
 3. **Immutable Audit Logging**: Every verification approval and lifecycle transition triggers an audit event via `AuditService.log_event` recorded in the cryptographic, append-only `audit_log` table.
+

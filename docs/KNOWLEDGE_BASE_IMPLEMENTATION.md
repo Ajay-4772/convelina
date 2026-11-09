@@ -165,3 +165,4 @@ To ensure zero downtime and prevent corrupt indices:
 | `/api/v1/knowledge/admin/collections/health` | `GET` | **ADMIN** | Detailed Qdrant collection point counts and vector config |
 | `/api/v1/knowledge/admin/collections/rollback` | `POST` | **ADMIN** | Revert active collections to previous version |
 | `/api/v1/knowledge/retrieval/diagnostics` | `POST` | **ADMIN** | Test query scoring, normalized tokens, and abstention reasons |
+

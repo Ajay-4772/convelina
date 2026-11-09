@@ -101,11 +101,17 @@ def seed_synthetic_fixtures():
         """, (ATTESTATION_A_ID, DOC_A_ID, CITIZEN_A_ID, ADMIN_ID, KEY_ID,
               ATTESTATION_B_ID, DOC_B_ID, CITIZEN_B_ID, ADMIN_ID, KEY_ID))
 
-        # Insert audit log entry
+        # Insert cryptographically chained audit log entry
+        cur.execute("SELECT get_latest_audit_hash();")
+        latest_h = cur.fetchone()[0] or '0000000000000000000000000000000000000000000000000000000000000000'
+        import hashlib, json
+        payload_str = f"{latest_h}|{CITIZEN_A_ID}|DOCUMENT_UPLOAD|documents|{DOC_A_ID}|{json.dumps({}, sort_keys=True)}"
+        curr_h = hashlib.sha256(payload_str.encode('utf-8')).hexdigest()
+
         cur.execute("""
             INSERT INTO audit_log (id, user_id, action, entity_type, entity_id, prev_hash, current_hash) VALUES
-            (%s, %s, 'DOCUMENT_UPLOAD', 'documents', %s, 'GENESIS', 'hash_audit_1');
-        """, (AUDIT_ID, CITIZEN_A_ID, DOC_A_ID))
+            (%s, %s, 'DOCUMENT_UPLOAD', 'documents', %s, %s, %s);
+        """, (AUDIT_ID, CITIZEN_A_ID, DOC_A_ID, latest_h, curr_h))
 
     conn.close()
     print("  [OK] Synthetic test fixtures seeded successfully.")

@@ -284,7 +284,8 @@ OFFICIAL_SOURCES_DATA: List[Dict[str, Any]] = [
         "effective_date": "2023-04-01T00:00:00Z",
         "last_verified_at": "2026-09-01T00:00:00Z",
         "version": "MARRIAGE-SOP-2024",
-        "verification_status": "verified",
+        "verification_status": "needs_review",
+        "verification_notes": "Downgraded per P3F.4 audit: issuing authority 'Inter-Agency Statutory Coordination Group' is a synthesized umbrella, not an official statutory gazetted entity. Source URL points only to UIDAI portal.",
         "is_active": True,
         "content": """
 # Inter-Agency Statutory Guidelines — Post-Marriage Surname Alignment
@@ -329,7 +330,9 @@ OFFICIAL_FORMS_DATA: List[Dict[str, Any]] = [
         "language": "en",
         "version": "JD-2023",
         "last_verified_at": "2026-09-01T00:00:00Z",
-        "verification_status": "verified",
+        "provenance": "SYNTHETIC_TEST_ASSET",
+        "provenance_notes": "Synthetic development sample PDF generated via ReportLab. NOT an official government form. Registered as unverified placeholder until authentic official original is supplied by administrator.",
+        "verification_status": "unverified",
         "is_active": True
     },
     {
@@ -349,7 +352,9 @@ OFFICIAL_FORMS_DATA: List[Dict[str, Any]] = [
         "language": "en",
         "version": "CSF-Rev-2023",
         "last_verified_at": "2026-09-01T00:00:00Z",
-        "verification_status": "verified",
+        "provenance": "SYNTHETIC_TEST_ASSET",
+        "provenance_notes": "Synthetic development sample PDF generated via ReportLab. NOT an official government form. Registered as unverified placeholder until authentic official original is supplied by administrator.",
+        "verification_status": "unverified",
         "is_active": True
     },
     {
@@ -369,7 +374,9 @@ OFFICIAL_FORMS_DATA: List[Dict[str, Any]] = [
         "language": "en",
         "version": "UIDAI-ENR-2024",
         "last_verified_at": "2026-09-01T00:00:00Z",
-        "verification_status": "verified",
+        "provenance": "SYNTHETIC_TEST_ASSET",
+        "provenance_notes": "Synthetic development sample PDF generated via ReportLab. NOT an official government form. Registered as unverified placeholder until authentic official original is supplied by administrator.",
+        "verification_status": "unverified",
         "is_active": True
     },
     {
@@ -389,7 +396,9 @@ OFFICIAL_FORMS_DATA: List[Dict[str, Any]] = [
         "language": "en",
         "version": "PSP-REISSUE-2024",
         "last_verified_at": "2026-09-01T00:00:00Z",
-        "verification_status": "verified",
+        "provenance": "SYNTHETIC_TEST_ASSET",
+        "provenance_notes": "Synthetic development sample PDF generated via ReportLab. NOT an official government form. Registered as unverified placeholder until authentic official original is supplied by administrator.",
+        "verification_status": "unverified",
         "is_active": True
     },
     {
@@ -409,7 +418,9 @@ OFFICIAL_FORMS_DATA: List[Dict[str, Any]] = [
         "language": "en",
         "version": "ANNEXURE-E-2023",
         "last_verified_at": "2026-09-01T00:00:00Z",
-        "verification_status": "verified",
+        "provenance": "SYNTHETIC_TEST_ASSET",
+        "provenance_notes": "Synthetic development sample PDF generated via ReportLab. NOT an official government form. Registered as unverified placeholder until authentic official original is supplied by administrator.",
+        "verification_status": "unverified",
         "is_active": True
     },
     {
@@ -429,7 +440,9 @@ OFFICIAL_FORMS_DATA: List[Dict[str, Any]] = [
         "language": "en",
         "version": "CBSE-CORR-2023",
         "last_verified_at": "2026-09-01T00:00:00Z",
-        "verification_status": "verified",
+        "provenance": "SYNTHETIC_TEST_ASSET",
+        "provenance_notes": "Synthetic development sample PDF generated via ReportLab. NOT an official government form. Registered as unverified placeholder until authentic official original is supplied by administrator.",
+        "verification_status": "unverified",
         "is_active": True
     },
     {
@@ -449,7 +462,9 @@ OFFICIAL_FORMS_DATA: List[Dict[str, Any]] = [
         "language": "en",
         "version": "DOP-FORM-2024",
         "last_verified_at": "2026-09-01T00:00:00Z",
-        "verification_status": "verified",
+        "provenance": "SYNTHETIC_TEST_ASSET",
+        "provenance_notes": "Synthetic development sample PDF generated via ReportLab. NOT an official government form. Registered as unverified placeholder until authentic official original is supplied by administrator.",
+        "verification_status": "unverified",
         "is_active": True
     },
     {
@@ -469,7 +484,9 @@ OFFICIAL_FORMS_DATA: List[Dict[str, Any]] = [
         "language": "en",
         "version": "EPFO-ONLINE-2024",
         "last_verified_at": "2026-09-01T00:00:00Z",
-        "verification_status": "verified",
+        "provenance": "SYNTHETIC_TEST_ASSET",
+        "provenance_notes": "Synthetic development sample PDF generated via ReportLab. NOT an official government form. Registered as unverified placeholder until authentic official original is supplied by administrator.",
+        "verification_status": "unverified",
         "is_active": True
     }
 ]

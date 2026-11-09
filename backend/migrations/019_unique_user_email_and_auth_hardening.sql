@@ -8,3 +8,4 @@ BEGIN;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_lower_email_unique ON users(LOWER(email));
 
 COMMIT;
+

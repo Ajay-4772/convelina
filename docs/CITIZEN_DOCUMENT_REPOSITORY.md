@@ -103,3 +103,4 @@ The repository enforces strict security protocols:
 - **No Path Traversal**: Endpoints `/api/v1/repository/resources/{id}/download` and `/preview` use `CitizenRepositoryService.resolve_file_path()` which strips null bytes (`\x00`), checks relative path escapes (`../`), resolves real absolute paths, and strictly validates that the target file resides within the approved white-listed directories (`forms/` or `forms_corpus/`).
 - **No Private Citizen Data**: The repository catalog is strictly public domain knowledge. Private citizen identity records, OCR images, and user documents are never exposed through repository endpoints.
 - **Two Application Roles**: Only `USER` and `ADMIN` exist in the system. Citizens cannot alter document verification states or edit statutory metadata.
+

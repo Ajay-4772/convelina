@@ -14,6 +14,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
     tesseract-ocr-eng \
     tesseract-ocr-hin \
+    tesseract-ocr-tam \
+    fonts-lohit-taml \
+    fonts-freefont-ttf \
     poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 

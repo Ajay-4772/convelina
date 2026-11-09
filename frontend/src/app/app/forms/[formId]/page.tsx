@@ -483,15 +483,22 @@ export default function DocumentDetailPage() {
                     >
                       Preview PDF
                     </a>
-                    <a
-                      href={`http://localhost:8000/api/v1/repository/resources/${resource.resource_id}/download`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#111111] hover:bg-[#2A2A2A] text-white text-xs font-sans font-medium rounded-[3px] transition-colors"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Download PDF</span>
-                    </a>
+                    {resource.resource_id === "DOC_043" ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-sans font-medium rounded-[3px]" title="DOC_043 is an internal operational guideline subject to unverified metadata conflict, not a citizen application form.">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        <span>Reference Circular Only (Not a Filing Form)</span>
+                      </span>
+                    ) : (
+                      <a
+                        href={`http://localhost:8000/api/v1/repository/resources/${resource.resource_id}/download`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#111111] hover:bg-[#2A2A2A] text-white text-xs font-sans font-medium rounded-[3px] transition-colors"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Download PDF</span>
+                      </a>
+                    )}
                   </>
                 )}
                 {resource.original_source_url && (

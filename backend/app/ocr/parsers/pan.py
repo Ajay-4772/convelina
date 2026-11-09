@@ -38,11 +38,25 @@ class PANParser(BaseDocumentParser):
 
 
         # 2. Date of Birth extraction (DD/MM/YYYY)
-        dob_match = re.search(r"\b([0-3]?\d[/-][0-1]?\d[/-]\d{4})\b", raw_text)
+        dob_match = re.search(r"(?:DOB|Date of Birth|जन्म तारीख)[:\s]*([0-3]?\d[/-][0-1]?\d[/-]\d{4})", raw_text, re.IGNORECASE)
+        if not dob_match:
+            dob_match = re.search(r"\b([0-3]?\d[/-][0-1]?\d[/-]\d{4})\b", raw_text)
         if dob_match:
             fields["date_of_birth"] = dob_match.group(1).replace("-", "/")
 
         # 3. Name & Father's Name parsing
+        # First try single-line explicit Name pattern (e.g. Name RAHUL KUMAR Father's Name ...)
+        inline_name = re.search(r"(?<!Father\'s\s)(?<!Father\s)(?<!Mother\'s\s)(?<!Mother\s)\bName[:\s]+([A-Za-z .]{3,35})(?=\s*(?:Father|DOB|\n|$))", raw_text, re.IGNORECASE)
+        if inline_name and not fields.get("full_name"):
+            cand = inline_name.group(1).strip()
+            if not any(k in cand.lower() for k in ["income", "tax", "department", "govt", "india", "permanent", "account"]):
+                fields["full_name"] = cand
+
+        inline_father = re.search(r"(?:Father'?s?\s*Name|Father\s*Name)[:\s]+([A-Za-z .]{3,35})(?=\s*(?:DOB|Date|\n|$))", raw_text, re.IGNORECASE)
+        if inline_father and not fields.get("father_name"):
+            cand_f = inline_father.group(1).strip()
+            fields["father_name"] = cand_f
+
         lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
         for i, line in enumerate(lines):
             # Check for Father's Name indicator
@@ -51,13 +65,15 @@ class PANParser(BaseDocumentParser):
                 if i > 0 and not fields.get("full_name"):
                     candidate = lines[i - 1]
                     if not any(k in candidate.lower() for k in ["income", "tax", "department", "govt", "india"]):
-                        cleaned = re.sub(r"[^a-zA-Z\s.]", "", candidate).strip()
+                        cleaned = re.sub(r'^(?:(?:Full\s*)?Name|Holder(?:\s*Name)?)[.:\s]+', '', candidate, flags=re.IGNORECASE).strip()
+                        cleaned = re.sub(r"[^a-zA-Z\s.]", "", cleaned).strip()
                         if len(cleaned) >= 3:
                             fields["full_name"] = cleaned
                 # The line after "Father's Name" is the father's name
                 if i + 1 < len(lines):
                     candidate_father = lines[i + 1]
-                    cleaned_father = re.sub(r"[^a-zA-Z\s.]", "", candidate_father).strip()
+                    cleaned_father = re.sub(r'^(?:Father\'?s?\s*Name|Father\s*Name|Father)[.:\s]+', '', candidate_father, flags=re.IGNORECASE).strip()
+                    cleaned_father = re.sub(r"[^a-zA-Z\s.]", "", cleaned_father).strip()
                     if len(cleaned_father) >= 3 and not re.search(r"\d", candidate_father):
                         fields["father_name"] = cleaned_father
 
@@ -67,6 +83,12 @@ class PANParser(BaseDocumentParser):
                 if re.match(r"^[A-Z\s.]{4,35}$", line) and not any(k in line.lower() for k in ["income", "tax", "department", "india", "permanent", "account"]):
                     fields["full_name"] = line.strip()
                     break
+
+        # Final prefix stripping
+        if fields.get("full_name"):
+            fields["full_name"] = re.sub(r'^(?:(?:Full\s*)?Name|Holder(?:\s*Name)?)[.:\s]+', '', fields["full_name"], flags=re.IGNORECASE).strip()
+        if fields.get("father_name"):
+            fields["father_name"] = re.sub(r'^(?:Father\'?s?\s*Name|Father\s*Name|Father)[.:\s]+', '', fields["father_name"], flags=re.IGNORECASE).strip()
 
         return {
             "masked_id": masked_id,

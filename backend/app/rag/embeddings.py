@@ -1,7 +1,7 @@
 import math
 import hashlib
 import logging
-from typing import List
+from typing import List, Optional
 import numpy as np
 
 from app.config import settings
@@ -89,6 +89,56 @@ class DeterministicHashEmbeddingService(BaseEmbeddingService):
 DeterministicBGEEmbeddingService = DeterministicHashEmbeddingService
 
 
-def get_embedding_service() -> BaseEmbeddingService:
+class FastEmbedEmbeddingService(BaseEmbeddingService):
+    """
+    Genuine neural semantic embedding service powered by FastEmbed (ONNX Runtime).
+    Runs locally on CPU with zero paid API dependencies and minimal footprint.
+    """
+    def __init__(self, model_name: str = "BAAI/bge-small-en-v1.5", dimension: int = 384):
+        self.model_name = model_name
+        self.dimension = dimension
+        self._model = None
+
+    @property
+    def model(self):
+        if self._model is None:
+            try:
+                from fastembed import TextEmbedding
+                self._model = TextEmbedding(model_name=self.model_name)
+            except Exception as e:
+                logger.warning("Failed to initialize FastEmbed model '%s': %s. Falling back to DeterministicHash.", self.model_name, e)
+                raise
+        return self._model
+
+    def embed_query(self, text: str) -> List[float]:
+        if not text or not text.strip():
+            return [0.0] * self.dimension
+        try:
+            vecs = list(self.model.embed([text.strip()]))
+            return vecs[0].tolist()
+        except Exception as e:
+            logger.warning("FastEmbed query embedding failed: %s. Using hash fallback.", e)
+            fallback = DeterministicHashEmbeddingService(dimension=self.dimension)
+            return fallback.embed_query(text)
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        if not texts:
+            return []
+        try:
+            vecs = list(self.model.embed([t.strip() for t in texts]))
+            return [v.tolist() for v in vecs]
+        except Exception as e:
+            logger.warning("FastEmbed document embedding failed: %s. Using hash fallback.", e)
+            fallback = DeterministicHashEmbeddingService(dimension=self.dimension)
+            return fallback.embed_documents(texts)
+
+
+def get_embedding_service(provider: Optional[str] = None) -> BaseEmbeddingService:
     """Factory returning configured embedding service."""
+    prov = (provider or getattr(settings, "RAG_EMBEDDING_PROVIDER", "deterministic-hash")).lower()
+    if prov in ("fastembed", "neural", "semantic"):
+        try:
+            return FastEmbedEmbeddingService()
+        except Exception:
+            logger.warning("FastEmbed unavailable, falling back to DeterministicHashEmbeddingService")
     return DeterministicHashEmbeddingService(dimension=VECTOR_DIMENSION)

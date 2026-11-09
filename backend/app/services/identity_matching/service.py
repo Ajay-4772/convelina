@@ -85,17 +85,44 @@ class DocumentComparisonService:
 
     @classmethod
     def create_profile_from_document(cls, doc: Document) -> DocumentIdentityProfile:
-        """Derives a canonical DocumentIdentityProfile directly from Document record."""
-        extracted = doc.extracted_fields or {}
-        ocr_conf = float(extracted.get("overall_ocr_confidence", 1.0))
+        """
+        Derives a canonical DocumentIdentityProfile directly from Document record.
+        Prioritizes citizen confirmed fields if present, while preserving raw extractions
+        and field-level OCR confidences for deterministic matching.
+        """
+        is_confirmed = getattr(doc, "is_user_confirmed", False)
+        confirmed = getattr(doc, "confirmed_fields", None) or {}
+        extracted = dict(doc.extracted_fields or {})
 
-        return DocumentIdentityProfile.from_extracted_fields(
+        effective_fields = dict(extracted)
+        if is_confirmed and confirmed:
+            effective_fields.update(confirmed)
+
+        field_extractions = getattr(doc, "field_extractions", None) or {}
+        field_confidences = {}
+        for f_name, f_data in field_extractions.items():
+            if isinstance(f_data, dict):
+                field_confidences[f_name] = float(f_data.get("confidence", 1.0))
+            else:
+                field_confidences[f_name] = 1.0
+
+        ocr_conf = float(extracted.get("overall_ocr_confidence", 1.0))
+        if doc.ocr_status == "needs_review" and not is_confirmed:
+            ocr_conf = min(ocr_conf, 0.55)
+
+        profile = DocumentIdentityProfile.from_extracted_fields(
             document_id=str(doc.id),
             document_type=doc.document_type,
-            extracted_fields=extracted,
+            extracted_fields=effective_fields,
             overall_ocr_confidence=ocr_conf,
             source_ref=doc.masked_id,
+            is_user_confirmed=bool(is_confirmed),
+            confirmed_field_names=list(confirmed.keys()) if is_confirmed else [],
         )
+        if field_confidences:
+            profile.field_confidence.update(field_confidences)
+
+        return profile
 
     @classmethod
     def compare_documents_for_user(
@@ -228,6 +255,27 @@ class DocumentComparisonService:
                 explanation=f"Evaluated {len(ordered_docs)} documents across {len(pairwise_evals)} pairs. Overall status: {worst_overall.value}.",
                 warnings=list(dict.fromkeys(combined_warnings)),
             )
+
+        # Fail-safe citizen confirmation enforcement
+        any_unconfirmed = any(not getattr(d, "is_user_confirmed", False) for d in ordered_docs)
+        any_doc_needs_review = any(
+            getattr(d, "ocr_status", "") == "needs_review" or any(
+                isinstance(f_data, dict) and f_data.get("review_required")
+                for f_data in (getattr(d, "field_extractions", None) or {}).values()
+            )
+            for d in ordered_docs
+        )
+
+        if any_unconfirmed:
+            unconfirmed_note = "Advisory: One or more documents contain unconfirmed machine extractions."
+            if unconfirmed_note not in comparison_result.warnings:
+                comparison_result.warnings.append(unconfirmed_note)
+
+        if any_unconfirmed and any_doc_needs_review:
+            comparison_result.requires_manual_review = True
+            review_note = "Comparison includes unconfirmed extractions flagged for review. Citizen confirmation required before trusted resolution."
+            if review_note not in comparison_result.warnings:
+                comparison_result.warnings.append(review_note)
 
         # 6. Idempotent Conflict Persistence in Database
         for d_1, d_2, pair_res in pairwise_evals:
