@@ -38,7 +38,17 @@
     - [x] Implemented 7 administrative and retrieval diagnostics endpoints with strict RBAC (HTTP 403 for citizens)
     - [x] Authored 9/9 passing pytest battery in `backend/tests/test_p3h5_knowledge_ingestion.py`
     - [x] Verified zero regressions across 28 Firebase auth security tests
-  - [ ] Execute Sub-Phase P3H.6: Document Repository & Citizen Profile Polish
+  - [x] **Execute Sub-Phase P3H.6: Citizen Document Repository & Procedural Guidance Synthesis**
+    - [x] Catalog Implementation: Built unified catalog with 52 resources across all 6 identity categories (`aadhaar`: 35, `pan`: 7, `passport`: 3, `class_10`: 2, `class_12`: 2, `epf`: 2) with category tabs and text search
+    - [x] Document Provenance & Verification: Enforced 7 provenance classifications (`OFFICIAL_ORIGINAL`, `OFFICIAL_COPY`, `GOVERNMENT_REFERENCE`, `HISTORICAL_REFERENCE`, `APPLICATION_GENERATED`, `SYNTHETIC_DEVELOPMENT_SAMPLE`, `UNVERIFIED_SOURCE`) and 5 verification states (`VERIFIED`, `NEEDS_REVIEW`, `OUTDATED`, `RETIRED`, `SOURCE_METADATA_CONFLICT`)
+    - [x] Provenance Guardrails: Strictly reject ReportLab/application-generated PDFs as official originals (HTTP 400); enforce prominent synthetic sample disclaimer (`SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM`)
+    - [x] Dedicated Detail Experience: Implemented 7 structured sections in `/app/forms/[formId]` (Overview, Purpose, Cohorts, Related Procedures, Checklist, Asset Stream, Citations/Limitations)
+    - [x] Supporting-Document Checklist Engine: Implemented `ChecklistService` supporting 9 statutory procedures across all 6 categories, differentiating `VERIFIED_MANDATORY`, `VERIFIED_CONDITIONAL`, `RECOMMENDED`, and `HUMAN_REVIEW_REQUIRED`
+    - [x] Procedural Guidance Engine: Implemented `ProceduralGuidanceService` with BM25 lexical retrieval, statutory synonym expansion, honest statutory abstention, and strict DOC_043 governance (SOURCE_METADATA_CONFLICT, human_review_required=True, limitation notice, exception interception)
+    - [x] Personalized Discrepancy Guidance: Linked confirmed citizen discrepancies from Module 5 (`/api/v1/conflicts`) with mandatory disclaimer `AUTOMATED COMPARISON RESULT — NOT OFFICIAL GOVERNMENT VERIFICATION`
+    - [x] Security & Traversal Defense: Implemented `CitizenRepositoryService.resolve_file_path()` with null-byte rejection, directory traversal prevention, and SHA-256 validation
+    - [x] Test Verification: 16/16 backend tests passed in `test_p3h6_citizen_repository.py`; frontend TypeScript typecheck clean (0 errors); Next.js production build 15/15 routes cleanly compiled; Playwright E2E passed
+    - [x] Documentation Deliverables: Authored `docs/CITIZEN_DOCUMENT_REPOSITORY.md`, `docs/PROCEDURAL_GUIDANCE_ENGINE.md`, `docs/DOCUMENT_PROVENANCE_AND_VERIFICATION.md`, and `docs/DOCUMENT_CHECKLIST_ENGINE.md`
 - [x] **Phase P4: Verification, Security Hardening & Penetration Testing Gate**
   - [x] Comprehensive 37-test platform penetration testing harness authored & passing (`scripts/run_p4_security_audit.py`, 37/37 tests passed, 100%)
   - [x] Audit log concurrency race condition remediated via Migration 018 (`pg_advisory_xact_lock`)
