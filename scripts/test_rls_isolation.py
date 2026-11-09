@@ -22,6 +22,8 @@ from psycopg2.extras import RealDictCursor
 def get_db_urls():
     # Detect if running inside docker container or host
     import socket
+    import dotenv
+    dotenv.load_dotenv()
     host = "localhost"
     try:
         socket.gethostbyname("postgres")

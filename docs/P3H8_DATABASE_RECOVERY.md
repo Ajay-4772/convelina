@@ -57,7 +57,7 @@ convelina-qdrant     qdrant/qdrant:v1.11.0   Up (healthy)   0.0.0.0:6333->6333/t
 To prevent superuser privilege escalation and ensure compliance with the CONVELINA architectural contract:
 1. **Restricted Runtime Role**: Application traffic strictly uses `consolith_app` with connection URL:
    ```text
-   postgresql://consolith_app:consolith_dev_pass@localhost:5432/consolith
+   postgresql://consolith_app:[REDACTED_DEV_PASSWORD]@localhost:5432/consolith
    ```
 2. **Superuser Exclusion**: The `postgres` superuser possesses `SUPERUSER` privileges which bypass Row-Level Security (`BYPASSRLS`). The application explicitly forbids using `postgres` in production or standard development runtimes.
 3. **Dedicated Object Grants**: `consolith_app` is granted `CONNECT` on `consolith`, `USAGE` on schema `public`, and targeted `SELECT, INSERT, UPDATE, DELETE` permissions only on user-facing tables.
