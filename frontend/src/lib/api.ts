@@ -1534,6 +1534,66 @@ export async function fetchProcedureChecklist(
   return await res.json();
 }
 
+export interface ChecklistProgressResponse {
+  procedure_id: string;
+  user_id: string;
+  completed_items: string[];
+  items_progress: Record<string, boolean>;
+  updated_at?: string | null;
+  disclaimer: string;
+}
+
+export async function fetchChecklistProgress(
+  token: string | null,
+  procedureId: string
+): Promise<ChecklistProgressResponse> {
+  const url = `${getApiUrl()}/api/v1/repository/checklists/${encodeURIComponent(procedureId)}/progress`;
+  const res = await fetch(url, {
+    method: "GET",
+    headers: getAuthHeaders(token),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch checklist progress for '${procedureId}'.`);
+  }
+  return await res.json();
+}
+
+export async function fetchResourceChecklistProgress(
+  token: string | null,
+  resourceId: string
+): Promise<ChecklistProgressResponse> {
+  const url = `${getApiUrl()}/api/v1/repository/resources/${encodeURIComponent(resourceId)}/checklist-progress`;
+  const res = await fetch(url, {
+    method: "GET",
+    headers: getAuthHeaders(token),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch resource checklist progress for '${resourceId}'.`);
+  }
+  return await res.json();
+}
+
+export async function updateChecklistItemProgress(
+  token: string | null,
+  procedureId: string,
+  itemId: string,
+  isCompleted: boolean
+): Promise<ChecklistProgressResponse> {
+  const url = `${getApiUrl()}/api/v1/repository/checklists/${encodeURIComponent(procedureId)}/progress`;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: getAuthHeaders(token),
+    body: JSON.stringify({ item_id: itemId, is_completed: isCompleted }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to update checklist item progress for '${itemId}'.`);
+  }
+  return await res.json();
+}
+
 export async function synthesizeProceduralGuidance(
   token: string | null,
   payload: {

@@ -8,6 +8,7 @@ from app.models.correction_draft import CorrectionDraft, CorrectionDraftVersion
 from app.models.case import Case, CaseEvidence, CaseReviewRequest
 from app.models.audit_log import AuditLog
 from app.models.pki import SigningKey, DocumentAttestation, AttestationVerification
+from app.models.checklist import CitizenChecklistItem
 
 __all__ = [
     "User",
@@ -26,4 +27,5 @@ __all__ = [
     "SigningKey",
     "DocumentAttestation",
     "AttestationVerification",
+    "CitizenChecklistItem",
 ]

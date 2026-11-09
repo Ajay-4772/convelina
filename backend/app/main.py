@@ -109,28 +109,52 @@ def health_check():
         "status": "healthy",
         "timestamp": time.time(),
         "services": {
-            "backend": {"status": "up"},
+            "fastapi": {"status": "up", "version": "1.0.0"},
             "postgres": {"status": "unknown"},
+            "database_migrations": {"status": "unknown"},
             "qdrant": {"status": "unknown"},
+            "ocr_engine": {"status": "unknown"},
+            "storage": {"status": "unknown"},
             "firebase_auth": {
                 "status": "configured" if is_firebase_configured() else "unconfigured"
-            }
-        }
+            },
+            "gemini": {
+                "status": "enabled" if settings.GEMINI_ENABLED else "disabled",
+                "model": settings.GEMINI_MODEL if settings.GEMINI_ENABLED else None,
+            },
+        },
     }
-    
-    # 1. Check PostgreSQL (via shared application connection pool)
+
+    # 1. Check PostgreSQL & Migration State (via dedicated non-superuser consolith_app pool)
     try:
         with db_engine.connect() as connection:
-            result = connection.execute(text("SELECT 1;")).scalar()
-            if result == 1:
-                health_status["services"]["postgres"] = {"status": "up"}
-            else:
-                health_status["services"]["postgres"] = {"status": "down", "error": "Query returned unexpected result"}
+            user_row = connection.execute(text("SELECT current_user, session_user, current_database();")).fetchone()
+            current_user = user_row[0] if user_row else "unknown"
+            health_status["services"]["postgres"] = {
+                "status": "up",
+                "role": current_user,
+                "database": user_row[2] if user_row else "unknown",
+            }
+
+            try:
+                mig_rows = connection.execute(text("SELECT version FROM schema_migrations ORDER BY version;")).fetchall()
+                applied_versions = [r[0] for r in mig_rows]
+                health_status["services"]["database_migrations"] = {
+                    "status": "up",
+                    "applied_count": len(applied_versions),
+                    "latest_applied": applied_versions[-1] if applied_versions else None,
+                }
+            except Exception as mig_err:
+                health_status["services"]["database_migrations"] = {
+                    "status": "down",
+                    "error": "schema_migrations table unavailable or uninitialized",
+                }
                 health_status["status"] = "degraded"
     except Exception as e:
         logger.error(f"Healthcheck failed to connect to PostgreSQL: {e}")
         error_msg = str(e) if settings.DEBUG else "Database connection failed or unreachable."
         health_status["services"]["postgres"] = {"status": "down", "error": error_msg}
+        health_status["services"]["database_migrations"] = {"status": "down", "error": "Database unreachable"}
         health_status["status"] = "degraded"
 
     # 2. Check Qdrant
@@ -142,7 +166,7 @@ def health_check():
             health_status["services"]["qdrant"] = {
                 "status": "up",
                 "mode": "in_process",
-                "collections": cols
+                "collections": cols,
             }
         else:
             qdrant_url = f"http://{settings.QDRANT_HOST}:{settings.QDRANT_PORT}"
@@ -157,6 +181,38 @@ def health_check():
         logger.error(f"Healthcheck failed to connect to Qdrant: {e}")
         error_msg = str(e) if settings.DEBUG else "Vector database connection failed or unreachable."
         health_status["services"]["qdrant"] = {"status": "down", "error": error_msg}
+        health_status["status"] = "degraded"
+
+    # 3. Check OCR Engine
+    try:
+        from app.ocr.engine import default_ocr_engine
+        health_status["services"]["ocr_engine"] = {
+            "status": "up",
+            "engine": "tesseract",
+            "available": True,
+        }
+    except Exception as e:
+        health_status["services"]["ocr_engine"] = {
+            "status": "down",
+            "error": str(e) if settings.DEBUG else "OCR engine uninitialized",
+        }
+        health_status["status"] = "degraded"
+
+    # 4. Check Storage
+    try:
+        import os
+        temp_dir = settings.STORAGE_TEMP_DIR
+        os.makedirs(temp_dir, exist_ok=True)
+        health_status["services"]["storage"] = {
+            "status": "up",
+            "retention_policy": settings.STORAGE_RETENTION_POLICY,
+            "temp_dir_available": os.path.isdir(temp_dir),
+        }
+    except Exception as e:
+        health_status["services"]["storage"] = {
+            "status": "down",
+            "error": str(e) if settings.DEBUG else "Storage directory unwritable",
+        }
         health_status["status"] = "degraded"
 
     http_code = status.HTTP_200_OK if health_status["status"] == "healthy" else status.HTTP_503_SERVICE_UNAVAILABLE

@@ -81,6 +81,7 @@ def seed_synthetic_fixtures():
         """, (CITIZEN_A_ID, CITIZEN_B_ID, ADMIN_ID))
 
         # Insert documents
+        cur.execute("DELETE FROM citizen_checklist_items;")
         cur.execute("""
             INSERT INTO documents (id, user_id, document_type, file_path, file_hash, masked_id, extracted_fields) VALUES
             (%s, %s, 'aadhaar', '/storage/docs/a_aadhaar.pdf', 'hash_a_123', 'XXXX-XXXX-1234', '{"name": "Ajay Kumar"}'::jsonb),
@@ -125,7 +126,7 @@ def run_rls_security_tests():
     conn.autocommit = False
     
     passed_tests = 0
-    total_tests = 9
+    total_tests = 10
 
     try:
         # TEST 1: Role privilege check (Must NOT be superuser)
@@ -308,6 +309,57 @@ def run_rls_security_tests():
             assert len(cur.fetchall()) == 0
             
             print("  [PASS] Connection pooling safely handles empty strings and session resets without crashing.")
+            passed_tests += 1
+
+        # TEST 10: Citizen Checklist Progress RLS Isolation
+        print("\n[TEST 10/10] Testing citizen checklist progress RLS isolation...")
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # 1. Unauthenticated sees 0 rows
+            cur.execute("RESET ALL;")
+            cur.execute("SELECT * FROM citizen_checklist_items;")
+            assert len(cur.fetchall()) == 0, "Unauthenticated user must see 0 checklist items"
+
+            # 2. Citizen A inserts checklist progress
+            cur.execute(f"SET LOCAL app.current_user_id = '{CITIZEN_A_ID}';")
+            cur.execute("SET LOCAL app.current_user_role = 'user';")
+            cur.execute(f"""
+                INSERT INTO citizen_checklist_items (user_id, procedure_id, item_id, is_completed)
+                VALUES ('{CITIZEN_A_ID}', 'aadhaar_name_update', 'REQ_AAD_NAME_01', TRUE);
+            """)
+
+            # Citizen A can read it
+            cur.execute("SELECT * FROM citizen_checklist_items WHERE procedure_id = 'aadhaar_name_update';")
+            a_items = cur.fetchall()
+            assert len(a_items) == 1, "Citizen A must see their own checklist item"
+            assert a_items[0]['item_id'] == 'REQ_AAD_NAME_01'
+
+            # 3. Citizen B cannot see Citizen A's checklist item
+            cur.execute(f"SET LOCAL app.current_user_id = '{CITIZEN_B_ID}';")
+            cur.execute("SET LOCAL app.current_user_role = 'user';")
+            cur.execute("SELECT * FROM citizen_checklist_items WHERE procedure_id = 'aadhaar_name_update';")
+            b_items = cur.fetchall()
+            assert len(b_items) == 0, "Citizen B must NOT see Citizen A's checklist items"
+
+            # 4. Citizen B cannot modify Citizen A's checklist item
+            cur.execute(f"""
+                UPDATE citizen_checklist_items SET is_completed = FALSE 
+                WHERE user_id = '{CITIZEN_A_ID}' AND item_id = 'REQ_AAD_NAME_01';
+            """)
+            assert cur.rowcount == 0, "Citizen B must NOT be able to modify Citizen A's checklist item"
+
+            # 5. Citizen B cannot insert checklist item with Citizen A's user_id
+            b_hijack_failed = False
+            try:
+                cur.execute(f"""
+                    INSERT INTO citizen_checklist_items (user_id, procedure_id, item_id, is_completed)
+                    VALUES ('{CITIZEN_A_ID}', 'aadhaar_name_update', 'REQ_AAD_NAME_02', TRUE);
+                """)
+            except psycopg2.DatabaseError:
+                b_hijack_failed = True
+            conn.rollback()
+
+            assert b_hijack_failed is True, "Citizen B must be forbidden by RLS WITH CHECK from creating items under Citizen A's user_id"
+            print("  [PASS] Citizen checklist progress strictly isolated by RLS.")
             passed_tests += 1
 
         print("\n==================================================")

@@ -1,9 +1,16 @@
 import logging
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
+from uuid import UUID
+from sqlalchemy.orm import Session
+from app.models.checklist import CitizenChecklistItem
+from app.services.audit_service import AuditService
 from app.rag.schemas import (
     ChecklistItem,
     ChecklistResponse,
     RequirementStatus,
+    ChecklistProgressResponse,
+    ChecklistItemProgressUpdate,
 )
 
 logger = logging.getLogger("convelina.checklist.service")
@@ -709,4 +716,106 @@ class ChecklistService:
             return cls.get_checklist_for_procedure("aadhaar_address_update")
 
         return None
+
+    @classmethod
+    def get_user_progress(
+        cls,
+        db: Session,
+        user_id: UUID,
+        procedure_id: str,
+    ) -> ChecklistProgressResponse:
+        """
+        Retrieves user checklist progress from persistent PostgreSQL storage under active RLS context.
+        """
+        items = db.query(CitizenChecklistItem).filter(
+            CitizenChecklistItem.user_id == user_id,
+            CitizenChecklistItem.procedure_id == procedure_id,
+        ).all()
+
+        items_progress = {item.item_id: item.is_completed for item in items}
+        completed_items = [item.item_id for item in items if item.is_completed]
+        latest_update = max([item.updated_at for item in items], default=None) if items else None
+
+        return ChecklistProgressResponse(
+            procedure_id=procedure_id,
+            user_id=str(user_id),
+            completed_items=completed_items,
+            items_progress=items_progress,
+            updated_at=latest_update.isoformat() if latest_update else None,
+        )
+
+    @classmethod
+    def update_user_item_progress(
+        cls,
+        db: Session,
+        user_id: UUID,
+        procedure_id: str,
+        item_id: str,
+        is_completed: bool,
+    ) -> ChecklistProgressResponse:
+        """
+        Updates persistent checklist item completion state for the authenticated citizen.
+        Enforces:
+        - Validates procedure and item IDs against authoritative statutory definitions
+        - Citizens cannot change statutory verification statuses
+        - Generates append-only cryptographic audit trail
+        """
+        # 1. Validate procedure existence
+        checklist_def = cls.get_checklist_for_procedure(procedure_id)
+        if not checklist_def:
+            raise ValueError(f"Procedure '{procedure_id}' is not a recognized statutory checklist.")
+
+        valid_item_ids = {item.requirement_id for item in checklist_def.items}
+        if item_id not in valid_item_ids:
+            raise ValueError(f"Item '{item_id}' is not a valid requirement in procedure '{procedure_id}'.")
+
+        # 2. Query or create item record
+        record = db.query(CitizenChecklistItem).filter(
+            CitizenChecklistItem.user_id == user_id,
+            CitizenChecklistItem.procedure_id == procedure_id,
+            CitizenChecklistItem.item_id == item_id,
+        ).first()
+
+        now = datetime.now(timezone.utc)
+        if record:
+            record.is_completed = is_completed
+            record.confirmed_at = now if is_completed else None
+            record.updated_at = now
+        else:
+            record = CitizenChecklistItem(
+                user_id=user_id,
+                procedure_id=procedure_id,
+                item_id=item_id,
+                is_completed=is_completed,
+                confirmed_at=now if is_completed else None,
+                created_at=now,
+                updated_at=now,
+            )
+            db.add(record)
+
+        db.flush()
+
+        # 3. Log audit event within the active transaction context
+        try:
+            AuditService.log_event(
+                db=db,
+                action="UPDATE_CHECKLIST_PROGRESS",
+                entity_type="CHECKLIST",
+                entity_id=record.id,
+                user_id=user_id,
+                details={
+                    "procedure_id": procedure_id,
+                    "item_id": item_id,
+                    "is_completed": is_completed,
+                    "confirmed_at": now.isoformat() if is_completed else None,
+                },
+            )
+        except Exception as audit_err:
+            logger.warning(f"Failed to record audit log for checklist progress update: {audit_err}")
+
+        progress = cls.get_user_progress(db=db, user_id=user_id, procedure_id=procedure_id)
+        db.commit()
+
+        return progress
+
 

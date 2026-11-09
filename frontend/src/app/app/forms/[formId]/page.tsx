@@ -27,6 +27,8 @@ import { useAuth } from "../../../../context/AuthContext";
 import {
   fetchRepositoryResourceDetail,
   fetchOfficialFormById,
+  fetchResourceChecklistProgress,
+  updateChecklistItemProgress,
   RepositoryResourceDetail,
   ChecklistItem,
 } from "../../../../lib/api";
@@ -41,14 +43,24 @@ export default function DocumentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Interactive Checklist State (local citizen preparation checklist)
+  // Interactive Checklist State (persistent citizen preparation checklist)
   const [completedItems, setCompletedItems] = useState<Record<string, boolean>>({});
 
-  const toggleChecklistItem = (reqId: string) => {
+  const toggleChecklistItem = async (reqId: string) => {
+    const nextState = !completedItems[reqId];
     setCompletedItems((prev) => ({
       ...prev,
-      [reqId]: !prev[reqId],
+      [reqId]: nextState,
     }));
+
+    if (idToken && resource) {
+      try {
+        const procId = (resource.related_procedures && resource.related_procedures[0]) || resource.resource_id;
+        await updateChecklistItemProgress(idToken, procId, reqId, nextState);
+      } catch (err) {
+        console.error("Failed to persist checklist item progress:", err);
+      }
+    }
   };
 
   const loadResource = useCallback(async () => {
@@ -60,6 +72,16 @@ export default function DocumentDetailPage() {
       try {
         const data = await fetchRepositoryResourceDetail(idToken, formId);
         setResource(data);
+        if (idToken) {
+          try {
+            const prog = await fetchResourceChecklistProgress(idToken, formId);
+            if (prog && prog.items_progress) {
+              setCompletedItems(prog.items_progress);
+            }
+          } catch {
+            // Ignore unpersisted initial state
+          }
+        }
         return;
       } catch (repoErr) {
         // Fallback to legacy official forms endpoint

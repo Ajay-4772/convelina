@@ -19,6 +19,8 @@ from app.rag.schemas import (
     RepositoryResourceDetail,
     RepositoryResourceListResponse,
     ChecklistResponse,
+    ChecklistItemProgressUpdate,
+    ChecklistProgressResponse,
     ProceduralGuidanceRequest,
     ProceduralGuidanceResponse,
     PersonalizedGuidanceResponse,
@@ -176,6 +178,65 @@ def get_category_checklists(
     Returns all standard checklists for a supported identity category.
     """
     return ChecklistService.get_checklists_for_category(category)
+
+
+@router.get("/checklists/{procedure_id}/progress", response_model=ChecklistProgressResponse)
+def get_user_checklist_progress(
+    procedure_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Returns persistent citizen checklist preparation progress for the authenticated user.
+    Enforces Row-Level Security isolation.
+    """
+    set_rls_context(db, current_user.id, current_user.role)
+    return ChecklistService.get_user_progress(db=db, user_id=current_user.id, procedure_id=procedure_id)
+
+
+@router.put("/checklists/{procedure_id}/progress", response_model=ChecklistProgressResponse)
+def update_user_checklist_progress(
+    procedure_id: str,
+    update: ChecklistItemProgressUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Updates completion state of a specific checklist item for the authenticated citizen.
+    - Validates item against authoritative statutory checklist definitions
+    - Citizens cannot modify statutory verification categories or criteria
+    - Persists completion with timestamp in PostgreSQL under forced RLS
+    - Emits immutable cryptographic audit record
+    """
+    set_rls_context(db, current_user.id, current_user.role)
+    try:
+        return ChecklistService.update_user_item_progress(
+            db=db,
+            user_id=current_user.id,
+            procedure_id=procedure_id,
+            item_id=update.item_id,
+            is_completed=update.is_completed,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.get("/resources/{resource_id}/checklist-progress", response_model=ChecklistProgressResponse)
+def get_resource_checklist_progress(
+    resource_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Returns checklist progress for a given resource or its primary associated correction procedure.
+    """
+    set_rls_context(db, current_user.id, current_user.role)
+    detail = CitizenRepositoryService.get_resource_detail(resource_id)
+    procedure_id = resource_id
+    if detail and detail.related_procedure_ids:
+        procedure_id = detail.related_procedure_ids[0]
+    return ChecklistService.get_user_progress(db=db, user_id=current_user.id, procedure_id=procedure_id)
+
 
 
 # ---------------------------------------------------------------------------

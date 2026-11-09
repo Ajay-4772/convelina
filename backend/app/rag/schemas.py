@@ -556,6 +556,22 @@ class ChecklistResponse(BaseModel):
         "and does not constitute official government approval or successful statutory correction."
     )
 
+class ChecklistItemProgressUpdate(BaseModel):
+    item_id: str
+    is_completed: bool
+
+class ChecklistProgressResponse(BaseModel):
+    procedure_id: str
+    user_id: str
+    completed_items: List[str]
+    items_progress: dict[str, bool]
+    updated_at: Optional[str] = None
+    disclaimer: str = (
+        "Citizen checklist completion is an informational preparation tool "
+        "and does not constitute official government approval or successful statutory correction."
+    )
+
+
 class RepositoryResourceItem(BaseModel):
     id: str
     resource_id: str
