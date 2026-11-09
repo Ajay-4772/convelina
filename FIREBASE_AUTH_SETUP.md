@@ -1,79 +1,54 @@
-# CONVELINA — Firebase Authentication Setup & Configuration Guide
+# CONVELINA — Firebase Authentication Setup & Configuration Guide (Email + Google)
 
-This guide provides step-by-step instructions for configuring Google Firebase Authentication for CONVELINA, covering both the web frontend (Next.js 14) and the backend API (FastAPI + PostgreSQL with forced Row-Level Security).
+This guide provides step-by-step instructions for configuring Google Firebase Authentication for CONVELINA, covering both Email/Password and Google Sign-In across the Next.js 14 frontend and FastAPI backend.
 
 ---
 
-## 1. Firebase Project Creation
+## 1. Firebase Project & Google Cloud Setup
 
-1. Navigate to the [Firebase Console](https://console.firebase.google.com/).
-2. Click **Add project** (or select an existing Google Cloud project).
-3. Name your project (e.g., `convelina-production` or `convelina-dev`).
-4. Toggle Google Analytics based on your operational preferences (optional for local authentication testing).
-5. Click **Create project** and wait for the resource provisioning to complete.
+1. Open the [Firebase Console](https://console.firebase.google.com/).
+2. Select or create your Firebase project (e.g., `convelina-production` or `convelina-dev`).
+3. Under **Project settings** > **General**, ensure the project is linked to your Google Cloud project.
 
 ---
 
 ## 2. Enable Authentication Providers
 
-1. In the left-hand navigation sidebar, click **Build** > **Authentication**.
-2. Click **Get started**.
-3. Under the **Sign-in method** tab:
-   - Select **Email/Password**.
+1. In the Firebase Console, navigate to **Build** > **Authentication**.
+2. Click the **Sign-in method** tab.
+3. **Enable Email/Password**:
+   - Click **Email/Password**.
    - Enable the **Email/Password** toggle.
-   - Leave *Email link (passwordless sign-in)* disabled unless explicitly required.
    - Click **Save**.
-4. (Optional) Under **Sign-in method**, add **Google** provider if Google single sign-on is desired.
-5. In the **Settings** > **Authorized domains** tab:
-   - Ensure `localhost` is listed.
-   - Add any staging or custom production domains (e.g., `admin.localhost`).
+4. **Enable Google Sign-In**:
+   - Click **Google**.
+   - Enable the **Enable** toggle.
+   - Select the project public-facing name (e.g., `CONVELINA`).
+   - Select a project support email from the dropdown.
+   - Click **Save**.
+5. **Account Linking Configuration**:
+   - Under **Authentication** > **Settings** > **User account linking**:
+   - Select *"Link accounts that use the same email"*.
+   - This ensures when a citizen signs in with Google using the same email previously used for email/password, Firebase and CONVELINA link the credentials under a single unified account.
+6. **Authorized Domains**:
+   - In the **Settings** > **Authorized domains** tab, confirm:
+     - `localhost`
+     - `127.0.0.1`
+     - Your staging/production custom domain (e.g., `convelina.in`).
 
 ---
 
 ## 3. Register Frontend Web Application
 
-1. In the Firebase Console, go to **Project settings** (gear icon beside Project Overview).
-2. Under the **General** tab, scroll down to the **Your apps** section.
-3. Click the **Web** icon (`</>`) to register a new web application.
-4. App nickname: `convelina-web`.
-5. Do not check "Also set up Firebase Hosting" unless using Firebase Hosting.
-6. Click **Register app**.
-7. Copy the configuration object displayed (`firebaseConfig`):
-   - `apiKey`
-   - `authDomain`
-   - `projectId`
-   - `storageBucket`
-   - `messagingSenderId`
-   - `appId`
-
----
-
-## 4. Generate Backend Admin Service Account
-
-1. In **Project settings**, select the **Service accounts** tab.
-2. Ensure **Firebase Admin SDK** is highlighted.
-3. Click **Generate new private key**.
-4. Confirm the prompt by clicking **Generate key**.
-5. A JSON file will download (e.g., `convelina-dev-firebase-adminsdk-xxxxx.json`).
-6. **SECURITY MANDATE**:
-   - Store this key securely outside public directories.
-   - Recommended location: `backend/secrets/firebase_service_account.json`.
-   - Verify that `backend/secrets/` and `*.json` are excluded in `.gitignore`.
-   - Never commit this file or paste its contents into version control.
-
----
-
-## 5. Configure Local Environment Variables
-
-### Frontend Configuration (`frontend/.env.local`)
-Create or edit `frontend/.env.local` (referenced from `frontend/.env.example`):
+1. In **Project settings** > **General**, scroll to **Your apps**.
+2. If not already registered, click the **Web** icon (`</>`) and register `convelina-web`.
+3. Copy the client configuration values into `frontend/.env.local`:
 
 ```bash
-# Backend FastAPI Endpoint
+# Frontend Next.js (.env.local)
 NEXT_PUBLIC_API_URL=http://localhost:8000
 
-# Firebase Web Client SDK
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyYourCopiedApiKey
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyYourApiKeyHere
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
@@ -84,66 +59,66 @@ NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789012:web:abcdef1234567890
 # NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
 ```
 
-### Backend Configuration (`backend/.env` or root `.env`)
-Create or edit `backend/.env` (referenced from `backend/.env.example`):
+---
+
+## 4. Generate Backend Service Account Key
+
+1. In **Project settings**, click the **Service accounts** tab.
+2. Select **Firebase Admin SDK** and click **Generate new private key**.
+3. Save the downloaded JSON file to a secure directory outside source control, such as:
+   `backend/secrets/firebase_service_account.json`
+4. **MANDATORY SECURITY RULE**:
+   - Ensure `backend/secrets/` is listed in `.gitignore`.
+   - Never commit private keys, service account JSON files, or `.env` files to Git.
+5. In `backend/.env` (or root `.env`):
 
 ```bash
-# Environment & Server
-PROJECT_NAME="CONVELINA API"
-ENVIRONMENT=development
-DEBUG=True
-
-# Database (connects via dedicated non-superuser role)
-DATABASE_URL=postgresql://consolith_app:consolith_secure_app_pw@localhost:5432/consolith
-
-# Firebase Admin SDK Configuration
+# Backend FastAPI (.env)
 FIREBASE_PROJECT_ID=your-project-id
 FIREBASE_SERVICE_ACCOUNT_PATH=secrets/firebase_service_account.json
-# FIREBASE_AUTH_EMULATOR_HOST=localhost:9099  # Optional: only for emulator
+# FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 # Optional: only when using local emulator
 
-# Administrator Account
+# Pre-configured Administrator Account (receives 'admin' role automatically)
 ADMIN_GMAIL=admin.demo@gmail.com
-
-# Sensitive Data Encryption
-ENCRYPTION_KEY=consolith_dev_fernet_secret_key_32_bytes_len=
 ```
 
 ---
 
-## 6. Testing Instructions
+## 5. Local Testing Instructions
 
-### Option A: Testing with Real Firebase Auth (Recommended)
-1. Start the backend:
+### Real Firebase Testing (Production-grade)
+1. Start FastAPI:
    ```bash
    uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
    ```
-2. Start the frontend:
+2. Start Next.js:
    ```bash
    cd frontend && npm run dev
    ```
-3. Navigate to `http://localhost:3000/signup`.
-4. Enter an email address and password (>= 6 characters).
-5. Upon successful creation, the user will be persisted in Firebase Console (`Authentication > Users`).
-6. The frontend automatically receives the Firebase ID token (JWT) and calls `POST /api/v1/auth/provision` or `GET /api/v1/auth/me`.
-7. The backend validates the JWT with `firebase_admin.auth.verify_id_token()`, links the `firebase_uid` to a row in the PostgreSQL `users` table, and sets the role to `'user'`.
-8. Log in with the newly created credentials at `http://localhost:3000/login`.
+3. Test **Email Registration & Login**:
+   - Navigate to `http://localhost:3000/signup`.
+   - Fill in Full Legal Name, Email, Password (>= 6 chars), and agree to privacy terms.
+   - User is persisted in Firebase Auth and provisioned in PostgreSQL with `role = 'user'`.
+4. Test **Google Sign-In**:
+   - Click "Continue with Google" on `http://localhost:3000/login` or "Sign up with Google" on `/signup`.
+   - Google account selection popup appears.
+   - Upon authorization, JWT is issued, backend verifies the token, and creates/synchronizes the user record.
+5. Test **Account Linking**:
+   - Sign up with Email/Password `user@domain.com`.
+   - Log out, then click "Continue with Google" using the same `user@domain.com`.
+   - Backend recognizes the verified email, links the Google credentials, and maintains the single existing user profile and uploaded documents without duplicating records.
+6. Test **Password Reset**:
+   - On `/login`, click "Forgot password?".
+   - Enter email address and submit.
+   - Firebase dispatches an official password reset email.
 
-### Option B: Testing with Local Firebase Emulator
-If internet connectivity is restricted or isolated testing is required:
-1. Install the Firebase CLI:
-   ```bash
-   npm install -g firebase-tools
-   ```
-2. Start the Auth emulator:
+### Local Emulator Testing
+1. Start Firebase Auth emulator:
    ```bash
    firebase emulators:start --only auth
    ```
-3. In `frontend/.env.local`, set:
+2. Set emulator host in both `.env.local` and `.env`:
    ```bash
    NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
-   ```
-4. In `backend/.env`, set:
-   ```bash
    FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
    ```
-5. Both client and server will route all token issuance and verification to `http://localhost:9099`.

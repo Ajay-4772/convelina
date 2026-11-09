@@ -34,50 +34,76 @@ def get_current_user(
     """
     Resolves the internal User entity from the database using verified Firebase UID.
     Activates transaction-local RLS session parameters for the query.
-    Automatically provisions new users into PostgreSQL on their first authenticated request.
+    Automatically provisions new users or synchronizes linked accounts (Email + Google)
+    without duplicating user records.
     """
     firebase_uid = claims.get("uid")
     if not firebase_uid:
         raise AuthenticationError("Token does not contain a valid user identity.")
 
-    # Secure resolution via resolve_user_by_firebase_uid
+    # 1. Primary lookup by verified Firebase UID
     row = db.execute(
         text("SELECT id, firebase_uid, email, full_name, role, created_at, updated_at FROM resolve_user_by_firebase_uid(:fuid);"),
         {"fuid": firebase_uid}
     ).mappings().first()
 
     if not row:
-        # Auto-provision user record on first authenticated request
         email = claims.get("email") or f"{firebase_uid}@user.convelina.internal"
         display_name = claims.get("name") or claims.get("display_name") or email.split("@")[0] or "User"
         is_admin = bool(settings.ADMIN_GMAIL and email.lower() == settings.ADMIN_GMAIL.lower())
 
-        try:
-            row = db.execute(
-                text("SELECT id, firebase_uid, email, full_name, role, created_at, updated_at FROM provision_user(:fuid, :email, :name);"),
-                {"fuid": firebase_uid, "email": email, "name": display_name}
-            ).mappings().first()
+        # 2. Check if a user with the same email already exists (e.g. Email/Password and Google sign-in for the same person)
+        existing_by_email = db.execute(
+            text("SELECT id, firebase_uid, email, full_name, role, created_at, updated_at FROM users WHERE LOWER(email) = LOWER(:email);"),
+            {"email": email}
+        ).mappings().first()
 
-            if is_admin and row and row["role"] != "admin":
-                set_rls_context(db, row["id"], "admin")
+        if existing_by_email:
+            # Safely synchronize Firebase UID on the existing user row to avoid duplication
+            try:
+                set_rls_context(db, existing_by_email["id"], existing_by_email["role"])
                 db.execute(
-                    text("UPDATE users SET role = 'admin' WHERE id = :uid;"),
-                    {"uid": row["id"]}
+                    text("UPDATE users SET firebase_uid = :fuid, updated_at = NOW() WHERE id = :uid;"),
+                    {"fuid": firebase_uid, "uid": existing_by_email["id"]}
                 )
                 db.commit()
                 row = db.execute(
                     text("SELECT id, firebase_uid, email, full_name, role, created_at, updated_at FROM resolve_user_by_firebase_uid(:fuid);"),
                     {"fuid": firebase_uid}
                 ).mappings().first()
-            else:
-                db.commit()
-        except Exception as e:
-            db.rollback()
-            logger.error(f"Auto-provisioning failed for {firebase_uid}: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to auto-provision user account."
-            )
+            except Exception as sync_err:
+                db.rollback()
+                logger.warning(f"Safe account synchronization failed for email {email}: {sync_err}")
+                row = existing_by_email
+
+        if not row:
+            # 3. Auto-provision brand new user record on first authenticated request
+            try:
+                row = db.execute(
+                    text("SELECT id, firebase_uid, email, full_name, role, created_at, updated_at FROM provision_user(:fuid, :email, :name);"),
+                    {"fuid": firebase_uid, "email": email, "name": display_name}
+                ).mappings().first()
+
+                if is_admin and row and row["role"] != "admin":
+                    set_rls_context(db, row["id"], "admin")
+                    db.execute(
+                        text("UPDATE users SET role = 'admin' WHERE id = :uid;"),
+                        {"uid": row["id"]}
+                    )
+                    db.commit()
+                    row = db.execute(
+                        text("SELECT id, firebase_uid, email, full_name, role, created_at, updated_at FROM resolve_user_by_firebase_uid(:fuid);"),
+                        {"fuid": firebase_uid}
+                    ).mappings().first()
+                else:
+                    db.commit()
+            except Exception as e:
+                db.rollback()
+                logger.error(f"Auto-provisioning failed for {firebase_uid}: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to auto-provision user account."
+                )
 
     # Establish transaction-local RLS context for subsequent operations
     user_id = row["id"]

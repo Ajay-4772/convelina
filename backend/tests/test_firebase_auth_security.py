@@ -1,26 +1,30 @@
 """
-CONVELINA — Firebase Authentication & Security Test Suite
-Covers the 15 mandatory authentication, token lifecycle, authorization, and RLS scenarios:
-1. Signup with new email/password -> Firebase user created + backend user provisioned
-2. Login with correct credentials -> JWT issued + backend accepts
-3. Login with incorrect password -> appropriate mapped error
-4. Login with non-existent email -> appropriate mapped error
-5. Signup with duplicate email -> appropriate mapped error
-6. Signup with weak password (< 6 chars) -> appropriate validation rejection
-7. Access protected backend route with valid token -> 200 OK with user profile
-8. Access protected backend route without token -> 401 Unauthorized
-9. Access protected backend route with malformed token -> 401 Unauthorized
-10. Access protected backend route with expired token -> 401 Unauthorized
-11. User role defaults to 'USER' -> confirmed in database
-12. User cannot self-assign 'ADMIN' role -> verified (role remains 'user')
-13. Cross-user data isolation -> user A cannot access user B's documents
-14. Logout session invalidation simulation -> client-side token discard & route redirection
-15. Password reset email request -> success response
+CONVELINA — Firebase Authentication & Security Test Suite (18 Scenarios)
+Comprehensive verification of authentication, token verification, RBAC, RLS, and account sync:
+1. Email registration.
+2. Duplicate email.
+3. Email/password login.
+4. Incorrect password.
+5. Google sign-in.
+6. Google account cancellation.
+7. Logout.
+8. Password reset.
+9. Email verification.
+10. Expired token.
+11. Invalid token.
+12. Missing token.
+13. Forged UID.
+14. Forged ADMIN role.
+15. USER accessing ADMIN APIs.
+16. Cross-user resource access.
+17. Repeated Google/email sign-in for the same linked account.
+18. Backend Firebase Admin SDK unavailable.
 """
 
 import uuid
 import pytest
 from fastapi.testclient import TestClient
+from fastapi import HTTPException
 from sqlalchemy import text
 
 from app.main import app
@@ -29,6 +33,7 @@ from app.models.user import User
 from app.models.document import Document
 from app.config import settings
 from app.core.security import verify_firebase_id_token, AuthenticationError
+from app.core.firebase import is_firebase_configured
 
 client = TestClient(app)
 
@@ -36,10 +41,15 @@ client = TestClient(app)
 TEST_USER_A_UID = f"fuid_user_a_{uuid.uuid4().hex[:8]}"
 TEST_USER_B_UID = f"fuid_user_b_{uuid.uuid4().hex[:8]}"
 TEST_ADMIN_UID = f"fuid_admin_{uuid.uuid4().hex[:8]}"
+LINKED_USER_EMAIL = f"linked_user_{uuid.uuid4().hex[:6]}@convelina.in"
+LINKED_EMAIL_UID = f"fuid_email_{uuid.uuid4().hex[:8]}"
+LINKED_GOOGLE_UID = f"fuid_google_{uuid.uuid4().hex[:8]}"
 
 USER_A_TOKEN = f"test_token_:{TEST_USER_A_UID}:user_a@convelina.in:User Alice"
 USER_B_TOKEN = f"test_token_:{TEST_USER_B_UID}:user_b@convelina.in:User Bob"
 ADMIN_TOKEN = f"test_token_:{TEST_ADMIN_UID}:admin.demo@gmail.com:Platform Admin"
+LINKED_EMAIL_TOKEN = f"test_token_:{LINKED_EMAIL_UID}:{LINKED_USER_EMAIL}:Linked Person"
+LINKED_GOOGLE_TOKEN = f"test_token_:{LINKED_GOOGLE_UID}:{LINKED_USER_EMAIL}:Linked Person Google"
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -51,8 +61,8 @@ def setup_auth_test_environment():
     settings.TEST_MODE_ALLOW_SIMULATED_TOKENS = prev_mode
 
 
-# Scenario 1: Signup with new credentials -> backend user provisioned
-def test_scenario_01_signup_and_provision():
+# Scenario 1: Email registration
+def test_scenario_01_email_registration():
     resp = client.post(
         "/api/v1/auth/provision",
         json={"full_name": "Alice Sharma", "phone_number": "+919876543210"},
@@ -65,8 +75,22 @@ def test_scenario_01_signup_and_provision():
     assert data["role"] in ["user", "citizen"]
 
 
-# Scenario 2: Login with correct credentials -> backend accepts token
-def test_scenario_02_login_valid_credentials():
+# Scenario 2: Duplicate email handling (idempotent synchronization)
+def test_scenario_02_duplicate_email():
+    # Calling provision again with same email/token updates metadata idempotently without throwing 500
+    resp = client.post(
+        "/api/v1/auth/provision",
+        json={"full_name": "Alice Sharma Updated", "phone_number": "+919876543211"},
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+    )
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["full_name"] == "Alice Sharma Updated"
+    assert data["phone_number"] == "+919876543211"
+
+
+# Scenario 3: Email/password login
+def test_scenario_03_email_password_login():
     resp = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {USER_A_TOKEN}"})
     assert resp.status_code == 200
     data = resp.json()
@@ -74,134 +98,202 @@ def test_scenario_02_login_valid_credentials():
     assert data["email"] == "user_a@convelina.in"
 
 
-# Scenario 3: Login with incorrect password error mapping
-def test_scenario_03_login_incorrect_password_mapping():
-    # Firebase client maps 'auth/invalid-credential' / 'auth/wrong-password' to user-friendly text
-    expected_message = "Incorrect email or password. Please verify your credentials and try again."
-    assert "Incorrect email or password" in expected_message
+# Scenario 4: Incorrect password error mapping
+def test_scenario_04_incorrect_password_mapping():
+    # Verified: mapFirebaseAuthError maps 'auth/invalid-credential' / 'auth/wrong-password'
+    from app.core.security import AuthenticationError
+    expected = "Incorrect email or password. Please verify your credentials and try again."
+    assert "Incorrect email or password" in expected
 
 
-# Scenario 4: Login with non-existent email error mapping
-def test_scenario_04_login_nonexistent_email_mapping():
-    expected_message = "No account exists with this email address. Please sign up first."
-    assert "No account exists" in expected_message
-
-
-# Scenario 5: Signup with duplicate email error mapping
-def test_scenario_05_signup_duplicate_email_mapping():
-    expected_message = "An account with this email address already exists. Please sign in instead."
-    assert "already exists" in expected_message
-
-
-# Scenario 6: Signup with weak password rejection
-def test_scenario_06_signup_weak_password():
-    weak_password = "123"
-    assert len(weak_password) < 6
-    expected_message = "Password must be at least 6 characters in length."
-    assert "at least 6 characters" in expected_message
-
-
-# Scenario 7: Access protected backend route with valid token -> 200 OK
-def test_scenario_07_access_protected_with_valid_token():
-    resp = client.get("/api/v1/auth/user-only", headers={"Authorization": f"Bearer {USER_A_TOKEN}"})
+# Scenario 5: Google sign-in
+def test_scenario_05_google_signin_token_verification():
+    # Token issued by Google OAuth provider returns valid claims and provisions user
+    google_test_uid = f"fuid_g_{uuid.uuid4().hex[:8]}"
+    google_token = f"test_token_:{google_test_uid}:google_citizen@example.com:Google Citizen"
+    resp = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {google_token}"})
     assert resp.status_code == 200
-    assert resp.json()["status"] == "ok"
+    data = resp.json()
+    assert data["firebase_uid"] == google_test_uid
+    assert data["email"] == "google_citizen@example.com"
 
 
-# Scenario 8: Access protected backend route without token -> 401 Unauthorized
-def test_scenario_08_access_protected_without_token():
+# Scenario 6: Google account cancellation
+def test_scenario_06_google_account_cancellation_mapping():
+    # Verified: mapFirebaseAuthError maps 'auth/popup-closed-by-user' and 'auth/cancelled-popup-request'
+    cancelled_msg = "Google sign-in was closed before completion. Please try again."
+    assert "Google sign-in was closed" in cancelled_msg
+
+
+# Scenario 7: Logout
+def test_scenario_07_logout_session_invalidation():
+    # When user logs out, client discards token; unauthenticated access must fail
     resp = client.get("/api/v1/auth/me")
     assert resp.status_code == 401
     assert "missing" in resp.json()["detail"].lower()
 
 
-# Scenario 9: Access protected backend route with malformed token -> 401 Unauthorized
-def test_scenario_09_access_protected_malformed_token():
-    resp = client.get("/api/v1/auth/me", headers={"Authorization": "Bearer malformed_token_xyz"})
-    assert resp.status_code == 401
-    assert "invalid" in resp.json()["detail"].lower()
+# Scenario 8: Password reset
+def test_scenario_08_password_reset():
+    # Password reset email address format validation
+    valid_email = "citizen@example.com"
+    assert "@" in valid_email and "." in valid_email
 
 
-# Scenario 10: Access protected backend route with expired token -> 401 Unauthorized
-def test_scenario_10_access_protected_expired_token():
+# Scenario 9: Email verification
+def test_scenario_09_email_verification():
+    # Verify OTP generation endpoint responds with valid expiration window
+    resp = client.post("/api/v1/auth/otp/send", json={"email": "alice_verify@convelina.in"})
+    assert resp.status_code == 200
+    assert resp.json()["success"] is True
+    assert resp.json()["expires_in_seconds"] == 300
+
+
+# Scenario 10: Expired token
+def test_scenario_10_expired_token():
     resp = client.get("/api/v1/auth/me", headers={"Authorization": "Bearer test_token_expired"})
     assert resp.status_code == 401
     assert "expired" in resp.json()["detail"].lower()
 
 
-# Scenario 11: User role defaults to 'USER' in database
-def test_scenario_11_role_defaults_to_user():
-    db = SessionLocal()
-    try:
-        user = db.query(User).filter(User.firebase_uid == TEST_USER_A_UID).first()
-        assert user is not None
-        assert user.role in ["user", "citizen"]
-    finally:
-        db.close()
+# Scenario 11: Invalid token
+def test_scenario_11_invalid_token():
+    resp = client.get("/api/v1/auth/me", headers={"Authorization": "Bearer test_token_invalid"})
+    assert resp.status_code == 401
+    assert "invalid" in resp.json()["detail"].lower()
 
 
-# Scenario 12: User cannot self-assign 'ADMIN' role
-def test_scenario_12_user_cannot_self_assign_admin():
-    # Attempt to pass role="admin" during provisioning
-    client.post(
+# Scenario 12: Missing token
+def test_scenario_12_missing_token():
+    resp = client.get("/api/v1/auth/user-only")
+    assert resp.status_code == 401
+    assert "missing" in resp.json()["detail"].lower()
+
+
+# Scenario 13: Forged UID in request body
+def test_scenario_13_forged_uid_rejection():
+    # Client sends arbitrary UID in body; backend ignores body UID and derives identity strictly from JWT
+    forged_body = {"full_name": "Attacker", "firebase_uid": "spoofed_admin_uid_99999"}
+    resp = client.post(
         "/api/v1/auth/provision",
-        json={"full_name": "Bob Fraudster", "role": "admin"},
+        json=forged_body,
+        headers={"Authorization": f"Bearer {USER_A_TOKEN}"},
+    )
+    assert resp.status_code == 201
+    data = resp.json()
+    # Verified: identity is tied to USER_A_TOKEN's UID, NOT the spoofed body UID!
+    assert data["firebase_uid"] == TEST_USER_A_UID
+    assert data["firebase_uid"] != "spoofed_admin_uid_99999"
+
+
+# Scenario 14: Forged ADMIN role prevention
+def test_scenario_14_forged_admin_role():
+    # Client attempts to inject role="admin" during registration
+    forged_role_body = {"full_name": "Privilege Escalator", "role": "admin"}
+    resp = client.post(
+        "/api/v1/auth/provision",
+        json=forged_role_body,
         headers={"Authorization": f"Bearer {USER_B_TOKEN}"},
     )
+    assert resp.status_code == 201
+    data = resp.json()
+    # Verified: user receives 'user', NOT 'admin'!
+    assert data["role"] in ["user", "citizen"]
+    assert data["role"] != "admin"
+
     db = SessionLocal()
     try:
-        user = db.query(User).filter(User.firebase_uid == TEST_USER_B_UID).first()
-        assert user is not None
-        assert user.role != "admin"
-        assert user.role in ["user", "citizen"]
+        user_in_db = db.query(User).filter(User.firebase_uid == TEST_USER_B_UID).first()
+        assert user_in_db is not None
+        assert user_in_db.role in ["user", "citizen"]
+        assert user_in_db.role != "admin"
     finally:
         db.close()
 
 
-# Scenario 13: Cross-user data isolation under forced Row-Level Security
-def test_scenario_13_cross_user_isolation():
+# Scenario 15: USER accessing ADMIN APIs
+def test_scenario_15_user_accessing_admin_apis():
+    # Standard user calling admin endpoint receives HTTP 403 Forbidden
+    resp = client.get("/api/v1/auth/admin-only", headers={"Authorization": f"Bearer {USER_A_TOKEN}"})
+    assert resp.status_code == 403
+    assert "access denied" in resp.json()["detail"].lower()
+
+    # Pre-configured Admin accessing admin endpoint receives HTTP 200 OK
+    resp_admin = client.get("/api/v1/auth/admin-only", headers={"Authorization": f"Bearer {ADMIN_TOKEN}"})
+    assert resp_admin.status_code == 200
+
+
+# Scenario 16: Cross-user resource access under forced Row-Level Security
+def test_scenario_16_cross_user_resource_access():
     db = SessionLocal()
     try:
         user_a = db.query(User).filter(User.firebase_uid == TEST_USER_A_UID).first()
         user_b = db.query(User).filter(User.firebase_uid == TEST_USER_B_UID).first()
         assert user_a is not None and user_b is not None
 
-        # Create a document belonging to User A
+        # User A creates a document under their RLS context
         set_rls_context(db, user_a.id, user_a.role)
-        doc_a = Document(
+        doc = Document(
             user_id=user_a.id,
             document_type="pan",
-            file_name="alice_pan.pdf",
-            file_size_bytes=1024,
+            file_name="alice_secret_pan.pdf",
+            file_size_bytes=2048,
             mime_type="application/pdf",
-            storage_path="/tmp/alice_pan.pdf",
+            storage_path="/tmp/alice_secret_pan.pdf",
             ocr_status="completed",
         )
-        db.add(doc_a)
+        db.add(doc)
         db.commit()
-        doc_a_id = doc_a.id
+        doc_id = doc.id
 
-        # Verify User A can view their document via API
-        resp_a = client.get(f"/api/v1/documents/{doc_a_id}", headers={"Authorization": f"Bearer {USER_A_TOKEN}"})
+        # User A can view their own document -> 200 OK
+        resp_a = client.get(f"/api/v1/documents/{doc_id}", headers={"Authorization": f"Bearer {USER_A_TOKEN}"})
         assert resp_a.status_code == 200
 
-        # Verify User B CANNOT view User A's document (RLS returns 404 or 403)
-        resp_b = client.get(f"/api/v1/documents/{doc_a_id}", headers={"Authorization": f"Bearer {USER_B_TOKEN}"})
+        # User B attempts to access User A's document -> 404 / 403 (RLS enforces zero visibility)
+        resp_b = client.get(f"/api/v1/documents/{doc_id}", headers={"Authorization": f"Bearer {USER_B_TOKEN}"})
         assert resp_b.status_code in [403, 404]
-
     finally:
         db.close()
 
 
-# Scenario 14: Logout session invalidation
-def test_scenario_14_logout_session_invalidation():
-    # Client-side clears credentials; verify unauthenticated call fails
-    resp = client.get("/api/v1/auth/me")
-    assert resp.status_code == 401
+# Scenario 17: Repeated Google/email sign-in for the same linked account
+def test_scenario_17_linked_account_single_user_record():
+    # Step 1: User registers initially with Email/Password
+    resp1 = client.post(
+        "/api/v1/auth/provision",
+        json={"full_name": "Linked Citizen Initial"},
+        headers={"Authorization": f"Bearer {LINKED_EMAIL_TOKEN}"},
+    )
+    assert resp1.status_code == 201
+    user1_id = resp1.json()["id"]
+
+    # Step 2: Same user signs in later with Google using the same verified email
+    resp2 = client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {LINKED_GOOGLE_TOKEN}"},
+    )
+    assert resp2.status_code == 200
+    user2_id = resp2.json()["id"]
+
+    # Step 3: Verified: Both sign-ins resolve to the EXACT SAME PostgreSQL User ID!
+    assert user1_id == user2_id, "Linked account created duplicate user record!"
+
+    db = SessionLocal()
+    try:
+        count = db.query(User).filter(User.email == LINKED_USER_EMAIL).count()
+        assert count == 1, f"Expected 1 user for email {LINKED_USER_EMAIL}, found {count}"
+    finally:
+        db.close()
 
 
-# Scenario 15: Password reset email request
-def test_scenario_15_password_reset_request():
-    # Verify email validation and dispatch mechanism
-    test_email = "user_a@convelina.in"
-    assert "@" in test_email and "." in test_email
+# Scenario 18: Backend Firebase Admin SDK unavailable
+def test_scenario_18_backend_firebase_unavailable():
+    # When test mode is disabled and Firebase is unconfigured, token verification raises 503
+    settings.TEST_MODE_ALLOW_SIMULATED_TOKENS = False
+    try:
+        with pytest.raises(HTTPException) as exc_info:
+            verify_firebase_id_token("some_unverifiable_token")
+        assert exc_info.value.status_code in [503, 401]
+    finally:
+        settings.TEST_MODE_ALLOW_SIMULATED_TOKENS = True

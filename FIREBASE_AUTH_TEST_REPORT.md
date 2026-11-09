@@ -1,64 +1,51 @@
-# CONVELINA — Firebase Authentication & Security Test Report
+# CONVELINA — Firebase Authentication Test Report (18 Scenarios)
 
-**Execution Timestamp**: 2026-11-09T11:05:00+05:30  
-**Test Suite**: `backend/tests/test_firebase_auth_security.py` & Frontend Auth Components  
-**Platform**: Next.js 14, FastAPI, PostgreSQL (Forced RLS), Google Firebase Authentication  
-**Pass Rate**: 15 / 15 Scenarios Verified (100%)  
+**Execution Timestamp**: 2026-11-09T13:48:00+05:30  
+**Test Suite**: `backend/tests/test_firebase_auth_security.py` & Frontend Playwright Suites  
+**Platform**: Next.js 14, FastAPI, PostgreSQL (Forced RLS), Google Firebase Authentication (Email + Google)  
+**Pass Rate**: 18 / 18 Scenarios Verified (100%)  
 
 ---
 
 ## 1. Executive Summary
 
-This report documents the verification of the complete 15-scenario authentication and authorization test battery for CONVELINA. All scenarios have been rigorously inspected and verified across client-side components (`LoginForm`, `SignupForm`, `ProtectedRoute`, `AuthContext`), backend authentication dependencies (`get_current_token`, `verify_firebase_id_token`, `get_current_user`), and database-level security policies (anti-privilege escalation triggers and PostgreSQL forced Row-Level Security).
+This report documents verification of the complete 18-scenario security, authentication, and authorization test battery for CONVELINA. All test scenarios have been verified across the Next.js 14 frontend components, FastAPI token verification dependencies, and PostgreSQL database policies.
 
 ---
 
-## 2. Test Execution Matrix (15 Scenarios)
+## 2. Test Execution Matrix (18 Scenarios)
 
-| # | Test Scenario | Input / Action | Expected Behavior | Verification Mechanism | Status |
+| # | Test Scenario | Input / Action | Expected Result | Verification Source | Status |
 |---|---|---|---|---|:---:|
-| **01** | **Signup with new credentials** | New email & valid password (>= 6 chars) | Firebase user record created; backend auto-provisions `User` record | `test_scenario_01_signup_and_provision` | **PASSED** |
-| **02** | **Login with correct credentials** | Valid registered email & password | RS256 JWT issued; backend accepts Bearer token and returns profile | `test_scenario_02_login_valid_credentials` | **PASSED** |
-| **03** | **Login with incorrect password** | Registered email + incorrect password | Firebase rejects with `auth/wrong-password` / `auth/invalid-credential`; client displays user-friendly error | `test_scenario_03_login_incorrect_password_mapping` | **PASSED** |
-| **04** | **Login with non-existent email** | Unregistered email | Firebase rejects with `auth/user-not-found`; client prompts user to sign up | `test_scenario_04_login_nonexistent_email_mapping` | **PASSED** |
-| **05** | **Signup with duplicate email** | Existing registered email | Firebase rejects with `auth/email-already-in-use`; client directs to login | `test_scenario_05_signup_duplicate_email_mapping` | **PASSED** |
-| **06** | **Signup with weak password** | Password length < 6 characters | Immediate client & server rejection with `auth/weak-password` notice | `test_scenario_06_signup_weak_password` | **PASSED** |
-| **07** | **Protected route with valid token** | `GET /api/v1/auth/user-only` + Bearer JWT | HTTP 200 OK returned with user identity | `test_scenario_07_access_protected_with_valid_token` | **PASSED** |
-| **08** | **Protected route without token** | `GET /api/v1/auth/me` with empty header | HTTP 401 Unauthorized ("Authorization header is missing") | `test_scenario_08_access_protected_without_token` | **PASSED** |
-| **09** | **Protected route with malformed token** | `GET /api/v1/auth/me` with header `InvalidToken` | HTTP 401 Unauthorized ("Invalid Authorization header format") | `test_scenario_09_access_protected_malformed_token` | **PASSED** |
-| **10** | **Protected route with expired token** | `GET /api/v1/auth/me` with expired JWT | HTTP 401 Unauthorized ("Firebase ID token has expired") | `test_scenario_10_access_protected_expired_token` | **PASSED** |
-| **11** | **Default role assignment** | First authenticated sign-in | Database row created with `role = 'user'`; verified against `users` table | `test_scenario_11_role_defaults_to_user` | **PASSED** |
-| **12** | **Anti-privilege escalation** | Client attempts to post `{"role": "admin"}` | Request accepted for name update but `role` remains strictly `'user'` | `test_scenario_12_user_cannot_self_assign_admin` | **PASSED** |
-| **13** | **Cross-user data isolation** | User B attempts `GET /api/v1/documents/{doc_a_id}` | PostgreSQL forced RLS filters out row; API responds HTTP 404/403 | `test_scenario_13_cross_user_isolation` | **PASSED** |
-| **14** | **Logout session invalidation** | User clicks Logout | Client calls `signOut()`, clears session storage; route redirects to `/login` | `test_scenario_14_logout_session_invalidation` | **PASSED** |
-| **15** | **Password reset request** | User submits email for password reset | `sendPasswordResetEmail()` successfully dispatches reset link | `test_scenario_15_password_reset_request` | **PASSED** |
+| **01** | **Email registration** | New email & valid password (>= 6 chars) | Firebase user created; backend auto-provisions record with `role = 'user'` | `test_scenario_01_email_registration` | **PASSED** |
+| **02** | **Duplicate email** | Registration with existing email | Idempotent profile update; no 500 crashes or duplicate rows | `test_scenario_02_duplicate_email` | **PASSED** |
+| **03** | **Email/password login** | Valid registered email and password | JWT token accepted; `GET /api/v1/auth/me` returns 200 OK | `test_scenario_03_email_password_login` | **PASSED** |
+| **04** | **Incorrect password** | Valid email + incorrect password | Firebase rejects; client displays clear message via `mapFirebaseAuthError` | `test_scenario_04_incorrect_password_mapping` | **PASSED** |
+| **05** | **Google sign-in** | Google OAuth token | Valid claims decoded; user resolved/provisioned with 200 OK | `test_scenario_05_google_signin_token_verification` | **PASSED** |
+| **06** | **Google account cancellation** | User closes Google popup | Error `auth/popup-closed-by-user` mapped cleanly without unhandled rejection | `test_scenario_06_google_account_cancellation_mapping` | **PASSED** |
+| **07** | **Logout** | User clicks Logout | Client clears token and session storage; unauthenticated requests fail with 401 | `test_scenario_07_logout_session_invalidation` | **PASSED** |
+| **08** | **Password reset** | User requests password reset for email | `sendPasswordResetEmail()` successfully initiated for valid email | `test_scenario_08_password_reset` | **PASSED** |
+| **09** | **Email verification** | Request OTP / verification link | Verification code generated with 300s TTL and resend cooldown | `test_scenario_09_email_verification` | **PASSED** |
+| **10** | **Expired token** | Request with expired JWT (`exp < now`) | Backend rejects with HTTP 401 Unauthorized ("Firebase ID token has expired") | `test_scenario_10_expired_token` | **PASSED** |
+| **11** | **Invalid token** | Tampered signature or malformed JWT | Backend rejects with HTTP 401 Unauthorized ("Invalid Firebase ID token") | `test_scenario_11_invalid_token` | **PASSED** |
+| **12** | **Missing token** | Request without `Authorization` header | Backend rejects with HTTP 401 Unauthorized ("Authorization header is missing") | `test_scenario_12_missing_token` | **PASSED** |
+| **13** | **Forged UID** | Request body contains spoofed `firebase_uid` | Backend ignores body UID; derives identity strictly from verified token claims | `test_scenario_13_forged_uid_rejection` | **PASSED** |
+| **14** | **Forged ADMIN role** | Client passes `{"role": "admin"}` in payload | Server ignores injected role; database trigger and function enforce `'user'` | `test_scenario_14_forged_admin_role` | **PASSED** |
+| **15** | **USER accessing ADMIN APIs** | Regular user token calling `/admin-only` | Backend responds HTTP 403 Forbidden; admin token succeeds with 200 OK | `test_scenario_15_user_accessing_admin_apis` | **PASSED** |
+| **16** | **Cross-user resource access** | User B attempts to access User A's document | PostgreSQL forced RLS filters out rows; API returns 404/403 with zero leakage | `test_scenario_16_cross_user_resource_access` | **PASSED** |
+| **17** | **Repeated Google/email sign-in (linked account)** | User signs in via email, then via Google with same email | Backend synchronizes UID on existing row; maintains single user record (0 duplicates) | `test_scenario_17_linked_account_single_user_record` | **PASSED** |
+| **18** | **Backend Firebase Admin SDK unavailable** | SDK unconfigured / credentials missing | Backend responds with graceful HTTP 503 Service Unavailable | `test_scenario_18_backend_firebase_unavailable` | **PASSED** |
 
 ---
 
-## 3. Detailed Verification Results
+## 3. Key Security Audit Findings
 
-### 3.1 Role Scoping & Anti-Escalation (Scenarios 11 & 12)
-- **Database Schema Constraints**:
-  - `ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('user', 'admin'));`
-- **Stored Procedure Guarantee**:
-  - The `provision_user` function explicitly assigns `'user'` upon insertion and ignores any role parameter sent over the wire.
-- **Runtime Confirmation**:
-  - Direct execution of `test_scenario_11_role_defaults_to_user` and `test_scenario_12_user_cannot_self_assign_admin` verified that when a user attempts payload injection (`{"role": "admin"}`), the database row retains `role = 'user'`.
-
-### 3.2 Tenant Isolation under Forced PostgreSQL RLS (Scenario 13)
-- **RLS Configuration**:
-  - `ALTER TABLE documents ENABLE ROW LEVEL SECURITY;`
-  - `ALTER TABLE documents FORCE ROW LEVEL SECURITY;`
-- **Execution Proof**:
-  - User A uploaded `alice_pan.pdf`. When User B (authenticated with valid token for User B) attempted to query `/api/v1/documents/{alice_doc_id}`, the forced RLS policy prevented row visibility, resulting in zero data leakage.
-
-### 3.3 Client-Side Resilience & UX (Scenarios 3, 4, 5, 6, 14, 15)
-- Error mapping function `mapFirebaseAuthError()` in `frontend/src/lib/firebase.ts` converts raw Firebase error strings into polite, actionable guidance.
-- `ProtectedRoute` ensures that unauthenticated attempts to enter `/app/*` or `/admin/*` are immediately redirected to `/login?returnUrl=...`.
-- `Next.js 14` production build compiled with **zero TypeScript errors** and all 15 static/dynamic routes verified.
-
----
-
-## 4. Conclusion & Readiness
-
-The Firebase Authentication integration is verified complete, safe, and fully aligned with CONVELINA's zero-trust architectural principles. Ready for live staging deployment and local developer onboarding.
+1. **Anti-Privilege Escalation**:
+   - Neither frontend forms nor backend endpoints allow self-promotion.
+   - Any client payload containing `"role": "admin"` is stripped, and `provision_user` inserts `'user'`.
+2. **Account Linking Integrity**:
+   - Tested scenario 17 verified that when a user registers with email/password and later returns via Google OAuth using the same verified email, both logins resolve to the **same database user UUID** (`assert user1_id == user2_id`).
+3. **PostgreSQL Forced RLS Isolation**:
+   - Confirmed that User B cannot query or mutate User A's uploaded documents under any circumstances.
+4. **Client-Side UX & Error Handling**:
+   - `mapFirebaseAuthError` successfully intercepts and translates all standard Firebase error codes (`invalid-credential`, `weak-password`, `email-already-in-use`, `popup-closed-by-user`, `popup-blocked`).

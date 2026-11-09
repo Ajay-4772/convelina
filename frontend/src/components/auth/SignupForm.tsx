@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, AlertCircle, ArrowRight, ShieldCheck } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { User as FirebaseUser } from "firebase/auth";
+import { User as FirebaseUser, updateProfile } from "firebase/auth";
 
 interface SignupFormProps {
   onSuccess?: (user: FirebaseUser) => void;
@@ -17,8 +17,9 @@ export default function SignupForm({ onSuccess, redirectTo }: SignupFormProps) {
   const searchParams = useSearchParams();
   const returnUrl = redirectTo || searchParams.get("returnUrl") || "/app";
 
-  const { signUpWithEmail, sendEmailOtp, loginWithGoogle, loading, error, clearError } = useAuth();
+  const { signUpWithEmail, sendEmailOtp, completeProfile, loginWithGoogle, loading, error, clearError } = useAuth();
 
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -56,12 +57,30 @@ export default function SignupForm({ onSuccess, redirectTo }: SignupFormProps) {
       // 1. Create account in Firebase
       const user = await signUpWithEmail(cleanEmail, password);
 
-      // 2. Dispatch OTP to the email address if email verification flow is enabled
+      // 2. Set display name if provided
+      if (fullName.trim()) {
+        try {
+          await updateProfile(user, { displayName: fullName.trim() });
+        } catch {
+          // non-fatal
+        }
+      }
+
+      // 3. Dispatch OTP or proceed to profile completion
       try {
         await sendEmailOtp(cleanEmail);
         router.push(`/verify-email?email=${encodeURIComponent(cleanEmail)}`);
       } catch {
-        // If OTP service is unconfigured or skipped in local testing, continue to profile setup
+        // If OTP service is bypassed or unconfigured in local development
+        if (fullName.trim()) {
+          try {
+            await completeProfile({ full_name: fullName.trim() });
+            router.push(returnUrl);
+            return;
+          } catch {
+            // fallback to setup profile page
+          }
+        }
         if (onSuccess) {
           onSuccess(user);
         } else {
@@ -149,6 +168,18 @@ export default function SignupForm({ onSuccess, redirectTo }: SignupFormProps) {
 
       {/* Main Registration Form */}
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
+        <div>
+          <label className="block text-xs font-medium text-zinc-700 mb-1">Full Legal Name</label>
+          <input
+            type="text"
+            autoComplete="name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            placeholder="e.g. Ajay Ramanathan"
+            className="w-full px-3 py-2 text-xs border border-[#e5e2dc] rounded-lg focus:border-zinc-900 bg-[#faf9f6]/40 transition"
+          />
+        </div>
+
         <div>
           <label className="block text-xs font-medium text-zinc-700 mb-1">Email Address</label>
           <input

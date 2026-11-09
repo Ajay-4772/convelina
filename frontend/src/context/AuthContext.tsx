@@ -3,11 +3,14 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { 
   User as FirebaseUser,
-  onAuthStateChanged,
+  onIdTokenChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
+  sendEmailVerification,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signOut
 } from "firebase/auth";
@@ -39,6 +42,8 @@ interface AuthContextType {
   loginWithEmail: (email: string, pass: string) => Promise<UserProfile | null>;
   signUpWithEmail: (email: string, pass: string) => Promise<FirebaseUser>;
   resetPassword: (email: string) => Promise<void>;
+  sendEmailVerificationLink: () => Promise<void>;
+  refreshToken: () => Promise<string | null>;
   loginWithGoogle: () => Promise<UserProfile | null>;
   sendEmailOtp: (email: string) => Promise<{ success: boolean; message: string }>;
   verifyEmailOtp: (email: string, otp: string) => Promise<{ success: boolean; verified: boolean; message: string }>;
@@ -156,7 +161,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    // Process redirect result if browser was redirected during Google sign-in
+    if (isFirebaseConfigured() && typeof window !== "undefined") {
+      getRedirectResult(auth)
+        .then(async (cred) => {
+          if (cred?.user) {
+            setFirebaseUser(cred.user);
+            const token = await cred.user.getIdToken();
+            setIdToken(token);
+            await fetchProfile(token);
+          }
+        })
+        .catch((err) => {
+          setError(mapFirebaseAuthError(err));
+        });
+    }
+
+    // onIdTokenChanged listens for login, logout, and automatic hourly token refreshes
+    const unsubscribe = onIdTokenChanged(auth, async (user) => {
       setLoading(true);
       setError(null);
 
@@ -252,7 +274,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (isFirebaseConfigured()) {
         await sendPasswordResetEmail(auth, cleanEmail);
       } else {
-        // Fallback for simulated development
         await new Promise((res) => setTimeout(res, 300));
       }
     } catch (err: unknown) {
@@ -261,6 +282,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error(msg);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const sendEmailVerificationLink = async (): Promise<void> => {
+    setError(null);
+    setLoading(true);
+    try {
+      if (isFirebaseConfigured() && auth.currentUser) {
+        await sendEmailVerification(auth.currentUser);
+      } else {
+        await new Promise((res) => setTimeout(res, 300));
+      }
+    } catch (err: unknown) {
+      const msg = mapFirebaseAuthError(err);
+      setError(msg);
+      throw new Error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refreshToken = async (): Promise<string | null> => {
+    try {
+      if (isFirebaseConfigured() && auth.currentUser) {
+        const fresh = await auth.currentUser.getIdToken(true);
+        setIdToken(fresh);
+        return fresh;
+      }
+      return idToken;
+    } catch (err: unknown) {
+      console.error("Token refresh failed:", err);
+      return null;
     }
   };
 
@@ -282,12 +335,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
-      const cred = await signInWithPopup(auth, provider);
-      const token = await cred.user.getIdToken();
-      setIdToken(token);
-      setFirebaseUser(cred.user);
-      const userProfile = await fetchProfile(token);
-      return userProfile;
+      
+      try {
+        const cred = await signInWithPopup(auth, provider);
+        const token = await cred.user.getIdToken();
+        setIdToken(token);
+        setFirebaseUser(cred.user);
+        const userProfile = await fetchProfile(token);
+        return userProfile;
+      } catch (popupErr: unknown) {
+        const errCode = (popupErr as { code?: string })?.code;
+        // If popup was blocked by browser, fallback seamlessly to redirect flow
+        if (errCode === "auth/popup-blocked") {
+          console.warn("Popup blocked by browser. Falling back to signInWithRedirect...");
+          await signInWithRedirect(auth, provider);
+          return null;
+        }
+        throw popupErr;
+      }
     } catch (err: unknown) {
       const msg = mapFirebaseAuthError(err);
       setError(msg);
@@ -380,7 +445,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setFirebaseUser(null);
       setProfile(null);
       setIdToken(null);
-      // Clean up local storage items
       try {
         if (typeof window !== "undefined") {
           sessionStorage.clear();
@@ -423,6 +487,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loginWithEmail,
         signUpWithEmail,
         resetPassword,
+        sendEmailVerificationLink,
+        refreshToken,
         loginWithGoogle,
         sendEmailOtp,
         verifyEmailOtp,

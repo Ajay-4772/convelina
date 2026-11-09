@@ -216,13 +216,31 @@ def provision_user(
         )
 
     try:
-        row = db.execute(
-            text(
-                "SELECT id, firebase_uid, email, full_name, role, created_at, updated_at "
-                "FROM provision_user(:fuid, :email, :name);"
-            ),
-            {"fuid": firebase_uid, "email": email, "name": full_name},
+        # Check if an existing account exists for this email (linking email/password & Google)
+        existing_by_email = db.execute(
+            text("SELECT id, firebase_uid, email, full_name, role, created_at, updated_at FROM users WHERE LOWER(email) = LOWER(:email);"),
+            {"email": email}
         ).mappings().first()
+
+        if existing_by_email:
+            set_rls_context(db, existing_by_email["id"], existing_by_email["role"])
+            db.execute(
+                text("UPDATE users SET firebase_uid = :fuid, full_name = :name, updated_at = NOW() WHERE id = :uid;"),
+                {"fuid": firebase_uid, "name": full_name, "uid": existing_by_email["id"]}
+            )
+            db.commit()
+            row = db.execute(
+                text("SELECT id, firebase_uid, email, full_name, role, created_at, updated_at FROM resolve_user_by_firebase_uid(:fuid);"),
+                {"fuid": firebase_uid}
+            ).mappings().first()
+        else:
+            row = db.execute(
+                text(
+                    "SELECT id, firebase_uid, email, full_name, role, created_at, updated_at "
+                    "FROM provision_user(:fuid, :email, :name);"
+                ),
+                {"fuid": firebase_uid, "email": email, "name": full_name},
+            ).mappings().first()
 
         # Set transaction-local RLS context so subsequent ORM queries are permitted under RLS
         set_rls_context(db, row["id"], row["role"])

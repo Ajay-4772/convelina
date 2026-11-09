@@ -70,11 +70,19 @@ export function mapFirebaseAuthError(error: unknown): string {
     case "auth/user-disabled":
       return "This account has been disabled by an administrator. Please contact support.";
     case "auth/operation-not-allowed":
-      return "Email/Password sign-in is not enabled in the Firebase project console.";
+      return "This sign-in method is not enabled in the Firebase console.";
     case "auth/network-request-failed":
-      return "Network connection error. Please check your internet connection and try again.";
+      return "Network error. Please check your internet connection and try again.";
     case "auth/popup-closed-by-user":
-      return "Sign-in popup was closed before completing authentication.";
+      return "Google sign-in was closed before completion. Please try again.";
+    case "auth/popup-blocked":
+      return "Sign-in popup was blocked by your browser. Please allow popups for this site.";
+    case "auth/cancelled-popup-request":
+      return "Previous sign-in request was cancelled. Please try again.";
+    case "auth/account-exists-with-different-credential":
+      return "An account already exists with the same email address using a different sign-in method. Please sign in with email/password.";
+    case "auth/credential-already-in-use":
+      return "This credential is already linked to another account.";
     case "auth/requires-recent-login":
       return "This operation is sensitive and requires recent authentication. Please sign in again.";
     default: {
