@@ -1,6 +1,6 @@
 # CONVELINA — Firebase Authentication Setup & Configuration Guide (Email + Google)
 
-This guide provides step-by-step instructions for configuring Google Firebase Authentication for CONVELINA, covering both Email/Password and Google Sign-In across the Next.js 14 frontend and FastAPI backend.
+This guide provides complete instructions for configuring Google Firebase Authentication for CONVELINA, covering Email/Password, Google Sign-In, secure account linking, and explicit administrator provisioning.
 
 ---
 
@@ -26,10 +26,11 @@ This guide provides step-by-step instructions for configuring Google Firebase Au
    - Select the project public-facing name (e.g., `CONVELINA`).
    - Select a project support email from the dropdown.
    - Click **Save**.
-5. **Account Linking Configuration**:
+5. **Account Linking & User Protection Configuration**:
    - Under **Authentication** > **Settings** > **User account linking**:
-   - Select *"Link accounts that use the same email"*.
-   - This ensures when a citizen signs in with Google using the same email previously used for email/password, Firebase and CONVELINA link the credentials under a single unified account.
+   - Select **"Link accounts that use the same email"** (or enable account linking protection).
+   - When a citizen registers with email/password and later signs in with Google, Firebase raises `auth/account-exists-with-different-credential`. CONVELINA captures the pending credential, prompts for password verification, and executes `linkWithCredential` so that both providers map to the **same** verified Firebase UID.
+   - **SECURITY RULE**: The backend strictly refuses to overwrite database `firebase_uid` values merely because emails match. Provider linking requires an authenticated session and verified email claims.
 6. **Authorized Domains**:
    - In the **Settings** > **Authorized domains** tab, confirm:
      - `localhost`
@@ -41,7 +42,7 @@ This guide provides step-by-step instructions for configuring Google Firebase Au
 ## 3. Register Frontend Web Application
 
 1. In **Project settings** > **General**, scroll to **Your apps**.
-2. If not already registered, click the **Web** icon (`</>`) and register `convelina-web`.
+2. Click the **Web** icon (`</>`) and register `convelina-web`.
 3. Copy the client configuration values into `frontend/.env.local`:
 
 ```bash
@@ -61,64 +62,59 @@ NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789012:web:abcdef1234567890
 
 ---
 
-## 4. Generate Backend Service Account Key
+## 4. Backend Firebase Admin SDK Setup
 
-1. In **Project settings**, click the **Service accounts** tab.
-2. Select **Firebase Admin SDK** and click **Generate new private key**.
-3. Save the downloaded JSON file to a secure directory outside source control, such as:
-   `backend/secrets/firebase_service_account.json`
-4. **MANDATORY SECURITY RULE**:
-   - Ensure `backend/secrets/` is listed in `.gitignore`.
-   - Never commit private keys, service account JSON files, or `.env` files to Git.
-5. In `backend/.env` (or root `.env`):
+1. In the Firebase Console, go to **Project settings** > **Service accounts**.
+2. Click **Generate new private key** and download the service account JSON.
+3. Save it to a secure local path **outside** the Git repository (or in the root as a gitignored file, e.g., `firebase-adminsdk-private.json`).
+4. Configure `backend/.env`:
 
 ```bash
-# Backend FastAPI (.env)
+# Backend Environment (.env)
 FIREBASE_PROJECT_ID=your-project-id
-FIREBASE_SERVICE_ACCOUNT_PATH=secrets/firebase_service_account.json
-# FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 # Optional: only when using local emulator
+FIREBASE_SERVICE_ACCOUNT_PATH=/absolute/path/to/firebase-adminsdk-private.json
 
-# Pre-configured Administrator Account (receives 'admin' role automatically)
+# Administrator Bootstrap (Deprecated for automatic promotion)
+# All new signups strictly receive role 'user'.
 ADMIN_GMAIL=admin.demo@gmail.com
 ```
 
+> [!CAUTION]
+> Never commit `serviceAccountKey.json` or `.env` to version control. Verified gitignore rules actively block all `*service_account*.json` and `firebase-adminsdk*.json` patterns.
+
 ---
 
-## 5. Local Testing Instructions
+## 5. Administrator Provisioning Procedure
 
-### Real Firebase Testing (Production-grade)
-1. Start FastAPI:
-   ```bash
-   uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-   ```
-2. Start Next.js:
-   ```bash
-   cd frontend && npm run dev
-   ```
-3. Test **Email Registration & Login**:
-   - Navigate to `http://localhost:3000/signup`.
-   - Fill in Full Legal Name, Email, Password (>= 6 chars), and agree to privacy terms.
-   - User is persisted in Firebase Auth and provisioned in PostgreSQL with `role = 'user'`.
-4. Test **Google Sign-In**:
-   - Click "Continue with Google" on `http://localhost:3000/login` or "Sign up with Google" on `/signup`.
-   - Google account selection popup appears.
-   - Upon authorization, JWT is issued, backend verifies the token, and creates/synchronizes the user record.
-5. Test **Account Linking**:
-   - Sign up with Email/Password `user@domain.com`.
-   - Log out, then click "Continue with Google" using the same `user@domain.com`.
-   - Backend recognizes the verified email, links the Google credentials, and maintains the single existing user profile and uploaded documents without duplicating records.
-6. Test **Password Reset**:
-   - On `/login`, click "Forgot password?".
-   - Enter email address and submit.
-   - Firebase dispatches an official password reset email.
+Automatic promotion based solely on `ADMIN_GMAIL` has been **completely eliminated** to prevent unauthorized privilege escalation from unverified or spoofed identities.
 
-### Local Emulator Testing
-1. Start Firebase Auth emulator:
-   ```bash
-   firebase emulators:start --only auth
-   ```
-2. Set emulator host in both `.env.local` and `.env`:
-   ```bash
-   NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
-   FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
-   ```
+Every new registration receives the `user` role.
+
+To grant administrator privileges, use one of the two explicit, audited procedures:
+
+### Method A: Direct Database CLI Promotion (Recommended for Initial Setup)
+System administrators with direct host/DB access execute:
+```bash
+python backend/scripts/promote_admin.py --email admin@convelina.in
+```
+This script:
+1. Connects under administrative database permissions.
+2. Validates user existence.
+3. Promotes `role` to `'admin'`.
+4. Writes an immutable, hash-chained `AuditLog` entry (`action="admin_promoted_via_cli"`).
+
+### Method B: Authenticated Administrator API Endpoint
+An existing authenticated administrator can promote a verified citizen user:
+```http
+POST /api/v1/admin/users/{user_id}/role
+Authorization: Bearer <admin_jwt_token>
+Content-Type: application/json
+
+{
+  "role": "admin"
+}
+```
+Security protections:
+- Callable strictly by users whose database role is `'admin'`.
+- Self-promotion and self-demotion are rejected with `400 Bad Request`.
+- Automatically logs `action="admin_role_updated"` in the tamper-evident audit log.

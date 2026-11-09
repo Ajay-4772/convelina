@@ -19,16 +19,20 @@ class Settings(BaseSettings):
     FIREBASE_PROJECT_ID: Optional[str] = "consolith-dev"
     FIREBASE_SERVICE_ACCOUNT_PATH: Optional[str] = None
     FIREBASE_AUTH_EMULATOR_HOST: Optional[str] = None
-    # Administrator Configuration
+    # Administrator Configuration (Deprecated for automatic promotion; roles must be explicitly provisioned)
     ADMIN_GMAIL: Optional[str] = "admin.demo@gmail.com"
 
     # Test Mode / Isolated verification (never enable in production)
     TEST_MODE_ALLOW_SIMULATED_TOKENS: bool = False
 
     
-    # Document Storage & Upload Security (Module 4)
+    # Document Storage & Upload Security (Module 4 & Phase P3E)
     STORAGE_TEMP_DIR: str = "/tmp/consolith/temp_docs"
+    STORAGE_TEMP_ATTACHMENTS_DIR: str = "/tmp/consolith/temp_attachments"
+    STORAGE_OFFICIAL_FORMS_DIR: str = "/app/data/official_forms"
     MAX_UPLOAD_SIZE_BYTES: int = 10 * 1024 * 1024  # 10 MB limit
+    MAX_ATTACHMENTS_PER_MESSAGE: int = 5
+    ATTACHMENT_RETENTION_HOURS: int = 24
     ALLOWED_EXTENSIONS: list[str] = [".pdf", ".jpg", ".jpeg", ".png"]
     ALLOWED_MIME_TYPES: list[str] = ["application/pdf", "image/jpeg", "image/png"]
     STORAGE_RETENTION_POLICY: str = "delete_after_ocr"  # "delete_after_ocr" or "retain_temp"

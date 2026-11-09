@@ -24,6 +24,7 @@ from app.models.official_form import OfficialForm
 from app.models.pki import DocumentAttestation, SigningKey
 from app.models.audit_log import AuditLog
 from app.services.audit_service import AuditService
+from app.schemas.auth import AdminUpdateRoleRequest
 
 logger = logging.getLogger(__name__)
 
@@ -140,6 +141,69 @@ def admin_delete_user(
     db.delete(user)
     db.commit()
     return {"success": True, "message": f"User {user.email} removed successfully."}
+
+
+@router.post("/users/{user_id}/role")
+def admin_update_user_role(
+    user_id: UUID,
+    req: AdminUpdateRoleRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    """
+    Explicit, authenticated administrator endpoint to assign or modify user roles.
+    Enforces strict two-role model: 'user' or 'admin'.
+    Rejects self-demotion or self-escalation.
+    Audits every role change into the immutable audit trail.
+    """
+    set_rls_context(db, current_user.id, current_user.role)
+
+    if current_user.id == user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Administrators cannot modify their own role via this endpoint."
+        )
+
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Target user not found."
+        )
+
+    new_role = req.role.lower()
+    if new_role not in ["user", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid role. Permitted roles are strictly 'user' and 'admin'."
+        )
+
+    old_role = target_user.role
+
+    # Audit the administrative role modification
+    AuditService.log_event(
+        db=db,
+        action="admin_role_updated",
+        entity_type="user",
+        entity_id=target_user.id,
+        user_id=current_user.id,
+        details={
+            "target_email": target_user.email,
+            "previous_role": old_role,
+            "new_role": new_role,
+        },
+    )
+
+    target_user.role = new_role
+    target_user.updated_at = datetime.now(timezone.utc)
+    db.commit()
+
+    return {
+        "success": True,
+        "message": f"Role updated from '{old_role}' to '{new_role}' for user {target_user.email}.",
+        "user_id": str(target_user.id),
+        "role": target_user.role,
+    }
 
 
 @router.get("/system-activity")

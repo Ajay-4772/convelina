@@ -26,16 +26,27 @@ def verify_firebase_id_token(token: str) -> Dict[str, Any]:
         raise AuthenticationError("Authorization token is missing or empty.")
 
     # 1. Isolated test token verification (Only allowed if TEST_MODE_ALLOW_SIMULATED_TOKENS is explicitly enabled)
-    if settings.TEST_MODE_ALLOW_SIMULATED_TOKENS and token.startswith("test_token_"):
-        # Format: test_token_<uid>_<role>_<email>
-        parts = token.split(":")
-        if len(parts) >= 3:
-            return {
-                "uid": parts[1],
-                "email": parts[2],
-                "name": parts[3] if len(parts) > 3 else "Test User",
-                "is_test_token": True
-            }
+    if settings.TEST_MODE_ALLOW_SIMULATED_TOKENS:
+        if token.startswith("test_token_unverified:"):
+            parts = token.split(":")
+            if len(parts) >= 3:
+                return {
+                    "uid": parts[1],
+                    "email": parts[2],
+                    "name": parts[3] if len(parts) > 3 else "Unverified User",
+                    "email_verified": False,
+                    "is_test_token": True,
+                }
+        elif token.startswith("test_token_:"):
+            parts = token.split(":")
+            if len(parts) >= 3:
+                return {
+                    "uid": parts[1],
+                    "email": parts[2],
+                    "name": parts[3] if len(parts) > 3 else "Test User",
+                    "email_verified": True,
+                    "is_test_token": True,
+                }
         elif token == "test_token_expired":
             raise AuthenticationError("Firebase ID token has expired.")
         elif token == "test_token_invalid":

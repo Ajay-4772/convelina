@@ -11,7 +11,10 @@ import {
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
+  linkWithCredential,
+  EmailAuthProvider,
   GoogleAuthProvider,
+  AuthCredential,
   signOut
 } from "firebase/auth";
 import { auth, isFirebaseConfigured, mapFirebaseAuthError } from "../lib/firebase";
@@ -45,6 +48,10 @@ interface AuthContextType {
   sendEmailVerificationLink: () => Promise<void>;
   refreshToken: () => Promise<string | null>;
   loginWithGoogle: () => Promise<UserProfile | null>;
+  hasPendingLink: boolean;
+  pendingLinkEmail: string | null;
+  linkPendingGoogleAccount: (password: string) => Promise<UserProfile | null>;
+  linkEmailPasswordAccount: (password: string) => Promise<void>;
   sendEmailOtp: (email: string) => Promise<{ success: boolean; message: string }>;
   verifyEmailOtp: (email: string, otp: string) => Promise<{ success: boolean; verified: boolean; message: string }>;
   completeProfile: (data: {
@@ -68,6 +75,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [idToken, setIdToken] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [pendingLinkCredential, setPendingLinkCredential] = useState<AuthCredential | null>(null);
+  const [pendingLinkEmail, setPendingLinkEmail] = useState<string | null>(null);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -351,8 +360,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await signInWithRedirect(auth, provider);
           return null;
         }
+        // Account exists with email/password; hold credential for verified linking
+        if (errCode === "auth/account-exists-with-different-credential") {
+          const pendingCred = GoogleAuthProvider.credentialFromError(popupErr as any);
+          const errEmail = (popupErr as { customData?: { email?: string } })?.customData?.email || "";
+          setPendingLinkCredential(pendingCred);
+          setPendingLinkEmail(errEmail);
+          const msg = "An account with this email address already exists. Please authenticate with your password to link your Google account.";
+          setError(msg);
+          throw new Error(msg);
+        }
         throw popupErr;
       }
+    } catch (err: unknown) {
+      const msg = mapFirebaseAuthError(err);
+      setError(msg);
+      throw new Error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const linkPendingGoogleAccount = async (password: string): Promise<UserProfile | null> => {
+    if (!pendingLinkCredential || !pendingLinkEmail) {
+      throw new Error("No pending account link operation found.");
+    }
+    setError(null);
+    setLoading(true);
+    try {
+      const cred = await signInWithEmailAndPassword(auth, pendingLinkEmail, password);
+      await linkWithCredential(cred.user, pendingLinkCredential);
+      const token = await cred.user.getIdToken(true);
+      setIdToken(token);
+      setFirebaseUser(cred.user);
+      setPendingLinkCredential(null);
+      setPendingLinkEmail(null);
+      const userProfile = await fetchProfile(token);
+      return userProfile;
+    } catch (err: unknown) {
+      const msg = mapFirebaseAuthError(err);
+      setError(msg);
+      throw new Error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const linkEmailPasswordAccount = async (password: string): Promise<void> => {
+    if (!auth.currentUser || !auth.currentUser.email) {
+      throw new Error("You must be authenticated with a verified email to link credentials.");
+    }
+    setError(null);
+    setLoading(true);
+    try {
+      const credential = EmailAuthProvider.credential(auth.currentUser.email, password);
+      await linkWithCredential(auth.currentUser, credential);
+      await sendEmailVerification(auth.currentUser);
+      const token = await auth.currentUser.getIdToken(true);
+      setIdToken(token);
+      await fetchProfile(token);
     } catch (err: unknown) {
       const msg = mapFirebaseAuthError(err);
       setError(msg);
@@ -490,6 +556,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         sendEmailVerificationLink,
         refreshToken,
         loginWithGoogle,
+        hasPendingLink: Boolean(pendingLinkCredential && pendingLinkEmail),
+        pendingLinkEmail,
+        linkPendingGoogleAccount,
+        linkEmailPasswordAccount,
         sendEmailOtp,
         verifyEmailOtp,
         completeProfile,

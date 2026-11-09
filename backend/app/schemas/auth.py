@@ -59,6 +59,12 @@ class VerifyOTPResponse(BaseModel):
     message: str
     verification_token: Optional[str] = None
 
+class LinkProviderRequest(BaseModel):
+    linking_token: str = Field(..., min_length=10, description="Secondary verified Firebase ID token for provider linking")
+
+class AdminUpdateRoleRequest(BaseModel):
+    role: str = Field(..., pattern="^(user|admin)$", description="Role to assign: 'user' or 'admin'")
+
 class UserActivityItem(BaseModel):
     id: str
     action: str

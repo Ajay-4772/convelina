@@ -9,6 +9,7 @@ from app.config import settings
 from app.core.database import get_db, set_rls_context
 from app.core.security import verify_firebase_id_token, AuthenticationError
 from app.models.user import User
+from app.services.audit_service import AuditService
 
 logger = logging.getLogger(__name__)
 
@@ -50,53 +51,77 @@ def get_current_user(
     if not row:
         email = claims.get("email") or f"{firebase_uid}@user.convelina.internal"
         display_name = claims.get("name") or claims.get("display_name") or email.split("@")[0] or "User"
-        is_admin = bool(settings.ADMIN_GMAIL and email.lower() == settings.ADMIN_GMAIL.lower())
+        email_verified = bool(claims.get("email_verified", False))
 
-        # 2. Check if a user with the same email already exists (e.g. Email/Password and Google sign-in for the same person)
+        # 2. Check if a user with the same email already exists
         existing_by_email = db.execute(
             text("SELECT id, firebase_uid, email, full_name, role, created_at, updated_at FROM users WHERE LOWER(email) = LOWER(:email);"),
             {"email": email}
         ).mappings().first()
 
         if existing_by_email:
-            # Safely synchronize Firebase UID on the existing user row to avoid duplication
-            try:
-                set_rls_context(db, existing_by_email["id"], existing_by_email["role"])
-                db.execute(
-                    text("UPDATE users SET firebase_uid = :fuid, updated_at = NOW() WHERE id = :uid;"),
-                    {"fuid": firebase_uid, "uid": existing_by_email["id"]}
+            existing_fuid = existing_by_email.get("firebase_uid")
+            if existing_fuid and existing_fuid != firebase_uid:
+                # SECURITY ENFORCEMENT: Prevent Unauthorized Account Takeover (ATO)
+                # An account exists with this email under a DIFFERENT Firebase UID.
+                # We strictly refuse to overwrite firebase_uid solely based on email match.
+                # The user must sign in with their original provider or perform authenticated provider linking.
+                logger.warning(
+                    f"Authentication rejected: email '{email}' is already bound to Firebase UID '{existing_fuid}'. "
+                    f"Incoming unlinked UID '{firebase_uid}' cannot claim this account without explicit authenticated linking."
                 )
-                db.commit()
-                row = db.execute(
-                    text("SELECT id, firebase_uid, email, full_name, role, created_at, updated_at FROM resolve_user_by_firebase_uid(:fuid);"),
-                    {"fuid": firebase_uid}
-                ).mappings().first()
-            except Exception as sync_err:
-                db.rollback()
-                logger.warning(f"Safe account synchronization failed for email {email}: {sync_err}")
-                row = existing_by_email
-
-        if not row:
-            # 3. Auto-provision brand new user record on first authenticated request
-            try:
-                row = db.execute(
-                    text("SELECT id, firebase_uid, email, full_name, role, created_at, updated_at FROM provision_user(:fuid, :email, :name);"),
-                    {"fuid": firebase_uid, "email": email, "name": display_name}
-                ).mappings().first()
-
-                if is_admin and row and row["role"] != "admin":
-                    set_rls_context(db, row["id"], "admin")
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="An account with this email address already exists under a different authentication identity. Please sign in with your original provider or complete authenticated account linking."
+                )
+            elif not existing_fuid:
+                # Legacy unlinked account without a registered Firebase UID
+                if not email_verified:
+                    logger.warning(f"Unverified identity '{firebase_uid}' attempted to claim unlinked user '{email}'.")
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Email address must be verified before associating with an existing user account."
+                    )
+                # Safely associate verified Firebase UID to legacy account
+                try:
+                    set_rls_context(db, existing_by_email["id"], existing_by_email["role"])
                     db.execute(
-                        text("UPDATE users SET role = 'admin' WHERE id = :uid;"),
-                        {"uid": row["id"]}
+                        text("UPDATE users SET firebase_uid = :fuid, updated_at = NOW() WHERE id = :uid;"),
+                        {"fuid": firebase_uid, "uid": existing_by_email["id"]}
+                    )
+                    AuditService.log_event(
+                        db=db,
+                        action="account_firebase_uid_bound",
+                        entity_type="user",
+                        entity_id=existing_by_email["id"],
+                        user_id=existing_by_email["id"],
+                        details={"email": email, "bound_firebase_uid": firebase_uid}
                     )
                     db.commit()
                     row = db.execute(
                         text("SELECT id, firebase_uid, email, full_name, role, created_at, updated_at FROM resolve_user_by_firebase_uid(:fuid);"),
                         {"fuid": firebase_uid}
                     ).mappings().first()
-                else:
-                    db.commit()
+                except Exception as bind_err:
+                    db.rollback()
+                    logger.error(f"Failed to bind verified UID to legacy account for {email}: {bind_err}")
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail="Failed to associate authentication identity."
+                    )
+
+        if not row:
+            # 3. Auto-provision brand new user record on first authenticated request
+            # CRITICAL SECURITY RULE: Every new user strictly receives role 'user'.
+            # Automatic role escalation based on ADMIN_GMAIL is completely eliminated.
+            # Client-supplied role claims are strictly ignored.
+            # Administrator access MUST be provisioned via explicit DB CLI script or authenticated admin endpoint.
+            try:
+                row = db.execute(
+                    text("SELECT id, firebase_uid, email, full_name, role, created_at, updated_at FROM provision_user(:fuid, :email, :name);"),
+                    {"fuid": firebase_uid, "email": email, "name": display_name}
+                ).mappings().first()
+                db.commit()
             except Exception as e:
                 db.rollback()
                 logger.error(f"Auto-provisioning failed for {firebase_uid}: {e}")

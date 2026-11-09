@@ -10,6 +10,7 @@ from sqlalchemy import text, desc
 from app.config import settings
 from app.core.database import get_db, set_rls_context
 from app.core.firebase import is_firebase_configured, get_firebase_init_error
+from app.core.security import verify_firebase_id_token
 from app.dependencies.auth import (
     get_token_claims,
     require_authenticated_user,
@@ -30,6 +31,7 @@ from app.schemas.auth import (
     SendOTPResponse,
     VerifyOTPRequest,
     VerifyOTPResponse,
+    LinkProviderRequest,
     UserActivityItem,
     UserActivityResponse,
 )
@@ -216,23 +218,32 @@ def provision_user(
         )
 
     try:
-        # Check if an existing account exists for this email (linking email/password & Google)
+        # Check if an existing account exists for this email
         existing_by_email = db.execute(
             text("SELECT id, firebase_uid, email, full_name, role, created_at, updated_at FROM users WHERE LOWER(email) = LOWER(:email);"),
             {"email": email}
         ).mappings().first()
 
         if existing_by_email:
+            existing_fuid = existing_by_email.get("firebase_uid")
+            if existing_fuid and existing_fuid != firebase_uid:
+                logger.warning(
+                    f"Account conflict during provision: email '{email}' already registered under UID '{existing_fuid}'. "
+                    f"Incoming UID '{firebase_uid}' rejected."
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="An account with this email address already exists. Please authenticate with your original provider or complete authenticated account linking."
+                )
+            
+            # Updating profile attributes for the same authenticated user
             set_rls_context(db, existing_by_email["id"], existing_by_email["role"])
             db.execute(
-                text("UPDATE users SET firebase_uid = :fuid, full_name = :name, updated_at = NOW() WHERE id = :uid;"),
-                {"fuid": firebase_uid, "name": full_name, "uid": existing_by_email["id"]}
+                text("UPDATE users SET full_name = :name, updated_at = NOW() WHERE id = :uid;"),
+                {"name": full_name, "uid": existing_by_email["id"]}
             )
             db.commit()
-            row = db.execute(
-                text("SELECT id, firebase_uid, email, full_name, role, created_at, updated_at FROM resolve_user_by_firebase_uid(:fuid);"),
-                {"fuid": firebase_uid}
-            ).mappings().first()
+            row = existing_by_email
         else:
             row = db.execute(
                 text(
@@ -313,6 +324,120 @@ def get_me(
         mother_name=current_user.mother_name,
         created_at=current_user.created_at,
         updated_at=current_user.updated_at,
+    )
+
+
+@router.post("/link-provider", response_model=UserResponse)
+def link_authentication_provider(
+    req: LinkProviderRequest,
+    current_user: User = Depends(require_authenticated_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Explicit, authenticated provider linking endpoint.
+    Allows an authenticated citizen to link a secondary verified provider credential to their account.
+    Security validations:
+    1. Caller must already be authenticated with valid primary session (current_user).
+    2. Secondary token must be cryptographically verified and unexpired.
+    3. Secondary token must have verified email ('email_verified' == True).
+    4. Secondary token email must match current_user.email (case-insensitive).
+    5. Secondary UID must not already be claimed by a different user.
+    Preserves:
+    - User UUID, documents, conflicts, correction drafts, and forced RLS context.
+    Audits:
+    - Writes immutable audit log event 'account_provider_linked'.
+    """
+    set_rls_context(db, current_user.id, current_user.role)
+    secondary_claims = verify_firebase_id_token(req.linking_token)
+
+    secondary_uid = secondary_claims.get("uid")
+    secondary_email = secondary_claims.get("email")
+    secondary_verified = secondary_claims.get("email_verified", False)
+    provider = secondary_claims.get("firebase", {}).get("sign_in_provider", "secondary_provider")
+
+    if not secondary_uid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Secondary token does not contain a valid user identity."
+        )
+
+    if secondary_uid == current_user.firebase_uid:
+        # Already linked to this exact UID
+        return UserResponse(
+            id=current_user.id,
+            firebase_uid=current_user.firebase_uid,
+            email=current_user.email,
+            full_name=current_user.full_name,
+            role=current_user.role,
+            phone_number=current_user.phone_number,
+            date_of_birth=current_user.date_of_birth,
+            address=current_user.address,
+            father_name=current_user.father_name,
+            mother_name=current_user.mother_name,
+            created_at=current_user.created_at,
+            updated_at=current_user.updated_at,
+        )
+
+    if not secondary_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Secondary provider account email is not verified. Email verification is mandatory before linking."
+        )
+
+    if not secondary_email or secondary_email.strip().lower() != current_user.email.strip().lower():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Secondary provider email does not match the authenticated account email."
+        )
+
+    # Check if another user row is already bound to this secondary UID
+    conflicting_user = db.execute(
+        text("SELECT id, email FROM users WHERE firebase_uid = :fuid AND id != :uid;"),
+        {"fuid": secondary_uid, "uid": current_user.id}
+    ).mappings().first()
+
+    if conflicting_user:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Target authentication provider is already linked to another account."
+        )
+
+    # Record tamper-evident audit event
+    AuditService.log_event(
+        db=db,
+        action="account_provider_linked",
+        entity_type="user",
+        entity_id=current_user.id,
+        user_id=current_user.id,
+        details={
+            "previous_firebase_uid": current_user.firebase_uid,
+            "new_firebase_uid": secondary_uid,
+            "email": current_user.email,
+            "provider": provider,
+        },
+    )
+
+    # Update firebase_uid on the existing user row, strictly preserving user UUID and data
+    db.execute(
+        text("UPDATE users SET firebase_uid = :fuid, updated_at = NOW() WHERE id = :uid;"),
+        {"fuid": secondary_uid, "uid": current_user.id}
+    )
+    db.commit()
+
+    updated_user = db.query(User).filter(User.id == current_user.id).first()
+    return UserResponse(
+        id=updated_user.id,
+        firebase_uid=updated_user.firebase_uid,
+        email=updated_user.email,
+        full_name=updated_user.full_name,
+        role=updated_user.role,
+        phone_number=updated_user.phone_number,
+        date_of_birth=updated_user.date_of_birth,
+        address=updated_user.address,
+        father_name=updated_user.father_name,
+        mother_name=updated_user.mother_name,
+        created_at=updated_user.created_at,
+        updated_at=updated_user.updated_at,
     )
 
 
