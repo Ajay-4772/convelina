@@ -204,9 +204,9 @@ def provision_user(
     Enforces that the email must be a valid Gmail address.
     """
     firebase_uid = claims.get("uid")
-    email = claims.get("email") or f"{firebase_uid}@gmail.com"
+    email = claims.get("email") or f"{firebase_uid}@user.convelina.internal"
     if not claims.get("is_test_token"):
-        validate_gmail_address(email)
+        validate_email_address(email)
     full_name = req.full_name.strip()
 
     if not full_name:
@@ -219,7 +219,7 @@ def provision_user(
         row = db.execute(
             text(
                 "SELECT id, firebase_uid, email, full_name, role, created_at, updated_at "
-                "FROM provision_citizen_user(:fuid, :email, :name);"
+                "FROM provision_user(:fuid, :email, :name);"
             ),
             {"fuid": firebase_uid, "email": email, "name": full_name},
         ).mappings().first()

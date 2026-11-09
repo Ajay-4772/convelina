@@ -6,18 +6,19 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signInWithPopup,
   GoogleAuthProvider,
   signOut
 } from "firebase/auth";
-import { auth, isFirebaseConfigured } from "../lib/firebase";
+import { auth, isFirebaseConfigured, mapFirebaseAuthError } from "../lib/firebase";
 
 export interface UserProfile {
   id: string;
   firebase_uid: string;
   email: string;
   full_name: string;
-  role: "citizen" | "admin";
+  role: "user" | "admin" | "citizen";
   phone_number?: string | null;
   date_of_birth?: string | null;
   address?: string | null;
@@ -37,6 +38,7 @@ interface AuthContextType {
   isProfileComplete: boolean;
   loginWithEmail: (email: string, pass: string) => Promise<UserProfile | null>;
   signUpWithEmail: (email: string, pass: string) => Promise<FirebaseUser>;
+  resetPassword: (email: string) => Promise<void>;
   loginWithGoogle: () => Promise<UserProfile | null>;
   sendEmailOtp: (email: string) => Promise<{ success: boolean; message: string }>;
   verifyEmailOtp: (email: string, otp: string) => Promise<{ success: boolean; verified: boolean; message: string }>;
@@ -67,8 +69,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const createSimulatedUser = useCallback((token: string): FirebaseUser => {
     const parts = token.split(":");
     const uid = parts[1] || "test_user_id";
-    const email = parts[2] || "citizen@example.com";
-    const displayName = parts[3] || "Citizen User";
+    const email = parts[2] || "user@example.com";
+    const displayName = parts[3] || "Test User";
     return {
       uid,
       email,
@@ -116,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (res.status === 401) {
-        // User authenticated in Firebase but profile not yet provisioned in CONVELINA DB
+        // User authenticated in Firebase but profile not yet provisioned in DB
         setProfile(null);
         return null;
       }
@@ -132,10 +134,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [apiUrl]);
 
   useEffect(() => {
-    // Safety failsafe to ensure UI never hangs on loading screen
+    // Safety failsafe to ensure UI never indefinitely hangs on loading state
     const failsafeTimer = setTimeout(() => {
       setLoading(false);
-    }, 2000);
+    }, 2500);
 
     // Restore session if test token is present in localStorage
     if (typeof window !== "undefined") {
@@ -165,7 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIdToken(token);
           await fetchProfile(token);
         } catch (err: unknown) {
-          setError(err instanceof Error ? err.message : "Failed to retrieve authentication token.");
+          setError(mapFirebaseAuthError(err));
         }
       } else {
         setFirebaseUser(null);
@@ -183,8 +185,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     setLoading(true);
     try {
-      if (!isFirebaseConfigured() || email.startsWith("test_") || email.startsWith("citizen_")) {
-        const testToken = `test_token_:${email.replace(/[^a-zA-Z0-9]/g, "_")}:${email}:Citizen User`;
+      const cleanEmail = email.trim();
+      if (!isFirebaseConfigured() && (cleanEmail.startsWith("test_") || cleanEmail.startsWith("citizen_"))) {
+        const testToken = `test_token_:${cleanEmail.replace(/[^a-zA-Z0-9]/g, "_")}:${cleanEmail}:Citizen User`;
         if (typeof window !== "undefined") {
           localStorage.setItem("convelina_test_token", testToken);
         }
@@ -194,16 +197,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userProfile = await fetchProfile(testToken);
         return userProfile;
       }
-      const cred = await signInWithEmailAndPassword(auth, email.trim(), pass);
+      const cred = await signInWithEmailAndPassword(auth, cleanEmail, pass);
       const token = await cred.user.getIdToken();
       setIdToken(token);
       setFirebaseUser(cred.user);
       const userProfile = await fetchProfile(token);
       return userProfile;
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Authentication failed.";
+      const msg = mapFirebaseAuthError(err);
       setError(msg);
-      throw err;
+      throw new Error(msg);
     } finally {
       setLoading(false);
     }
@@ -213,8 +216,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     setLoading(true);
     try {
-      if (!isFirebaseConfigured() || email.startsWith("test_") || email.startsWith("citizen_")) {
-        const testToken = `test_token_:${email.replace(/[^a-zA-Z0-9]/g, "_")}:${email}:Citizen User`;
+      const cleanEmail = email.trim();
+      if (!isFirebaseConfigured() && (cleanEmail.startsWith("test_") || cleanEmail.startsWith("citizen_"))) {
+        const testToken = `test_token_:${cleanEmail.replace(/[^a-zA-Z0-9]/g, "_")}:${cleanEmail}:Citizen User`;
         if (typeof window !== "undefined") {
           localStorage.setItem("convelina_test_token", testToken);
         }
@@ -223,15 +227,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIdToken(testToken);
         return simUser;
       }
-      const cred = await createUserWithEmailAndPassword(auth, email.trim(), pass);
+      const cred = await createUserWithEmailAndPassword(auth, cleanEmail, pass);
       const token = await cred.user.getIdToken();
       setIdToken(token);
       setFirebaseUser(cred.user);
       return cred.user;
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Registration failed.";
+      const msg = mapFirebaseAuthError(err);
       setError(msg);
-      throw err;
+      throw new Error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetPassword = async (email: string): Promise<void> => {
+    setError(null);
+    setLoading(true);
+    try {
+      const cleanEmail = email.trim();
+      if (!cleanEmail) {
+        throw new Error("Please enter your email address.");
+      }
+      if (isFirebaseConfigured()) {
+        await sendPasswordResetEmail(auth, cleanEmail);
+      } else {
+        // Fallback for simulated development
+        await new Promise((res) => setTimeout(res, 300));
+      }
+    } catch (err: unknown) {
+      const msg = mapFirebaseAuthError(err);
+      setError(msg);
+      throw new Error(msg);
     } finally {
       setLoading(false);
     }
@@ -262,9 +289,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userProfile = await fetchProfile(token);
       return userProfile;
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Google authentication failed.";
+      const msg = mapFirebaseAuthError(err);
       setError(msg);
-      throw err;
+      throw new Error(msg);
     } finally {
       setLoading(false);
     }
@@ -353,7 +380,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setFirebaseUser(null);
       setProfile(null);
       setIdToken(null);
-      // Clean up any residual cached auth states in browser storage
+      // Clean up local storage items
       try {
         if (typeof window !== "undefined") {
           sessionStorage.clear();
@@ -365,7 +392,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // ignore storage errors
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Logout failed.");
+      const msg = mapFirebaseAuthError(err);
+      setError(msg);
     }
   };
 
@@ -394,6 +422,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isProfileComplete,
         loginWithEmail,
         signUpWithEmail,
+        resetPassword,
         loginWithGoogle,
         sendEmailOtp,
         verifyEmailOtp,

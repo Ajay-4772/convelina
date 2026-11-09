@@ -5,6 +5,7 @@ from fastapi import Depends, HTTPException, status, Header
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
+from app.config import settings
 from app.core.database import get_db, set_rls_context
 from app.core.security import verify_firebase_id_token, AuthenticationError
 from app.models.user import User
@@ -23,7 +24,7 @@ def get_current_token(authorization: Optional[str] = Header(None)) -> str:
     return parts[1]
 
 def get_token_claims(token: str = Depends(get_current_token)) -> Dict[str, Any]:
-    """Verifies Firebase token and extracts claims."""
+    """Verifies Firebase token and extracts claims (uid, email, email_verified, etc.)."""
     return verify_firebase_id_token(token)
 
 def get_current_user(
@@ -33,6 +34,7 @@ def get_current_user(
     """
     Resolves the internal User entity from the database using verified Firebase UID.
     Activates transaction-local RLS session parameters for the query.
+    Automatically provisions new users into PostgreSQL on their first authenticated request.
     """
     firebase_uid = claims.get("uid")
     if not firebase_uid:
@@ -45,10 +47,37 @@ def get_current_user(
     ).mappings().first()
 
     if not row:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User account not found. Please provision your profile via /api/v1/auth/provision."
-        )
+        # Auto-provision user record on first authenticated request
+        email = claims.get("email") or f"{firebase_uid}@user.convelina.internal"
+        display_name = claims.get("name") or claims.get("display_name") or email.split("@")[0] or "User"
+        is_admin = bool(settings.ADMIN_GMAIL and email.lower() == settings.ADMIN_GMAIL.lower())
+
+        try:
+            row = db.execute(
+                text("SELECT id, firebase_uid, email, full_name, role, created_at, updated_at FROM provision_user(:fuid, :email, :name);"),
+                {"fuid": firebase_uid, "email": email, "name": display_name}
+            ).mappings().first()
+
+            if is_admin and row and row["role"] != "admin":
+                set_rls_context(db, row["id"], "admin")
+                db.execute(
+                    text("UPDATE users SET role = 'admin' WHERE id = :uid;"),
+                    {"uid": row["id"]}
+                )
+                db.commit()
+                row = db.execute(
+                    text("SELECT id, firebase_uid, email, full_name, role, created_at, updated_at FROM resolve_user_by_firebase_uid(:fuid);"),
+                    {"fuid": firebase_uid}
+                ).mappings().first()
+            else:
+                db.commit()
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Auto-provisioning failed for {firebase_uid}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to auto-provision user account."
+            )
 
     # Establish transaction-local RLS context for subsequent operations
     user_id = row["id"]
@@ -78,7 +107,9 @@ class RoleChecker:
         self.allowed_roles = allowed_roles
 
     def __call__(self, user: User = Depends(get_current_user)) -> User:
-        if user.role not in self.allowed_roles:
+        user_role = "user" if user.role == "citizen" else user.role
+        allowed = [("user" if r == "citizen" else r) for r in self.allowed_roles]
+        if user_role not in allowed and user.role not in self.allowed_roles:
             logger.warning(
                 f"Unauthorized access attempt by user {user.id} (role: {user.role}) "
                 f"to endpoint requiring roles: {self.allowed_roles}"
