@@ -1,0 +1,7 @@
+exception_id,document_id,page_number,exception_type,severity,description,mitigation_applied,human_review_required
+EXC_001,DOC_034,22,LOW_TEXT_DENSITY,INFO,Page 22 of DOC_034 contains only 12 characters ('UIDAI.GOV.IN').,Preserved as authentic sparse page; flagged in validation report.,FALSE
+EXC_002,DOC_043,1,SOURCE_METADATA_CONFLICT,CRITICAL,DOC_043 is an e-Office draft export (1/58751/2026) signed 18-09-2026; prior reports stated 27.02.2024.,Flagged human_review_required=True and retrieval_eligibility=CONDITIONAL_HUMAN_REVIEW_REQUIRED across all chunks.,TRUE
+EXC_003,DOC_043,3,ROTATED_LANDSCAPE_TABLE,INFO,Page 3 is a landscape table requiring 270-degree rotation for forward reading.,Rotated to r270 prior to Windows Media OCR; 100% scenario illustrations transcribed.,FALSE
+EXC_004,DOC_043,4,ROTATED_LANDSCAPE_TABLE,INFO,Page 4 is a landscape table requiring 270-degree rotation for forward reading.,Rotated to r270 prior to Windows Media OCR; 100% scenario illustrations transcribed.,FALSE
+EXC_005,DOC_043,5,ROTATED_LANDSCAPE_TABLE,INFO,Page 5 is a landscape table requiring 270-degree rotation for forward reading.,Rotated to r270 prior to Windows Media OCR; 100% scenario illustrations transcribed.,FALSE
+EXC_006,DOC_043,6,ROTATED_LANDSCAPE_TABLE,INFO,Page 6 is a landscape table requiring 270-degree rotation for forward reading.,Rotated to r270 prior to Windows Media OCR; 100% scenario illustrations transcribed.,FALSE

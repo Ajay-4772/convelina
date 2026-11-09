@@ -1,0 +1,113 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CONVELINA Knowledge Chunk Metadata Schema",
+  "description": "Defines the required metadata fields for all CONVELINA retrieval chunks.",
+  "type": "object",
+  "required": [
+    "chunk_id",
+    "document_id",
+    "source_file_sha256",
+    "document_title",
+    "document_function",
+    "page_start",
+    "page_end",
+    "section_reference",
+    "applicant_cohort",
+    "lifecycle_stage",
+    "applicable_fields",
+    "source_authenticity_status",
+    "publication_status",
+    "current_applicability_status",
+    "retrieval_eligibility",
+    "human_review_required",
+    "chunk_text"
+  ],
+  "properties": {
+    "chunk_id": {
+      "type": "string",
+      "description": "Unique deterministic chunk identifier"
+    },
+    "document_id": {
+      "type": "string",
+      "pattern": "^DOC_[0-9]{3}$"
+    },
+    "source_file_sha256": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64
+    },
+    "document_title": {
+      "type": "string"
+    },
+    "document_function": {
+      "type": "string",
+      "enum": [
+        "CORRECTION_PROCEDURE",
+        "APPLICATION_FORM",
+        "PROOF_ELIGIBILITY_RULES",
+        "ALTERNATIVE_EVIDENCE",
+        "CROSS_CATEGORY_LINKING",
+        "REFERENCE_ONLY"
+      ]
+    },
+    "page_start": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "page_end": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "section_reference": {
+      "type": "string"
+    },
+    "applicant_cohort": {
+      "type": "string"
+    },
+    "lifecycle_stage": {
+      "type": "string"
+    },
+    "applicable_fields": {
+      "type": "string"
+    },
+    "source_authenticity_status": {
+      "type": "string",
+      "enum": [
+        "OFFICIALLY_PUBLISHED",
+        "SOURCE_METADATA_CONFLICT",
+        "AUTHENTICITY_UNCONFIRMED",
+        "OFFICIAL_CIRCULAR_EOFFICE_DRAFT_CONFLICT"
+      ]
+    },
+    "publication_status": {
+      "type": "string"
+    },
+    "current_applicability_status": {
+      "type": "string",
+      "enum": [
+        "ACTIVE_CURRENT",
+        "CONDITIONAL_OFFICIAL_PROCEDURE",
+        "CURRENT_APPLICABILITY_UNCONFIRMED",
+        "REFERENCE_ONLY",
+        "SUPERSEDED"
+      ]
+    },
+    "retrieval_eligibility": {
+      "type": "string",
+      "enum": [
+        "CORE_SEARCH_SPACE",
+        "CONDITIONAL_HUMAN_REVIEW_REQUIRED",
+        "REFERENCE_ONLY",
+        "AUDIT_TRAIL_AND_HISTORICAL_LINEAGE_ONLY",
+        "EXCLUDED_FROM_AUTHORITATIVE_RETRIEVAL"
+      ]
+    },
+    "human_review_required": {
+      "type": "boolean"
+    },
+    "chunk_text": {
+      "type": "string",
+      "minLength": 10
+    }
+  }
+}

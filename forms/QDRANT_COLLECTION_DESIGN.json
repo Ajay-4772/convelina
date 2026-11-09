@@ -1,0 +1,275 @@
+{
+  "$schema": "https://qdrant.tech/schemas/collection-config.json",
+  "project": "CONVELINA",
+  "phase": "P3H.4.1",
+  "version": "1.1.0",
+  "generated_at": "2026-11-09T00:00:00Z",
+  "specification_type": "CORRECTED_QDRANT_COLLECTION_ARCHITECTURE_DESIGN",
+  "budget_constraint": "ZERO_CLOUD_COST_LOCAL_EXECUTION",
+  "vector_dimensions": {
+    "candidate_neural_fastembed": 384,
+    "air_gapped_deterministic_hash": 1024
+  },
+  "reconciliation_summary": {
+    "total_inventory_files": 47,
+    "operational_core_documents": 8,
+    "operational_core_chunks": 167,
+    "reference_secondary_documents": 12,
+    "reference_secondary_chunks": 28,
+    "total_qdrant_vectors": 195,
+    "quarantined_relational_documents": 27
+  },
+  "collections": [
+    {
+      "collection_name": "convelina_core_operational",
+      "staging_collection_name": "convelina_core_operational_staging",
+      "alias_name": "convelina_core_operational",
+      "description": "Primary authoritative search space containing 167 chunks extracted from the 8 verified documents in CORE_OPERATIONAL_KNOWLEDGE_CORPUS (DOC_001, DOC_004, DOC_013, DOC_022, DOC_023, DOC_034, DOC_036, DOC_043).",
+      "status": "APPROVED_CORE_CANDIDATE",
+      "source_document_membership": [
+        "DOC_001",
+        "DOC_004",
+        "DOC_013",
+        "DOC_022",
+        "DOC_023",
+        "DOC_034",
+        "DOC_036",
+        "DOC_043"
+      ],
+      "expected_point_count": 167,
+      "vector_parameters": {
+        "size": 384,
+        "distance": "Cosine",
+        "hnsw_config": {
+          "m": 16,
+          "ef_construct": 100,
+          "full_scan_threshold": 1000,
+          "max_indexing_threads": 2,
+          "on_disk": false,
+          "payload_m": 16
+        },
+        "quantization_config": {
+          "scalar": {
+            "type": "int8",
+            "quantile": 0.99,
+            "always_ram": true
+          }
+        },
+        "on_disk": false
+      },
+      "optimizers_config": {
+        "deleted_threshold": 0.2,
+        "vacuum_min_vector_number": 100,
+        "default_segment_number": 2,
+        "max_segment_size": null,
+        "memmap_threshold": 20000,
+        "indexing_threshold": 10000,
+        "flush_interval_sec": 5,
+        "max_optimization_threads": 1
+      },
+      "wal_config": {
+        "wal_capacity_mb": 32,
+        "wal_segments_ahead": 0
+      },
+      "payload_indexes": [
+        {
+          "field_name": "document_id",
+          "field_type": "keyword",
+          "description": "Canonical identifier of source document. Required for atomic filtering and staged validation."
+        },
+        {
+          "field_name": "document_category",
+          "field_type": "keyword",
+          "description": "Identity category: aadhaar, pan, passport, class_10, class_12, epf."
+        },
+        {
+          "field_name": "document_function",
+          "field_type": "keyword",
+          "description": "Functional taxonomy: CORRECTION_PROCEDURE, APPLICATION_FORM, PROOF_ELIGIBILITY_RULES, ALTERNATIVE_EVIDENCE, CROSS_CATEGORY_LINKING."
+        },
+        {
+          "field_name": "applicant_cohort",
+          "field_type": "keyword",
+          "description": "Target applicant group: ALL_RESIDENTS, ADULT_RESIDENT, MINOR_STUDENT, NRI_OVERSEAS, GENERAL_CITIZEN."
+        },
+        {
+          "field_name": "lifecycle_stage",
+          "field_type": "keyword",
+          "description": "Procedural stage: UPDATE_CORRECTION, ENROLMENT_AND_UPDATE, CROSS_CATEGORY_SEEDING, COMPLIANCE_LINKING."
+        },
+        {
+          "field_name": "retrieval_eligibility",
+          "field_type": "keyword",
+          "description": "Mandatory push-down filter: strictly CORE_SEARCH_SPACE for this collection."
+        },
+        {
+          "field_name": "current_applicability_status",
+          "field_type": "keyword",
+          "description": "Statutory state: CURRENT_ACTIVE or CONDITIONAL_OFFICIAL_PROCEDURE."
+        },
+        {
+          "field_name": "source_authenticity_status",
+          "field_type": "keyword",
+          "description": "Provenance verification state: OFFICIALLY_PUBLISHED or SOURCE_METADATA_CONFLICT."
+        },
+        {
+          "field_name": "human_review_required",
+          "field_type": "bool",
+          "description": "Safety flag: true for DOC_043; false for standard verified operational procedures."
+        },
+        {
+          "field_name": "source_file_sha256",
+          "field_type": "keyword",
+          "description": "Cryptographic hash of physical source PDF byte stream for tamper detection."
+        },
+        {
+          "field_name": "issuing_authority",
+          "field_type": "keyword",
+          "description": "Authoritative issuing entity: UIDAI, Protean, Income Tax Department, MEA, EPFO, CBSE."
+        },
+        {
+          "field_name": "page_start",
+          "field_type": "integer",
+          "description": "1-based starting page index in physical PDF."
+        },
+        {
+          "field_name": "page_end",
+          "field_type": "integer",
+          "description": "1-based ending page index in physical PDF."
+        }
+      ]
+    },
+    {
+      "collection_name": "convelina_reference_secondary",
+      "staging_collection_name": "convelina_reference_secondary_staging",
+      "alias_name": "convelina_reference_secondary",
+      "description": "Secondary isolated reference space containing 28 informational and contextual chunks extracted from the 12 verified documents in REFERENCE_ONLY_CORPUS (DOC_005, DOC_006, DOC_021, DOC_024, DOC_025, DOC_026, DOC_027, DOC_028, DOC_029, DOC_031, DOC_033, DOC_047).",
+      "status": "APPROVED_REFERENCE_CANDIDATE",
+      "source_document_membership": [
+        "DOC_005",
+        "DOC_006",
+        "DOC_021",
+        "DOC_024",
+        "DOC_025",
+        "DOC_026",
+        "DOC_027",
+        "DOC_028",
+        "DOC_029",
+        "DOC_031",
+        "DOC_033",
+        "DOC_047"
+      ],
+      "expected_point_count": 28,
+      "vector_parameters": {
+        "size": 384,
+        "distance": "Cosine",
+        "hnsw_config": {
+          "m": 16,
+          "ef_construct": 100,
+          "full_scan_threshold": 500,
+          "max_indexing_threads": 1,
+          "on_disk": false,
+          "payload_m": 16
+        },
+        "quantization_config": {
+          "scalar": {
+            "type": "int8",
+            "quantile": 0.99,
+            "always_ram": true
+          }
+        },
+        "on_disk": false
+      },
+      "optimizers_config": {
+        "deleted_threshold": 0.2,
+        "vacuum_min_vector_number": 50,
+        "default_segment_number": 1,
+        "max_segment_size": null,
+        "memmap_threshold": 10000,
+        "indexing_threshold": 5000,
+        "flush_interval_sec": 5,
+        "max_optimization_threads": 1
+      },
+      "wal_config": {
+        "wal_capacity_mb": 16,
+        "wal_segments_ahead": 0
+      },
+      "payload_indexes": [
+        {
+          "field_name": "document_id",
+          "field_type": "keyword",
+          "description": "Source reference document ID."
+        },
+        {
+          "field_name": "document_category",
+          "field_type": "keyword",
+          "description": "Identity category: aadhaar, pan, passport, class_10, class_12, epf."
+        },
+        {
+          "field_name": "document_function",
+          "field_type": "keyword",
+          "description": "Strictly REFERENCE_ONLY or APPLICATION_FORM."
+        },
+        {
+          "field_name": "retrieval_eligibility",
+          "field_type": "keyword",
+          "description": "Strictly REFERENCE_ONLY. Prohibits automated operational guidance output."
+        },
+        {
+          "field_name": "source_file_sha256",
+          "field_type": "keyword",
+          "description": "Cryptographic hash of source PDF byte stream."
+        }
+      ]
+    }
+  ],
+  "quarantine_and_exclusion_registry": {
+    "policy": "STRICT_QDRANT_EXCLUSION_RELATIONAL_AUDIT_ONLY",
+    "total_quarantined_files": 27,
+    "description": "The following 27 files are strictly quarantined from Qdrant vector indexing to guarantee zero historical or out-of-scope retrieval leakage. They are tracked solely in PostgreSQL relational tables.",
+    "historical_superseded_documents": [
+      "DOC_003",
+      "DOC_009",
+      "DOC_010",
+      "DOC_011",
+      "DOC_016",
+      "DOC_017",
+      "DOC_019",
+      "DOC_038",
+      "DOC_039"
+    ],
+    "out_of_scope_documents": [
+      "DOC_007",
+      "DOC_008",
+      "DOC_012",
+      "DOC_014",
+      "DOC_015",
+      "DOC_018",
+      "DOC_020",
+      "DOC_030",
+      "DOC_032",
+      "DOC_037",
+      "DOC_041",
+      "DOC_042",
+      "DOC_044",
+      "DOC_045",
+      "DOC_046"
+    ],
+    "authenticity_unconfirmed_documents": [
+      "DOC_002"
+    ],
+    "exact_duplicates": [
+      "DOC_035",
+      "DOC_040"
+    ],
+    "conditional_core_with_conflict_status": [
+      {
+        "document_id": "DOC_043",
+        "original_filename": "ListofAcceptableSupportingDocumentsforAadhaarEnrolment_2023.pdf",
+        "sha256": "3cb49a46c374667a48d80f836371cb7c430e7fc7c6a58bc261c4c23dbd4eb46e",
+        "status": "SOURCE_METADATA_CONFLICT",
+        "handling_rule": "Indexed in convelina_core_operational (21 chunks) with human_review_required=true; intercepted at retrieval to force conditional disclaimer banner."
+      }
+    ]
+  }
+}

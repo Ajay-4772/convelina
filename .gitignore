@@ -1,12 +1,21 @@
 # Environment and Secrets
 .env
+.env.local
 .env*.local
 *.pem
 *.key
 *.p12
+*.crt
+*.cer
+*.pfx
 *.json_service_account*
 serviceAccountKey*.json
 firebase-adminsdk*.json
+*service_account*.json
+*credentials*.json
+client_secret*.json
+auth_tokens.json
+test_tokens.json
 
 # Dependencies
 node_modules/
@@ -20,6 +29,7 @@ venv/
 .venv/
 pip-log.txt
 pip-delete-this-directory.txt
+tools/
 
 # Next.js
 frontend/.next/
@@ -33,6 +43,8 @@ build/
 .coverage
 htmlcov/
 *.tsbuildinfo
+graphify-out/
+.openqodex/
 
 # IDE / System
 .vscode/
@@ -46,6 +58,20 @@ Thumbs.db
 data/
 qdrant_storage/
 postgres_data/
+
+# Uploaded documents & Temporary OCR files
+data/temp_docs/
+/tmp/consolith/temp_docs/
+frontend/e2e/temp_fixtures/
+scripts/doc43_pages/
+scripts/doc43_*.png
+scripts/doc43_*.txt
+*.ocr.txt
+
+# Database dumps
+*.dump
+*.sql.dump
+*.sql.gz
 
 # Test outputs
 docs/load_test_results.json
