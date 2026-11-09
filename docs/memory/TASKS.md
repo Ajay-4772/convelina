@@ -49,6 +49,15 @@
     - [x] Security & Traversal Defense: Implemented `CitizenRepositoryService.resolve_file_path()` with null-byte rejection, directory traversal prevention, and SHA-256 validation
     - [x] Test Verification: 16/16 backend tests passed in `test_p3h6_citizen_repository.py`; frontend TypeScript typecheck clean (0 errors); Next.js production build 15/15 routes cleanly compiled; Playwright E2E passed
     - [x] Documentation Deliverables: Authored `docs/CITIZEN_DOCUMENT_REPOSITORY.md`, `docs/PROCEDURAL_GUIDANCE_ENGINE.md`, `docs/DOCUMENT_PROVENANCE_AND_VERIFICATION.md`, and `docs/DOCUMENT_CHECKLIST_ENGINE.md`
+  - [x] **Execute Sub-Phase P3H.7: Full Application Exploration, Product Alignment & End-to-End Acceptance Audit**
+    - [x] Comprehensive Live Runtime Exploration: Verified all 14 frontend routes and 112 backend API endpoints across 9 routers with running FastAPI backend and Next.js 14 production server.
+    - [x] Automated Playwright Exploration Battery: 8/8 tests passed (`frontend/e2e/p3h7_full_exploration.spec.ts`) validating desktop & mobile viewports, citizen dashboard, conflict resolution, assistant, forms repository, profile, and admin gateway.
+    - [x] Visual Audit Assets: 15 high-fidelity screenshots captured across citizen and admin experiences in `docs/screenshots/`.
+    - [x] Product Alignment Matrix: Scored 30 product requirements across 10 areas (28 PASS [93.3%], 1 PARTIAL [3.3%], 1 BLOCKED [3.3%], 0 FAIL).
+    - [x] Cross-Module Architecture Bridges: Confirmed active integration between Inconsistencies Hub, Conversational Assistant, Statutory Repository, and Draft Generation.
+    - [x] Statutory & Legal Integrity Audit: Grounded UIDAI 2-lifetime update limit under Regulation 10; strictly governed DOC_043 with honest statutory abstention; verified ReportLab synthetic sample rejection gate.
+    - [x] Security & Privacy Verification: Zero raw Aadhaar storage, in-memory byte buffers, Fernet AES-256 field encryption, two-role RBAC enforcement, and append-only audit triggers verified.
+    - [x] Six Required Documentation Deliverables authored in `docs/` (`P3H7_FULL_APPLICATION_EXPLORATION.md`, `P3H7_ROUTE_AND_FEATURE_INVENTORY.md`, `P3H7_PRODUCT_ALIGNMENT_MATRIX.md`, `P3H7_END_TO_END_TEST_REPORT.md`, `P3H7_SECURITY_AND_LEGAL_GAPS.md`, `P3H7_REMEDIATION_BACKLOG.md`).
 - [x] **Phase P4: Verification, Security Hardening & Penetration Testing Gate**
   - [x] Comprehensive 37-test platform penetration testing harness authored & passing (`scripts/run_p4_security_audit.py`, 37/37 tests passed, 100%)
   - [x] Audit log concurrency race condition remediated via Migration 018 (`pg_advisory_xact_lock`)
