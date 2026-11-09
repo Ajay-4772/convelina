@@ -58,7 +58,7 @@ def verify_firebase_id_token(token: str, check_revoked: bool = False) -> Dict[st
         logger.error(f"Authentication failed: {err}")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Authentication service is currently unconfigured. Check server configuration."
+            detail="Authentication service is currently unconfigured. Live Firebase integration: pending credential configuration."
         )
 
     try:
@@ -78,7 +78,7 @@ def verify_firebase_id_token(token: str, check_revoked: bool = False) -> Dict[st
             logger.error(f"Backend Firebase Admin unavailable or uncredentialed: {e}")
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Authentication service is currently unavailable. Backend Firebase credentials missing."
+                detail="Authentication service is currently unavailable. Live Firebase integration: pending credential configuration."
             )
         logger.error(f"Unexpected token verification error: {e}")
         raise AuthenticationError("Authentication failed.")

@@ -1,5 +1,10 @@
 # CONVELINA — Firebase Authentication Setup & Configuration Guide (Email + Google)
 
+> [!IMPORTANT]
+> **DEVELOPMENT MODE STATUS**:
+> `LIVE FIREBASE INTEGRATION: PENDING CREDENTIAL CONFIGURATION`  
+> Real Firebase credentials have not been configured in the local project directory yet. Local frontend and backend development proceeds using mocked Admin SDK tokens and frontend auth mocks. All security validations and anti-takeover logic remain active. Live cloud integration will be verified once credentials are provided. Unrelated development tasks are unblocked.
+
 This guide provides complete instructions for configuring Google Firebase Authentication for CONVELINA, covering Email/Password, Google Sign-In, secure account linking, and explicit administrator provisioning.
 
 ---

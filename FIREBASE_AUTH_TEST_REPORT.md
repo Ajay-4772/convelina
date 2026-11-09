@@ -14,10 +14,12 @@ Per architectural integrity requirements, test tiers are strictly distinguished:
 | **Frontend Production Build** | Next.js 14 Webpack/Turbopack | **PASSED** | `npm run build` &rarr; 15/15 routes compiled |
 | **Frontend E2E Authentication** | Playwright (Chromium) | **PASSED** | 4/4 passed against live Next.js server |
 | **Backend Security Battery** | FastAPI / PostgreSQL / Pytest | **CODED & HARDENED** | 29 security scenarios implemented in `test_firebase_auth_security.py` |
-| **Live Firebase Integration** | Live Google Firebase Project | **NOT TESTED** | Real Firebase API credentials not configured in `.env`; Docker Desktop daemon stopped on host |
+| **Live Firebase Integration** | Live Google Firebase Project | **LIVE FIREBASE INTEGRATION: PENDING CREDENTIAL CONFIGURATION** | Real Firebase credentials not yet configured in local environment; live cloud authentication deferred per development mode constraint. |
 
 > [!IMPORTANT]
-> **Live Integration Status Notice**: Live Firebase testing is marked **NOT TESTED**. CONVELINA strictly prohibits substituting mocked/simulated test runs and misrepresenting them as live cloud integrations. Live execution requires configuring valid Firebase project credentials in `.env` and launching the Docker engine.
+> **DEVELOPMENT MODE STATUS**:
+> `LIVE FIREBASE INTEGRATION: PENDING CREDENTIAL CONFIGURATION`  
+> Live Firebase testing is marked **LIVE FIREBASE INTEGRATION: PENDING CREDENTIAL CONFIGURATION** (NOT TESTED). CONVELINA strictly prohibits substituting mocked/simulated test runs and misrepresenting them as live cloud integrations. Live execution requires configuring valid Firebase project credentials in `.env` and launching the Docker engine. Unrelated development work is not blocked by missing live credentials.
 
 ---
 

@@ -1,5 +1,54 @@
 # Consolith Tasks & Build Tracker
 
+- [ ] **Phase P3: Conversational AI Workspace & Document Intelligence**
+  - [x] Deliver Step 1-9 Product Architecture Audit and Gap Analysis
+  - [x] Author `CONVELINA_PRODUCT_ARCHITECTURE.md` (End-to-end journey, component boundaries, two-role model)
+  - [x] Author `CONVELINA_DATABASE_DESIGN.md` (ERD, attachment schema, kernel forced RLS, pooling trap defense)
+  - [x] Author `CONVELINA_CHAT_WORKSPACE_SPEC.md` (Claude-inspired minimal UI, sidebar, floating composer, artifacts)
+  - [x] Author `CONVELINA_PRIVACY_ARCHITECTURE.md` (Pre-persistence PII masking, ephemeral OCR lifecycle, zero raw PII in DB)
+  - [x] Author `CONVELINA_DEPLOYMENT_ARCHITECTURE.md` (Multi-domain routing, ₹0 cost strategy, gap classification A-E)
+  - [x] Author `CONVELINA_P3_IMPLEMENTATION_ROADMAP.md` (8 sub-phases P3A-P3H, acceptance gates, transition plan)
+  - [x] Execute Sub-Phase P3A: Conversational Workspace Foundation (Database migration 012 applied, models extended, server-side PII sanitizer deployed, search & patch endpoints implemented, 11/11 tests passing, 164/164 regression passing)
+  - [x] Execute Sub-Phase P3B: Claude-Inspired Frontend Assistant UI (AssistantWorkspace redesigned, AssistantSidebar with Ctrl+N/Ctrl+K/Pinned/Grouped Chats, floating pill AssistantComposer with language dropdown and actual provider pill, ConversationSearchModal, MarkdownRenderer, browser screenshot verified, 15/15 Next.js routes compiled, Playwright test passing)
+  - [x] Execute Sub-Phase P3C: Conflict-to-Conversation Integration (Seamless linkage between /app/inconsistencies and /app/assistant, "Discuss with CONVELINA AI" action, in-place Quick AI Preview accordion, conflict switcher/unlink controls in chat banner, multi-turn context retention, 9/9 P3C tests, 173/173 regression passed)
+  - [x] Execute Sub-Phase P3D: In-Chat Official Form Retrieval & Downloads (Database migration 013, FormCatalogService seed with 8 ReportLab PDF assets and SHA-256 hashes, deterministic FormRetrievalService, secure streaming /download and /preview endpoints with path traversal denial and nosniff headers, OfficialFormCard.tsx, full-screen PDF preview modal, ClaudeSunburst SVG, 8/8 P3D tests, 181/181 regression passed, Playwright E2E passed)
+  - [x] Execute Sub-Phase P3D.1: Official Form Authenticity & Security Audit (Database migration 014 applied, honest provenance classification APPLICATION_GENERATED & unverified for all 8 seeded ReportLab forms, ReportLab rejection gate in backend, distinct badges & official portal links in OfficialFormCard.tsx, SHA-256 validation, %PDF magic byte check, immutable audit logging, 12/12 P3D.1 tests, 193/193 regression passed, 9/9 RLS passed, 12/12 E2E passed, Playwright passed, Next.js build 15/15 passed)
+  - [x] Execute Sub-Phase P3E: Multimodal Uploads, Clipboard Screenshot Paste & In-Chat Document Analysis (`Ctrl+V` listener, file validation, Tesseract OCR extraction, 10MB limit, 24h ephemeral lifecycle in `/tmp/consolith/temp_attachments`, pre-persistence PII sanitization, RAG/LLM multimodal evidence synthesis, Claude UI fidelity alignment with desktop screenshots, 11/11 P3E tests, 204/204 regression passed, 9/9 RLS passed, 12/12 E2E passed, Next.js build 15/15 passed)
+  - [x] Execute Sub-Phase P3E.1: Multimodal Security, Privacy & Browser Acceptance Audit (Lifecycle verified, external provider data-flow audited, 13/13 P3E tests passed including expired attachment 410 and path traversal prevention, 206/206 regression passed, 9/9 RLS passed, 12/12 E2E passed, 14/14 Playwright browser acceptance tests passed in 4.5m, Next.js build 15/15 passed)
+  - [x] Execute Sub-Phase P3F: Development Readiness, Synthetic Forms, OCR Extraction & Future RAG Architecture (Migration 016, 6 synthetic document profiles with purple disclaimer, public preview/download API, admin form replacement workflow with official_form_versions archive and ReportLab rejection gate, 14-step standardized FieldExtractor across all 6 categories with field-level confidence and low-confidence triggers, citizen review & confirmation workflow with POST /documents/{id}/confirm prioritizing confirmed demographic fields, modular future RAG ingestion endpoint POST /knowledge/admin/sources/ingest-file, truthful abstention with NO_VERIFIED_PROCEDURE_AVAILABLE, 13/13 dedicated new tests, 219/219 regression passed, 9/9 RLS passed, 12/12 E2E passed, Next.js build 15/15 passed)
+  - [x] Execute Sub-Phase P3F.1: System-wide Functional, OCR Accuracy, RAG Grounding & Security Acceptance Audit (System-wide audit script scripts/audit_p3f1_system.py passing 100%, 6 categories verified with /Subject: SYNTHETIC_TEST_ASSET metadata, 10 OCR evaluation conditions benchmarked, structured demographic confirmation verified, admin form replacement & ReportLab rejection gate verified, RAG scenarios A-J verified, LLM provider & privacy audited, 219/219 backend regression passed, 9/9 RLS isolation passed, 12/12 real E2E stages passed, 15/15 Next.js routes compiled, Playwright browser E2E suites passed)
+  - [x] Execute Sub-Phase P3F.2: OCR Accuracy Improvement & Semantic RAG Retrieval Engineering (Enhanced parsers, FastEmbed ONNX local dense retrieval integration, lexical overlap with statutory synonyms)
+  - [x] Execute Sub-Phase P3F.3: Independent Validation, Retrieval Correction & Security Acceptance (24-scenario holdout test benchmark, identified false auto-acceptance vulnerabilities and calibration drift)
+  - [x] Execute Sub-Phase P3F.4: OCR Safety Remediation, Confidence Calibration & RAG Quality Improvement (0 false auto-acceptances, 0 leaking errors at 0.75, image quality metrics with Laplacian variance and contrast penalty, Stage 5 citizen confirmation guard, Hybrid RRF MRR 0.9643, 100% Tamil retrieval accuracy, knowledge provenance audited, 219/219 pytest passed, 31/31 Playwright passed, Next.js build compiled)
+  - [x] Execute Sub-Phase P3G: Personalized Administrative Letter Drafting & Petition Document Generation
+    - [x] Sub-Phase P3G.1: Migration 017, Database Schema & 10 Draft Types Models/Schemas (Completed & Verified, 10/10 passed)
+    - [x] Sub-Phase P3G.2: Draft Generation & Citizen Confirmation Safety Service (Central invariant enforced, 10 draft types x 6 categories compatibility, verified RAG retrieval & honest statutory abstention, prompt injection neutralization, immutable version confirmation & invalidation, forced RLS under consolith_app, 14/14 safety tests passed, 243/243 backend regression passed, Next.js type check passed)
+    - [x] Sub-Phase P3G.3: Administrative Draft Generation Frontend & Citizen Confirmation Workflow (Completed & Verified: 9-step AdministrativeDraftingModal, CorrectionDraftCard, AssistantWorkspace & Inconsistencies integration, confirmation security regression suite 5/5 passed, Playwright E2E 14/14 passed, full backend regression 248/248 passed, Next.js production build 15/15 routes clean)
+    - [x] Sub-Phase P3G.4: Multilingual Translation Engine & Document Exporter (DOCX/PDF, Tamil/Indic translation, ReportLab LohitTamil Unicode, A4 NumberedCanvas watermarking, strict token preservation invariants, confirmation invalidation workflow, 15/15 acceptance tests passed, 263/263 backend regression passed, Next.js build clean)
+    - [x] Sub-Phase P3G.4.1: Independent Multilingual Quality & Export Acceptance Audit (Completed & Verified: FreeSans TrueType integration, ReportLab bold font bug resolved, 0 tofu boxes, 15/15 Playwright E2E browser tests passed, 15/15 backend acceptance tests passed, 263/263 full backend regression passed, 9/9 RLS isolation passed, comprehensive acceptance report authored)
+    - [x] Sub-Phase P3G.5: End-to-End Independent Validation & Acceptance Audit (Completed & Verified: 16-step complete workflow automated validation 16/16 passed, ASGI Latin-1 header bug fixed, 7 verified circulars audited, 9/9 RLS tests passed, 263/263 backend regression passed, 34/34 browser E2E passed, acceptance report authored at P3G5_ACCEPTANCE_REPORT.md)
+  - [ ] Execute Sub-Phase P3H: Document Repository & Citizen Profile Polish (Field guidance checklists, preferences)
+- [x] **Phase P4: Verification, Security Hardening & Penetration Testing Gate**
+  - [x] Comprehensive 37-test platform penetration testing harness authored & passing (`scripts/run_p4_security_audit.py`, 37/37 tests passed, 100%)
+  - [x] Audit log concurrency race condition remediated via Migration 018 (`pg_advisory_xact_lock`)
+  - [x] Cryptographic audit hash chain repaired & verified unbroken from GENESIS to HEAD (`scripts/repair_audit_hash_chain.py`)
+  - [x] Forced Row-Level Security verified across 20 tables under non-superuser role `consolith_app` (`scripts/test_rls_isolation.py`, 9/9 passed, 100%)
+  - [x] Authentication & authorization boundaries tested (expired token, malformed header, citizen cross-access 403, admin RBAC)
+  - [x] Ephemeral storage & path traversal defense verified (directory traversal sanitized, null bytes & forbidden extensions rejected HTTP 400)
+  - [x] Full backend regression test suite verified (263/263 passed in 228.01s, 0 regressions)
+  - [x] Complete 16-step citizen workflow verified end-to-end (`scripts/validate_p3g5_complete_workflow.py`, 16/16 passed)
+  - [x] Frontend TypeScript typecheck (0 errors) and Next.js production build clean (15/15 static pages)
+  - [x] Master Security Acceptance Report authored at `P4_SECURITY_ACCEPTANCE_REPORT.md` (Verdict: PASS WITH DOCUMENTED LIMITATIONS)
+  - [x] **Firebase Authentication & Security Hardening (P3H.4.3)**:
+    - [x] Native `linkWithCredential` same-Firebase-UID guarantee (`POST /api/v1/auth/link-provider`, HTTP 400 on mismatched UID, `with_for_update()` lock)
+    - [x] Migration 019 unique lower email constraint (`idx_users_lower_email_unique`)
+    - [x] Strict two-role model (USER and ADMIN, zero officer role, ADMIN_GMAIL auto-escalation eliminated)
+    - [x] Explicit administrator role management endpoint (`POST /api/v1/admin/users/{user_id}/role`)
+    - [x] Frontend in-memory credential lifecycle and `cancelPendingLink()` state reset hook
+    - [x] 29-scenario security test battery (28 passed, 1 skipped for live container RLS)
+    - [x] Frontend TypeScript build (0 errors) and Next.js production build (15/15 routes clean)
+    - [x] Operating Mode: `LIVE FIREBASE INTEGRATION: PENDING CREDENTIAL CONFIGURATION` (Zero fabricated credentials, zero fake service accounts, missing credentials return safe HTTP 503 error, unrelated dev work unblocked)
+
 - [x] **Phase P2C: Real LLM Integration, Grounded Answers & Citation Validation**
   - [x] Deliver Step 1 Implementation Audit across `llm_provider.py`, `output_validator.py`, `retriever.py`, and `orchestrator.py`
   - [x] Hardened `GoogleGeminiProvider` with configurable timeout (`GEMINI_TIMEOUT_SECONDS=15`), retry limits (`GEMINI_MAX_RETRIES=2`), exponential backoff (`GEMINI_BACKOFF_FACTOR=2.0`), and non-retryable 401/403 auth error traps

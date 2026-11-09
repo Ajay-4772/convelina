@@ -1,5 +1,439 @@
-- **Current Active State**: Phase P2C Real LLM Integration, Grounded Answers & Citation Validation Completed & Verified; Google Gemini Provider Implemented with Exponential Backoff Retry Loop and Explicit Timeout Handling; Structured Statutory Offline Fallback Implemented (is_fallback=True, provider_status='fallback_offline') Synthesizing Deterministic Resolution Mappings and Retrieved Evidence; GroundedOutputValidator Hardened with Authoritative Source URL Correspondence, Verification Status Filtering, and Strict Statutory Disclaimer Enforcement; HybridRetriever Verified Status Enforcement Active; Frontend AssistantWorkspace Grounded UX with Provider Mode Pills, Verified Portal Links, and Insufficient Evidence Callout Implemented; Backend Pytest 153/153 Passing; Dedicated P2C Test Battery 14/14 Passing; PostgreSQL Forced RLS 9/9 Passing; E2E Functional Audit 12/12 Stages Passing; Next.js 14 Production Build 15/15 Routes Compiled with 0 Errors; Docker Stack 3/3 Containers Healthy.
+# CONVELINA — CURRENT ARCHITECTURAL & OPERATIONAL STATE
+
+> [!IMPORTANT]
+> **FIREBASE CREDENTIAL CONFIGURATION — CURRENT DEVELOPMENT MODE**:
+> **`LIVE FIREBASE INTEGRATION: PENDING CREDENTIAL CONFIGURATION`**
+> - Real Firebase credentials have **NOT** been configured in the project directory yet.
+> - **Operational Guardrails**:
+>   1. Do not request, generate, invent, or fabricate Firebase credentials.
+>   2. Do not create fake service-account JSON files.
+>   3. Do not attempt live Google Firebase cloud authentication.
+>   4. Do not modify the Firebase project configuration to bypass missing credentials.
+>   5. Do not mark live Firebase integration as tested or accepted.
+>   6. Continue using mocked Firebase Admin SDK responses for backend unit/logic tests.
+>   7. Continue using frontend mocks for authentication-related automated tests where appropriate.
+>   8. Clearly distinguish mocked tests, local integration tests, and live cloud tests.
+>   9. Keep all authentication and authorization security checks active.
+>   10. Ensure missing Firebase credentials produce a clear, safe configuration error (`HTTP 503: Live Firebase integration: pending credential configuration`) rather than silently accepting users.
+> - **Active Development Scope**:
+>   - Local frontend and backend development.
+>   - Mocked authentication testing.
+>   - Backend token-validation logic testing.
+>   - USER/ADMIN authorization testing.
+>   - Account-linking security testing.
+>   - PostgreSQL RLS testing when local PostgreSQL becomes available.
+>   - No production deployment.
+>   - Unrelated development work is not blocked by missing live Firebase credentials.
+
+- **Current Active State**: Phase P4 (Security Hardening, Independent Verification & Penetration Testing Gate) Completed, Verified & Accepted; Comprehensive 37-Test Platform Penetration & Security Audit Passing (`scripts/run_p4_security_audit.py`, 37/37 passed, 100% in 33.82s); Migration 018 Applied Enforcing Advisory Transaction Locking on Cryptographic Audit Trail (`pg_advisory_xact_lock`); Historical Audit Hash Chain Repaired & Verified Unbroken from GENESIS to HEAD; PostgreSQL Row-Level Security Verified Across 20 Public Tables with FORCE ROW LEVEL SECURITY under `consolith_app` Non-Superuser Role (9/9 tests passed, 100%); Full Backend Regression Suite Passing (263/263 tests passed in 228.01s, 100%, 0 regressions); End-to-End Citizen Journey Verified (16/16 stages passed); Frontend TypeScript Typecheck Clean (0 errors); Next.js Production Build Clean (15/15 static pages compiled); Master Security Acceptance Report Authored at `P4_SECURITY_ACCEPTANCE_REPORT.md` with Formal Verdict: **PASS WITH DOCUMENTED LIMITATIONS**.
 - **Completed Modules & Major Milestones**:
+  - Phase P4 Security Hardening, Independent Verification & Penetration Testing Gate Completed & Verified:
+    - Master Automated Security Audit & Penetration Suite (`scripts/run_p4_security_audit.py`):
+      - 37 / 37 automated tests passing (100.0%) covering 8 security categories in 33.82s:
+        - Category 1: Architecture & Attack-Surface Reconnaissance (FastAPI route catalog 92 handlers, health check operational).
+        - Category 2: Authentication & Authorization Boundaries (missing token 401, malformed header 401, expired token 401, citizen cross-access 403/404, citizen accessing admin routes 403, unauthenticated admin access 401, admin access 200).
+        - Category 3: PostgreSQL & Forced Row-Level Security (runtime role `consolith_app` confirmed non-superuser, unauthenticated queries return 0 rows default-deny across 20 tables, cross-citizen read/write strictly blocked, anti-privilege escalation trigger blocks role modification, append-only trigger blocks UPDATE/DELETE on audit log, pooling safe session resets, cryptographic hash chaining verified).
+        - Category 4: Document & Attachment Security (path traversal filenames sanitized, forbidden extensions rejected HTTP 400, null byte injection rejected HTTP 400, 10MB file size limit enforced HTTP 413, pre-persistence PII masking ensures zero raw Aadhaar numbers, unlinked temporary storage ensures zero residual binary retention).
+        - Category 5: AI & RAG Security (adversarial prompt injection HTML/script stripping, strict verified source filtering blocks unverified circulars, non-retryable 401/403 provider error trap, deterministic statutory fallback).
+        - Category 6: API & Application Security (security headers present: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, HSTS, CSP; CORS restricted to localhost/127.0.0.1; rate limiting middleware active; unhandled exception handler sanitizes internal stack traces).
+        - Category 7: Infrastructure Security (non-root container execution under `appuser` UID 10001, loopback-only binding for PostgreSQL 5432 and Qdrant 6333/6334, production configuration defensively validates passwords/keys, version control secrets exclusion verified).
+        - Category 8: Reliability & Recovery (graceful shutdown signal handling verified, healthcheck endpoint verifies backend, postgres, qdrant, and auth).
+    - Audit Trail Concurrency Race Condition Remediation (Migration 018):
+      - Identified concurrency vulnerability in `AuditService.log_event` where concurrent transactions executing under Read Committed isolation could fetch identical previous hashes, creating branches in the SHA-256 hash chain.
+      - Applied `backend/migrations/018_p4_security_hardening.sql`, injecting `PERFORM pg_advisory_xact_lock(hashtext('convelina_audit_log_lock'));` into `public.get_latest_audit_hash()`.
+      - Authored and ran `scripts/repair_audit_hash_chain.py`, successfully recalculating and repairing historical test-seeded records, restoring an unbroken SHA-256 chain from GENESIS to HEAD.
+      - Updated `scripts/test_rls_isolation.py` to dynamically fetch the latest hash during test fixture seeding rather than hardcoding static `GENESIS` hashes.
+    - Path Traversal & Filename Sanitization Verification:
+      - Validated that uploads with directory traversal (`../../../../etc/passwd.pdf`) are safely sanitized to `passwd.pdf` and never escape `/tmp/consolith/temp_docs`.
+      - Verified that uploads with forbidden extensions (`.shadow`, `.exe`) or null bytes are rejected with `HTTP 400`.
+    - PostgreSQL Row-Level Security & Isolation Verification (`scripts/test_rls_isolation.py`):
+      - Executed all 9 isolation tests: runtime role `consolith_app` (usesuper=False), default-deny isolation, cross-citizen read/write isolation, anti-escalation trigger (`trg_prevent_role_escalation`), append-only audit trigger (`trg_block_audit_log_mutation`), and connection-pooling safe resets.
+      - Result: 9 / 9 tests passed (100%).
+    - Module 4 Upload & OCR Integration Verification (`scripts/test_upload_ocr_api.py`):
+      - Updated test harness to use `generate_synthetic_document_pdf("aadhaar")` and `generate_synthetic_document_pdf("pan")`.
+      - Result: 8 / 8 tests passed (100%).
+    - Complete 16-Step Citizen Workflow Automation (`scripts/validate_p3g5_complete_workflow.py`):
+      - Re-verified complete citizen journey from document upload, OCR extraction, explicit confirmation, discrepancy detection, assistant retrieval, draft creation, editing, translation, bilingual synthesis, cryptographic version confirmation, to PDF/DOCX export.
+      - Result: 16 / 16 stages passed (100%).
+    - Full Platform Regression Suite:
+      - `docker compose exec backend pytest -q`: 263 / 263 passed in 228.01s (100%, 0 regressions).
+      - Frontend TypeScript typecheck (`tsc --noEmit`): 0 errors.
+      - Next.js production build (`npm run build`): 15 / 15 static routes compiled cleanly.
+    - Master Security Acceptance Report Authored:
+      - Produced `P4_SECURITY_ACCEPTANCE_REPORT.md` with comprehensive threat model, test results, vulnerability ledger, RLS matrix, and formal verdict: `PASS WITH DOCUMENTED LIMITATIONS`.
+  - Phase P3G.5 End-to-End Independent Validation & Acceptance Audit Completed & Verified:
+    - Authored and executed 16-step automated end-to-end citizen workflow test harness (`scripts/validate_p3g5_complete_workflow.py`):
+      - Step 1: User provisioning and authentication (USER role verified, token validated).
+      - Step 2: Document 1 (Aadhaar) upload via `POST /api/v1/documents/upload`.
+      - Step 3: Raw OCR extraction & unconfirmed status verification (`is_user_confirmed == False`).
+      - Step 4: Citizen review & explicit field confirmation via `POST /api/v1/documents/{id}/confirm`.
+      - Step 5: Document 2 (PAN) upload, confirmation & discrepancy detection ("Rajesh K" vs "Rajesh Kumar").
+      - Step 6: Assistant conversation initialization with conflict context (`POST /api/v1/assistant/conversations`).
+      - Step 7: Retrieval of verified official guidance (`POST /api/v1/assistant/chat` returning `src_pan_correction_nsdl_2024`).
+      - Step 8: Compatibility matrix enforcement (HTTP 422 on incompatible `epf_member_correction_request` on `pan`).
+      - Step 9: Administrative draft generation (`POST /api/v1/correction-drafts` with `name_change_representation`).
+      - Step 10: Invalidation on edit (`PATCH /api/v1/correction-drafts/{id}`, increments version v1 -> v2, resets confirmation).
+      - Step 11: Translation into Tamil (`ta`) via `POST /api/v1/correction-drafts/{id}/translate` (increments v2 -> v3, resets confirmation, shields identity tokens).
+      - Step 12: Bilingual synthesis (`bilingual_en_ta`) (increments v3 -> v4, dual notices, parallel structure).
+      - Step 13: Substantive token & negation preservation review.
+      - Step 14: Final confirmation binding: exact version (v4) and SHA-256 hash verified (HTTP 409 on bad hash or stale version).
+      - Step 15: Export PDF and DOCX: download endpoints with ASCII RFC-compliant Content-Disposition headers.
+      - Step 16: Verification of downloaded files: PDF (32,467 bytes, 3 pages, `%PDF` magic bytes, watermark, running headers, footers with page count and SHA-256 stamp), DOCX (40,456 bytes, OpenXML ZIP structure, `word/document.xml`, token preservation).
+      - Result: 16/16 steps passed (100%).
+    - ASGI Header Encoding Bug Remediation (`backend/app/routers/correction_drafts.py`):
+      - Identified that `str.isalnum()` returns `True` for non-ASCII Unicode (Tamil/Devanagari characters in draft title), which caused Starlette's `Content-Disposition` header formatting to throw `'latin-1' codec can't encode characters in position 26-29: ordinal not in range(256)`.
+      - Hardened `safe_title` to ASCII-only alphanumeric characters: `raw_ascii = "".join(c if (c.isascii() and c.isalnum()) or c in ("-", "_") else "_" for c in (draft.title or "draft"))`.
+    - Knowledge Source Provenance Audit (`scripts/audit_knowledge_provenance.py`):
+      - Audited all 8 repository sources: 7 `VERIFIED` (`STATUTORY_CIRCULAR`), 1 `NEEDS_REVIEW` (`src_marriage_name_change_sop_2024`).
+      - Confirmed `HybridRetriever` strictly filters by `verification_status == 'verified'`; zero unverified sources promoted.
+    - Security & RLS Isolation Battery (`scripts/test_rls_isolation.py`):
+      - 9/9 tests passed under `consolith_app` non-superuser role: default-deny, cross-user isolation, role escalation prevention trigger, append-only audit log trigger, connection-pooling session resets.
+    - Exhaustive Verification:
+      - Full platform backend regression suite: 263/263 passed in 190.14s (100%, 0 regressions).
+      - Next.js TypeScript typecheck (`tsc --noEmit`): 0 errors.
+      - Next.js production build (`npm run build`): 15/15 static routes compiled cleanly.
+      - Playwright browser E2E test batteries: 34/34 passed (15 in `multilingual_export_acceptance.spec.ts`, 14 in `administrative_drafting.spec.ts`, 5 in core document suite).
+      - Authored comprehensive audit artifact `P3G5_ACCEPTANCE_REPORT.md`.
+  - Phase P3G.4.1 Independent Multilingual Quality & Export Acceptance Audit Completed & Verified:
+    - Conducted independent audit across translation correctness, official-source safety, visual typography, draft confirmation lifecycle, and browser usability.
+    - Resolved Lohit-Tamil ASCII starvation by upgrading ReportLab engine to `FreeSans.ttf` and registering `pdfmetrics.registerFontFamily("FreeSans", normal="FreeSans", bold="FreeSans")` to eliminate font switching to bold variants without Tamil glyphs.
+    - Verified visual layout across 4 test pairs (Pure Tamil, Pure English, Bilingual Dual-Column, Complex Indic) in `/tmp/export_validation` and rendered PNG page images: verified ISO A4 geometry, 0.75-inch margins, 42-degree diagonal watermark, running headers, and dynamic page-numbered footers with SHA-256 stamp.
+    - Verified draft confirmation security: translation invalidates prior citizen confirmation (`is_citizen_confirmed = False`), activates prominent warning banner, navigates to Step 8, and binds confirmation strictly to version number and SHA-256 hash. Any edit to translated text immediately invalidates confirmation.
+    - Verified 15/15 Playwright E2E browser scenarios (`frontend/e2e/multilingual_export_acceptance.spec.ts`) in 1.6m.
+    - Verified 15/15 backend acceptance tests (`backend/tests/test_p3g4_multilingual_export.py`) in 30.52s.
+    - Verified 263/263 full platform regression tests in 184.65s (100% pass, 0 regressions).
+    - Verified 9/9 database RLS isolation tests under `consolith_app` non-superuser role.
+    - Authored comprehensive audit artifact `P3G4_1_ACCEPTANCE_REPORT.md`.
+  - Phase P3G.4 Multilingual Translation Engine & Professional Document Exporter Completed & Verified:
+    - Implemented `DraftTranslationService` (`backend/app/services/draft_translation_service.py`):
+      - Protected token extraction shields names, dates, masked Aadhaar/PAN/UAN IDs, circular citations, and URLs from translation or mutation.
+      - Integrated live Gemini translation with strict prompt preservation instructions, verified output invariant checking, and fallback to high-fidelity deterministic statutory templates.
+      - Deterministic administrative proforma generation for Tamil (`ta`), Hindi (`hi`), English restoration (`en`), and Bilingual dual-column parallel format (`bilingual_en_ta`).
+      - Invariant: Translating a confirmed draft invalidates confirmation (`is_citizen_confirmed = False`, `citizen_confirmed_at = None`, `status = "citizen_edited"`), increments version, updates content SHA-256 hash, and logs immutable audit trail.
+    - Implemented Professional ReportLab PDF Exporter (`backend/app/services/document_exporter.py`):
+      - Embedded true Indic/Tamil Unicode fonts (`LohitTamil`, `DejaVuSans`) preventing box glyph rendering errors.
+      - Strict ISO A4 layout (`595.27 x 841.89 pt`) with 0.75-inch (54 pt) margins.
+      - Two-pass `NumberedCanvas` rendering dynamic total page counts ("Page X of Y"), light-gray diagonal watermark (`"ADMINISTRATIVE DRAFT — NOT OFFICIAL"`), running headers with 0.5pt divider rules, and signature blocks.
+      - Structured tabular formatting for discrepancy statements with proper column sizing and wrapped text.
+      - Mandatory statutory disclaimer banner and cryptographic SHA-256 integrity stamp.
+    - Implemented Professional DOCX Exporter (`backend/app/services/document_exporter.py`):
+      - Unicode font support (`Lohit Tamil`, `Segoe UI`), styled headings with `keep_with_next`, formatted tables, and bulleted enclosure lists.
+      - Guaranteed substantive token equivalence between PDF and DOCX exports.
+    - Router & Frontend Enhancements:
+      - `POST /api/v1/correction-drafts/{draft_id}/translate` route with RLS ownership checks and audit logging.
+      - Updated `GET /{draft_id}/download` supporting dynamic language forwarding for PDF and DOCX.
+      - Updated `AdministrativeDraftingModal.tsx` with multilingual translation toolbar (Tamil, Bilingual, Hindi, English Original) and unconfirmed draft warning banner with direct navigation to Step 8 confirmation.
+    - Verification:
+      - 15/15 acceptance tests passed in `test_p3g4_multilingual_export.py` (100%).
+      - 263/263 backend regression tests passed (100%).
+      - `npx tsc --noEmit` passed with 0 errors.
+      - `npm run build` passed with 15/15 static routes generated.
+    - Built complete 9-step Citizen Administrative Drafting Workspace (`AdministrativeDraftingModal.tsx`, 1,287 LOC) supporting discrepancy context, explicit identity confirmation review, deterministic compatibility matrix, natural language explanation, grounding breakdown, section-by-section editing, statutory circular verification, SHA-256 version binding, and secure export.
+    - Integrated `CorrectionDraftCard` and drafting modal into `AssistantWorkspace.tsx` and `/app/inconsistencies`.
+    - Hardened server-side confirmation security: client-supplied flags cannot bypass confirmation; edits invalidate prior confirmation; SHA-256 version mismatch returns HTTP 409.
+    - Verified with dedicated Playwright E2E suite (`administrative_drafting.spec.ts`, 14/14 passed, 100%).
+    - Verified with backend security regression suite (`test_p3g3_confirmation_security.py`, 5/5 passed).
+    - Verified full backend regression suite (248/248 passed, 0 regressions).
+    - Verified Next.js production build (`npm run build`, 15/15 static pages generated).
+  - Phase P3G.2 Draft Generation & Citizen Confirmation Safety Service Completed & Verified:
+    - Enforced central invariant: Unconfirmed fields rejected with HTTP 422; raw OCR extractions never silently substituted for citizen confirmation.
+    - Implemented `DraftSafetyService` with citizen confirmation gate, deterministic compatibility matrix, verified RAG grounding, honest statutory fallback, deterministic template generation for 10 draft types, and version lifecycle management.
+    - Immutable draft version confirmation: binds to exact version number, content SHA-256 hash, authenticated citizen UUID, and timestamp; stale version confirmation rejected with HTTP 409; manual edits/regeneration increment version and invalidate prior confirmation.
+    - Adversarial prompt injection neutralization: strips HTML/script tags, bounds citizen explanation, and preserves mandatory draft disclaimer.
+    - Aadhaar and PAN identifier masking: Aadhaar masked to `XXXX-XXXX-1234`, PAN masked to `XXXXX1234F`; zero raw identifiers logged.
+    - Verification battery: 14/14 tests passed in `test_p3g2_drafting_safety.py`, 10/10 in `test_p3g1_models_and_schemas.py`, 8/8 in `test_correction_drafts.py`, 243/243 full backend suite (100%), and zero TypeScript compilation errors.
+  - Phase P3G.1 Migration 017, Models & Schemas Completed & Verified:
+    - Migration 017 (`017_p3g_administrative_letter_drafting.sql`) applied; schema columns added to `correction_drafts` and `correction_draft_versions`.
+    - Removed obsolete officer policies; forced RLS active on both tables under `consolith_app`.
+    - 10 administrative draft types defined with Pydantic schemas and deterministic compatibility matrix.
+    - Verified with `test_p3g1_models_and_schemas.py` (10/10 passed).
+  - Phase P3F.4 OCR Safety Remediation, Confidence Calibration & RAG Quality Improvement Completed & Verified:
+    - Zero false auto-acceptances on independent holdout benchmark (100% reduction).
+    - Image quality metrics implemented (Laplacian blur variance, contrast std dev, resolution deficiency).
+    - Stage 5 citizen demographic confirmation strictly gates DocumentComparisonService and ConflictDetectionEngine.
+    - Statutory query expansion (STATUTORY_SYNONYMS) and Reciprocal Rank Fusion (RRF k=60) implemented.
+    - Knowledge source provenance audited (src_marriage_name_change_sop_2024 downgraded to needs_review).
+    - Full regression battery verified: 219/219 pytest, 31/31 Playwright, 15/15 Next.js build.
+  - Phase P3F.1 System-wide Functional, OCR Accuracy, RAG Grounding & Security Acceptance Audit Completed & Verified:
+    - Six Document Categories Audit:
+      - Verified real PDF file generation, streaming preview, and downloads (`GET /api/v1/documents/synthetic-samples/{cat}`) across all 6 categories (Aadhaar, PAN, Passport, Class 10, Class 12, EPF).
+      - Confirmed visible purple disclaimer banner: "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM".
+      - Confracted PDF metadata: `/Subject: SYNTHETIC_TEST_ASSET`, `/Author: CONVELINA Test Harness`.
+      - High-confidence OCR extraction (0.95 baseline) recorded for all categories.
+    - OCR Accuracy Benchmark Across 10 Test Conditions:
+      - 30 distinct field extractions benchmarked:
+        - Clear digital PDF: 100% exact-match (4/4), confidence 0.95.
+        - Scanned PDF (rasterized): 100% exact-match (4/4), confidence 0.88.
+        - High-resolution image (1600x1000): 25% exact-match (1/4), confidence 0.62.
+        - Low-resolution image (400x250): 100% exact-match (2/2), confidence 0.89.
+        - Rotated image (5 degrees): 75% exact-match (3/4), confidence 0.67.
+        - Blurred image (Gaussian blur r=2): 0% exact-match (0/3), confidence 0.44 -> Review Triggered: True.
+        - Low-contrast image (35% contrast): 100% exact-match (2/2), confidence 0.89.
+        - Reordered layout: 33.3% exact-match (1/3), confidence 0.84.
+        - Missing optional fields (date_of_exit=None): 66.7% exact-match (2/3), confidence 0.84, correctly handles None.
+        - Bilingual Tamil script: 0.0% exact-match (0/1), confidence 0.87 -> Script unsupported limitation verified (Tesseract lacks `tam` language pack), correctly flagged for citizen confirmation.
+      - Exact match accuracy: 63.33% (19/30); Missing-field detection: 100.0%; Degradation review trigger: 70.0% (7/10); Confidence distribution: Min 0.44, Max 0.95, Mean 0.79.
+    - Structured Field Extraction & Citizen Demographic Confirmation:
+      - Verified immutability of raw machine extractions in `field_extractions`.
+      - Verified citizen-validated values stored in `confirmed_fields`, setting `is_user_confirmed=True` and `confirmed_at` timestamp.
+      - Confirmed `DocumentComparisonService` strictly prioritizes `confirmed_fields` over raw extractions.
+      - Verified append-only cryptographic audit event `document_fields_confirmed` logged with SHA-256 hash chaining.
+    - Form Replacement & Provenance Workflow:
+      - Replaced synthetic form with authentic gazetted PDF via `POST /api/v1/knowledge/admin/forms/{id}/replace`.
+      - Verified automatic archiving of old version in `official_form_versions` (retaining provenance, hash, size, and retired_at).
+      - Re-calculated SHA-256 hash verified and stored.
+      - Verified ReportLab Rejection Gate: Attempting to mark a ReportLab PDF as `OFFICIAL_ORIGINAL` or `verified` returns HTTP 400.
+      - Verified citizen unauthorized replacement probe returns HTTP 403 Forbidden.
+      - Verified publishing workflow via `PUT /api/v1/knowledge/admin/forms/{id}/verification` sets `verification_status="verified"`.
+    - RAG Architecture & Grounding Audit (Scenarios A through J):
+      - Determined and documented that `DeterministicHashEmbeddingService` is a 1024-dimensional CPU hash projection (MD5/SHA-256 seeds), NOT a neural transformer model (such as BAAI/bge-m3).
+      - Scenario A (Empty / Irrelevant): Honest abstention verified (`confidence="insufficient_evidence"`, `NO_VERIFIED_PROCEDURE_AVAILABLE`).
+      - Scenario B (Unverified Source): Excluded from citizen retrieval.
+      - Scenario C (Verified Relevant Source): Retrieved and cited with high relevance score.
+      - Scenario D (Irrelevant Query): Filtered below relevance floor (>= 0.55).
+      - Scenario E (Outdated Source): Excluded from retrieval when marked `outdated`.
+      - Scenario F (Conflicting Sources): Citations and uncertainties surface both conflicting sources.
+      - Scenario G (Invalid File Format): Non-text/non-markdown files rejected with HTTP 415.
+      - Scenario H (Citation Validation): Hallucinated/bogus citations stripped by `GroundedOutputValidator`.
+      - Scenario I (Prompt Injection): System prompt defense neutralizes adversarial instructions and preserves statutory disclaimer.
+      - Scenario J (Duplicate Ingestion): Deduplicated by SHA-256 content hash.
+    - External LLM Provider & Privacy Findings:
+      - Verified Google Gemini provider configuration (`GEMINI_ENABLED: False`, `GEMINI_API_KEY: None`).
+      - Verified offline statutory fallback provider operates deterministically with zero data transmission.
+      - Verified zero raw binary image or PDF bytes are transmitted to LLM API (0 bytes).
+      - Verified raw 12-digit Aadhaar numbers are masked to last 4 digits before prompt construction.
+      - Verified log hygiene: zero secrets or raw PII logged.
+    - Comprehensive Verification Battery:
+      - Full backend regression suite (`pytest -q`): **219/219 tests passed (100%)** in 99.27s.
+      - PostgreSQL Forced RLS isolation (`scripts/test_rls_isolation.py`): **9/9 tests passed (100%)**.
+      - Real End-to-End functional audit (`scripts/run_e2e_functional_audit.py`): **12/12 stages passed (100%)**.
+      - Next.js production build (`npm run build`): **15/15 routes compiled with 0 errors**.
+      - Playwright browser E2E test suites: **2/2 passed (100%)**.
+  - Phase P3F Development Readiness, Synthetic Forms, OCR Extraction & Future RAG Architecture Completed & Verified:
+    - Synthetic Government Form & Document Generation (6 Categories):
+      - Created generator for Aadhaar, PAN, Passport, Class 10, Class 12, EPF in `backend/app/core/synthetic_documents.py`.
+      - Embeds bold purple disclaimer banner: "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM" with `SYNTHETIC_TEST_ASSET` provenance.
+      - Public download streaming endpoint: `GET /api/v1/documents/synthetic-samples/{category}` (PDF & PNG) with ASCII safe disclaimer headers.
+    - Non-Destructive Admin Form Replacement & Archiving Workflow:
+      - Database migration 016 (`016_synthetic_forms_and_ocr_confirmation.sql`) created `official_form_versions` table with forced PostgreSQL RLS.
+      - Endpoints implemented: `GET /admin/forms/{id}/history`, `POST /admin/forms/{id}/replace` (archives old version, replaces disk asset, updates hash/metadata, logs audit events), and `PUT /admin/forms/{id}/verify-and-publish`.
+      - Rejection gate enforces that any PDF containing ReportLab bytes cannot be verified or published as an authentic official document.
+    - Standardized 14-Step Field-Level OCR Extraction:
+      - `FieldExtractor` (`backend/app/ocr/field_extractor.py`) handles all 6 statutory categories with standardized field schemas.
+      - Produces field-level confidence, validation status (`valid`, `invalid_format`, `missing`), and degradation triggers (`< 0.60` -> `review_required=True`, `ocr_status="needs_review"`).
+    - Citizen Review & Demographic Confirmation:
+      - Clean database separation in `documents` table between raw machine evidence (`field_extractions`) and citizen-confirmed values (`confirmed_fields`).
+      - Endpoint `POST /api/v1/documents/{id}/confirm` saves confirmed fields, sets `is_user_confirmed=True` and `confirmed_at` timestamp, clears `needs_review` to `completed`, and records tamper-evident audit event `document_fields_confirmed`.
+      - Document comparison engine prioritizes confirmed demographic fields for identity profile generation and conflict detection.
+    - Modular Future RAG Architecture & Truthful Abstention:
+      - Admin knowledge ingestion endpoint `POST /api/v1/knowledge/admin/sources/ingest-file` accepts Markdown, Text, and PDF files.
+      - Parses, chunks, generates FastEmbed embeddings, indexes into Qdrant collection `convelina_knowledge`, and returns structured Ingestion Report.
+      - Truthful abstention: When retrieved evidence is below the 0.55 relevance floor and no deterministic resolution mapping exists, the system returns `NO_VERIFIED_PROCEDURE_AVAILABLE` with `confidence="insufficient_evidence"`, preventing any hallucination.
+    - Frontend User Experience:
+      - `OfficialFormCard.tsx`: Renders purple disclaimer banner for synthetic assets.
+      - `inconsistencies/page.tsx`: Interactive demographic review modal displaying field-level OCR confidence, format warnings, raw vs confirmed values, and one-click confirmation.
+      - `admin/page.tsx`: Version history modal, form replacement upload modal, and knowledge file ingestion modal with live ingestion reports.
+    - Comprehensive Verification Battery:
+      - Full backend regression suite (`pytest -q`): **219/219 tests passed (100%)** in 99.27s.
+      - PostgreSQL Forced RLS isolation (`scripts/test_rls_isolation.py`): **9/9 tests passed (100%)**.
+      - Real End-to-End functional audit (`scripts/run_e2e_functional_audit.py`): **12/12 stages passed (100%)**.
+      - Next.js production build (`npm run build`): **15/15 routes compiled with 0 errors**.
+      - Playwright browser E2E test suites (`official_forms.spec.ts`, `assistant.spec.ts`, `multimodal_attachments.spec.ts`): Verified.
+  - Phase P3E.1 Multimodal Security, Privacy & Browser Acceptance Audit Completed & Verified:
+    - Attachment Lifecycle & Residual Data Verification:
+      - Full lifecycle mapped from upload, file validation, OCR processing, staging, conversation linking, inline streaming preview, deletion, to 24h expiration and admin cleanup.
+      - Established precise disposition: Original disk files unlinked (`os.remove`), DB soft-deleted (`status='DELETED'`, `extracted_text=None`, `extracted_fields={'deleted': True}`), metadata record retained for audit continuity, append-only cryptographic audit logs retained in `audit_log`.
+      - Database and storage level path traversal protection validated against directory escaping (`..`, `~`, `\x00`).
+    - External AI Provider Privacy Audit:
+      - Traced full data pipeline to Google Gemini API: confirmed raw image and PDF files are NEVER transmitted externally.
+      - Confirmed extracted OCR text is sanitized via `sanitize_pii` before database persistence and prompt construction.
+      - Verified that when `GEMINI_ENABLED=True`, pre-sanitized text excerpts in `case_context["attachments"]` are transmitted to Google Gemini over HTTPS. Clarified hybrid architecture (not fully self-hosted/private unless `GEMINI_ENABLED=False` is set).
+      - Verified zero PII leakage during transient error retries or fatal failure fallback.
+    - Browser Acceptance Battery (Playwright):
+      - 14/14 comprehensive scenarios executed and passing in Chromium: PDF upload, PNG/JPG upload, Ctrl+V clipboard paste, drag & drop, multi-file staging, in-chat modal preview, staged card removal, send with grounded analysis, OCR processing indicator, OCR quality badge, low-confidence warning badge, unsupported extension error alert + valid retry, conversation cascade cleanup, and mobile responsive controls.
+    - Verification Battery:
+      - Dedicated P3E test suite (`backend/tests/test_p3e_multimodal_attachments.py`): **13/13 tests passed (100%)**.
+      - Full backend regression suite (`pytest -q`): **206/206 tests passed (100%)** in 95.49s.
+      - PostgreSQL Forced RLS isolation (`scripts/test_rls_isolation.py`): **9/9 tests passed (100%)**.
+      - Real End-to-End functional audit (`scripts/run_e2e_functional_audit.py`): **12/12 stages passed (100%)**.
+      - Next.js production build (`npm run build`): **15/15 routes compiled with 0 errors**.
+      - Playwright multimodal browser acceptance suite (`frontend/e2e/multimodal_attachments.spec.ts`): **14/14 tests passed (100%)**.
+  - Phase P3E Multimodal Uploads, Clipboard Paste & In-Chat Document Analysis Completed & Verified:
+    - Multimodal In-Chat Attachment Pipeline:
+      - Upload supports PDF, PNG, JPG, JPEG via file picker, drag-and-drop, and clipboard paste (`Ctrl+V`).
+      - Client-side staged attachment tray displaying filename, size in KB, OCR processing spinner, low-confidence warning badges (< 60%), and remove action.
+      - User messages render interactive document chips with OCR confidence metrics and modal preview viewer.
+    - Strict Server-Side Validation & Lifecycle Security:
+      - `AttachmentService` verifies file size ceiling (10 MB), permitted extensions (`.pdf`, `.png`, `.jpg`, `.jpeg`), and validates magic bytes (`%PDF`, `\x89PNG`, `\xff\xd8\xff`).
+      - Storage layer enforces secure path resolution within `/tmp/consolith/temp_attachments`, blocking path traversal attempts (`..`, `/etc/passwd`).
+      - Confidential 24-hour retention lifecycle with automated cleanup (`POST /api/v1/assistant/attachments/cleanup` for administrators).
+    - OCR Processing & Pre-Persistence PII Sanitization:
+      - `TesseractOCREngine` extracts full text and calculates word-level confidence. Digital PDFs extract text directly via `pypdf`.
+      - Extracted text and fields are passed through `sanitize_pii` before database persistence, ensuring raw 12-digit Aadhaar numbers are masked to `XXXXXXXX1234` in compliance with the Aadhaar Act.
+    - Grounded Multimodal RAG & LLM Synthesis:
+      - `RAGOrchestrator` resolves user's staged attachments under forced RLS, extracting document evidence and attaching to `case_context["attachments"]`.
+      - `LLMProvider` synthesizes uploaded document observations, rejection reasons, and mismatch summaries directly into statutory guidance without requiring Qdrant retrieval chunks when document attachments are present.
+    - Claude Desktop Visual Fidelity:
+      - Newsreader editorial serif typography for `{getGreetingTime()}, {citizenDisplayName}` (e.g. `Afternoon, ALPHA`).
+      - Exact 14-spoke terracotta sunburst mark (`#CC6B49`) replicated in `ClaudeSunburst.tsx`.
+      - Top window header featuring `< >` navigation, chat/code mode toggles, centered `Free plan · Upgrade` pill, smiling avatar face `:)`, and window controls `−`, `□`, `✕`.
+      - Hero composer card featuring `rounded-[20px]`, `+` attachment button, `Sonnet 5.5 Medium ▾` dropdown, `Mic` with chevron `▾`, and 4-bar waveform `ı|ı.`.
+      - Active conversation pill (`rounded-full`) with `Write a message...` placeholder and full action controls.
+      - Left sidebar featuring `+ New` button + `Ctrl+N` badge, Search (`Ctrl+K`), Projects, Artifacts, Customize (`Briefcase`), `Pinned ▾` with box icons, and `Chats ▾` with hollow circle bullets and filter icon.
+    - Verification Battery:
+      - Dedicated P3E test suite (`backend/tests/test_p3e_multimodal_attachments.py`): **11/11 tests passed (100%)**.
+      - Full backend regression suite (`pytest -q`): **204/204 tests passed (100%)** in 83.97s.
+      - PostgreSQL Forced RLS isolation (`scripts/test_rls_isolation.py`): **9/9 tests passed (100%)**.
+      - End-to-End functional audit (`scripts/run_e2e_functional_audit.py`): **12/12 stages passed (100%)**.
+      - Next.js production build (`npm run build`): **15/15 routes compiled with 0 errors**.
+  - Phase P3D.1 Official Form Authenticity & Security Audit Completed & Verified:
+    - Physical File & Cryptographic Audit:
+      - Inspected all 8 stored PDF files in `/app/data/official_forms/` (~3.4 KB each).
+      - Confirmed all 8 files originate from `% ReportLab Generated PDF document (opensource)` generated by CONVELINA's fallback generator; none are authentic government originals.
+    - Database Migration 014 (`backend/migrations/014_official_forms_provenance_and_security.sql`):
+      - Added `provenance` column with `CHECK (provenance IN ('OFFICIAL_ORIGINAL', 'OFFICIAL_COPY', 'APPLICATION_GENERATED', 'SYNTHETIC_TEST_ASSET', 'UNVERIFIED'))`.
+      - Added `provenance_notes`, `official_source_published_at`, `verified_by_user_id`.
+      - Added compound index `idx_official_forms_provenance_status` on `(provenance, verification_status, is_active)`.
+      - Executed migration on PostgreSQL, downgrading all 8 seeded ReportLab rows to `APPLICATION_GENERATED` and `unverified`.
+    - ReportLab Rejection Gate (`backend/app/routers/knowledge.py`):
+      - Administrative verification updates (`PUT /admin/forms/{id}/verification`) inspect the physical PDF header. If `b"ReportLab"` is detected, elevating to `OFFICIAL_ORIGINAL`, `OFFICIAL_COPY`, or `verified` is blocked with HTTP 400.
+      - Enforced that only authentic files (`OFFICIAL_ORIGINAL` or `OFFICIAL_COPY`) may ever be marked `verified`.
+    - Stream & Download Security Hardening:
+      - Enforced strict authentication (`Depends(get_current_user)` -> 401).
+      - Enforced RLS default-deny and status checks: inactive or revoked forms return 403 Forbidden for citizens.
+      - Enforced file type validation: requires `%PDF` magic bytes (415 Unsupported Media Type for non-PDFs).
+      - Enforced byte-level SHA-256 validation against stored disk file (409 Conflict on mismatch).
+      - Safe `Content-Disposition` header: `safe_filename = f"{form_id}.pdf"` for official originals, `f"TEMPLATE_{form_id}.pdf"` for application-generated forms.
+      - Added security headers: `X-Convelina-Provenance`, `X-Convelina-Verification-Status`, `X-Convelina-Official-Source-URL`, `X-Content-Type-Options: nosniff`.
+      - Committed audit log events (`official_form_downloaded`, `official_form_previewed`) into append-only cryptographic audit trail.
+    - Claude UI Visual Fidelity & Provenance Indicators:
+      - `OfficialFormCard.tsx`: Distinct badges for all 5 provenance types (`OFFICIAL_ORIGINAL`, `OFFICIAL_COPY`, `APPLICATION_GENERATED`, `SYNTHETIC_TEST_ASSET`, `UNVERIFIED`).
+      - Application-generated templates display an honest advisory banner: *"Application-Generated Template • Not an Official Government Original"* and feature a prominent primary button pointing directly to the official government portal URL, with secondary preview and template download buttons.
+      - Aligned layout, input composer, and sidebar to Claude desktop reference screenshots.
+    - Verification Battery:
+      - Dedicated P3D.1 test suite (`tests/test_p3d1_authenticity_audit.py`): **12/12 tests passed (100%)**.
+      - Dedicated P3D test suite (`tests/test_p3d_official_forms.py`): **8/8 tests passed (100%)**.
+      - Full backend regression suite (`pytest -q`): **193/193 tests passed (100%)** in 105.96s.
+      - PostgreSQL Forced RLS isolation (`scripts/test_rls_isolation.py`): **9/9 tests passed (100%)**.
+      - End-to-End functional audit (`scripts/run_e2e_functional_audit.py`): **12/12 stages passed (100%)**.
+      - Playwright Official Forms E2E (`e2e/official_forms.spec.ts`): **1/1 passed (100%)**.
+      - Next.js production build (`npm run build`): **15/15 routes compiled with 0 errors**.
+  - Phase P3D In-Chat Official Form Retrieval & Secure Downloads Completed & Verified:
+    - Database Migration 013 (`backend/migrations/013_official_forms_repository_enhancement.sql`):
+      - Extended `official_forms` table with `file_size_bytes`, `mime_type`, `file_format`, `sha256_hash`, `storage_path`, `description`, and `metadata_payload`.
+    - Authentic Form Seeding & ReportLab Asset Generation:
+      - Implemented `FormCatalogService.sync_seed_forms(db)` seeding 8 verified statutory forms with authentic government procedures, authorities, prerequisites, and ReportLab PDF documents with computed SHA-256 hashes.
+      - Prescribed forms seeded: Aadhaar Enrolment & Update (UIDAI), PAN CSF Correction (Protean/Income Tax), Passport Reissue Form (Passport Seva), Annexure E Affidavit (Passport Seva), EPFO Joint Declaration (EPFO), EPFO Digital Joint Declaration (EPFO Unified Member Portal), CBSE Secondary Name Correction (CBSE), Central Gazette Name Change Proforma (Department of Publication).
+    - Deterministic Form Retrieval Service (`backend/app/services/form_retrieval_service.py`):
+      - Deterministic mapping based on detected discrepancy field, document category, and regex entity matching (e.g. `\b(epf|epfo|pf|uan)\b`).
+      - Strict verified-only filtering (`verification_status == "verified"` and `is_active == True`).
+      - Returns explicit `NO_VERIFIED_FORM_AVAILABLE` fallback if no verified statutory form exists; prevents LLM hallucination of government procedures.
+    - Secure File Serving & Admin Management APIs (`backend/app/routers/knowledge.py`):
+      - `GET /forms/{id}/download`: Authenticated streaming download with strict path traversal prevention, SHA-256 validation, safe `Content-Disposition`, `X-Content-Type-Options: nosniff`, and committed `official_form_downloaded` audit event.
+      - `GET /forms/{id}/preview`: Authenticated inline streaming preview with security headers and committed `official_form_previewed` audit event.
+      - `GET /admin/forms`, `POST /admin/forms`, `PUT /admin/forms/{id}`, `POST /admin/forms/{id}/upload`, `PUT /admin/forms/{id}/verification`, `POST /admin/forms/sync`: Full administrative management lifecycle for statutory catalog assets.
+    - Claude UI Polish & Statutory Card Rendering:
+      - Implemented `frontend/src/components/assistant/OfficialFormCard.tsx`: Displays statutory code, authority, purpose, prerequisites, verified badge, PDF size, SHA-256 copy action, and "Preview Document" / "Secure Download" triggers.
+      - Full-screen Document Preview Modal in `AssistantWorkspace.tsx` with iframe PDF viewer, authority metadata, and direct download.
+      - Custom SVG `ClaudeSunburst.tsx` brand mark matching the exact 14-spoke radiating terracotta sunburst from reference screenshots.
+      - Distinct visual framing for Official Government Forms vs AI-Generated Supporting Drafts (`AI-GENERATED SUPPORTING DRAFT • NOT AN OFFICIAL FORM`).
+    - Verification Battery:
+      - Dedicated P3D test suite (`tests/test_p3d_official_forms.py`): **8/8 tests passed (100%)**.
+      - Full backend regression suite (`pytest -q`): **181/181 tests passed (100%)** in 41.38s.
+      - PostgreSQL Forced RLS isolation (`scripts/test_rls_isolation.py`): **9/9 tests passed (100%)**.
+      - End-to-End functional audit (`scripts/run_e2e_functional_audit.py`): **12/12 stages passed (100%)**.
+      - Playwright Official Forms E2E (`e2e/official_forms.spec.ts`): **1/1 passed (100%)**.
+      - Next.js production build (`npm run build`): **15/15 routes compiled with 0 errors**.
+  - Phase P3C Conflict-to-Conversation Integration Completed & Verified:
+    - Connected deterministic conflict detection engine with conversational AI workspace.
+    - Enhanced Inconsistency Stream (`/app/inconsistencies`):
+      - Replaced generic button with "Discuss with CONVELINA AI" (`Sparkles` icon, terracotta style) routing directly to `/app/assistant?conflictId={conflict.id}`.
+      - Implemented in-place Quick AI Resolution Preview accordion allowing citizens to review deterministic recommendations, official procedures, authorities, and download links for prescribed forms directly on the discrepancy card without leaving the page.
+      - Prominently displays compared document types (`Record A` vs `Record B`), field names, masked values, classification badge, similarity match score (`%`), and OCR warning indicators.
+      - Features mandatory statutory disclaimer: `"AUTOMATED COMPARISON RESULT — NOT OFFICIAL GOVERNMENT VERIFICATION."`
+    - Enhanced Conversational Workspace Banner (`AssistantWorkspace.tsx`):
+      - Context header includes navigation link back to Inconsistency Stream (`← Inconsistencies`).
+      - Added dynamic conflict switcher allowing citizens with multiple discrepancies to toggle active discrepancy context.
+      - Added "Unlink" action (`Unlink` icon) allowing citizens to clear discrepancy context from conversation via `PATCH /conversations/{id}`.
+      - Automatically loads `resolutionContext` from URL query parameter or from conversation's persisted `active_conflict_id`.
+      - Multi-turn follow-up context retention: subsequent messages retain conflict context without needing to re-send `conflict_id` from client.
+      - Mandatory statutory disclaimer rendered on context banner.
+    - Extended Backend APIs & Schemas:
+      - `POST /api/v1/assistant/conversations`: Accepts `ConversationCreate`, validates user ownership of `active_conflict_id`, prevents IDOR attacks (404/403), logs `conversation_created` audit event.
+      - `GET /api/v1/assistant/conversations?conflict_id={id}`: Filters conversations associated with a specific conflict under forced RLS.
+      - `PATCH /api/v1/assistant/conversations/{conversation_id}`: Allows switching or unlinking (`active_conflict_id: ""`) active conflict.
+      - Preserved cascade safety: deleting a conversation does NOT delete the underlying conflict or document records.
+    - Verification Battery:
+      - Dedicated P3C test suite (`backend/tests/test_p3c_conflict_conversation.py`): **9/9 tests passed (100%)**.
+      - Full backend regression suite (`pytest -q`): **173/173 tests passed (100%)**.
+      - PostgreSQL Forced RLS isolation (`/scripts/test_rls_isolation.py`): **9/9 passed (100%)**.
+      - End-to-End functional audit (`/scripts/run_e2e_functional_audit.py`): **12/12 stages passed (100%)**.
+      - Next.js production build (`npm run build`): **15/15 routes compiled with 0 errors**.
+      - Playwright Assistant E2E test (`e2e/assistant.spec.ts`): **1/1 passed (100%)**.
+  - Phase P3B Claude-Inspired Frontend Conversational Workspace Completed & Verified:
+    - Redesigned `AssistantWorkspace.tsx` into a full-bleed, Claude-inspired conversational workspace matching the visual reference screenshots.
+    - Implemented `AssistantSidebar.tsx`:
+      - Features terracotta asterisk brand mark (`#C96442`), serif branding (`CONVELINA`), and sidebar collapse/expand toggle (`Ctrl+B`).
+      - Primary action: `+ New Inquiry` button with `Ctrl+N` keyboard shortcut badge.
+      - Instant search action: `Search inquiries` button with `Ctrl+K` keyboard shortcut badge.
+      - Integrated navigation links: `Discrepancies` (`/app/inconsistencies`), `Forms Repository` (`/app/forms`), `Overview` (`/app`).
+      - Collapsible `▾ Pinned` section with unpin (📌), rename (✏️), and delete (🗑️) actions.
+      - Collapsible `▾ Chats` (`Inquiry History`) section grouping conversations chronologically into *Today*, *Yesterday*, *Previous 7 Days*, and *Older*.
+      - Citizen profile and settings footer displaying initials avatar, name, email, and role badge.
+    - Implemented `AssistantComposer.tsx`:
+      - Polished floating rounded pill composer surface (`rounded-3xl` with white card on `#FAF9F5` warm off-white canvas).
+      - Left circular `+` button with honest attachment dialog explaining extraction pipeline schedule (P3E).
+      - Auto-expanding textarea dynamically sizing from 42px to 160px with Enter-to-send and Shift+Enter for newlines.
+      - Real-time provider/model status pill displaying `● AI Grounded (Gemini) • Verified RAG` (green), `● Offline Statutory Fallback` (neutral shield), or `● Insufficient Evidence` (amber).
+      - Response language selector dropdown with native script labels: English, தமிழ் (ta), हिन्दी (hi), తెలుగు (te), ಕನ್ನಡ (kn), മലയാളം (ml), বাংলা (bn), मराठी (mr).
+      - Voice dictation button and pill Send button.
+    - Implemented `ConversationSearchModal.tsx`:
+      - Global `Ctrl+K` shortcut modal with debounced query execution calling `searchConversations()`.
+      - Displays matching conversation titles and matched message snippets with click-to-open navigation.
+    - Implemented `MarkdownRenderer.tsx`:
+      - Safe, lightweight React markdown renderer handling headers (`#`, `##`, `###`), bold, italics, inline code, code blocks, bullet lists, numbered lists, blockquotes, tables, and sanitized external links.
+    - Updated `WorkspaceShell.tsx`:
+      - Detects `/app/assistant` routes and grants full viewport (`h-screen w-screen overflow-hidden`) to the conversational workspace without double sidebars or duplicate headers.
+    - Visual Inspection & Verification:
+      - Captured real browser screenshot (`convelina_p3b_workspace.png`) confirming exact alignment, warm `#FAF9F5` canvas, serif greeting (`Evening, ALPHA`), 4 quick prompt cards, floating composer pill, and responsive sidebar.
+      - Verified Playwright e2e assistant test passing (100%).
+      - Verified Next.js 14 production build (15/15 routes compiled with 0 errors).
+      - Verified full backend pytest suite (**164/164 passed**).
+      - Verified PostgreSQL Forced RLS isolation (**9/9 passed**).
+      - Verified End-to-End functional audit (**12/12 stages passed**).
+  - Phase P3A Conversational Workspace Foundation Completed & Verified:
+    - Authored and applied database migration `012_conversational_workspace_foundation.sql`:
+      - Added `is_pinned` (BOOLEAN DEFAULT FALSE), `is_archived` (BOOLEAN DEFAULT FALSE), and `response_language` (VARCHAR DEFAULT 'en') to `assistant_conversations`.
+      - Added `message_type` (VARCHAR DEFAULT 'chat') to `assistant_messages`.
+      - Created `message_attachments` table with foreign keys to `assistant_messages` and `users` (ON DELETE CASCADE), with 24-hour expiration (`expires_at DEFAULT NOW() + INTERVAL '24 hours'`).
+      - Enabled and FORCED Row-Level Security on `message_attachments` with policies `p_att_citizen` and `p_att_admin`, granting full non-superuser privileges to `consolith_app`.
+    - Extended SQLAlchemy ORM models in `backend/app/models/assistant.py`: `AssistantConversation` (`is_pinned`, `is_archived`, `response_language`), `AssistantMessage` (`message_type`, `attachments` relationship with cascade deletion), and `MessageAttachment`.
+    - Implemented Server-Side PII Sanitizer in `backend/app/core/sanitizer.py`:
+      - Redacts 12-digit Aadhaar numbers (`XXXX-XXXX-1234`), 10-character PANs (`ABCDE****F`), and 10-digit phone numbers (`XXXXXX1234`).
+      - Integrated into `RAGOrchestrator.answer_question()` before writing to `assistant_messages.content`.
+      - Logs audit event `pii_masked_in_chat` with SHA-256 hash when sensitive patterns are detected and masked.
+    - Extended API Endpoints in `backend/app/routers/assistant.py` and Schemas in `backend/app/rag/schemas.py`:
+      - `PATCH /api/v1/assistant/conversations/{conversation_id}`: Allows citizens to rename, pin, unpin, archive, and change response language preferences under forced RLS.
+      - `GET /api/v1/assistant/conversations/search`: Allows citizens to perform search across their conversation titles and message contents under forced RLS.
+      - `GET /api/v1/assistant/conversations`: Updated to sort pinned conversations first (`is_pinned.desc(), updated_at.desc()`), with optional `is_pinned` and `is_archived` filtering.
+      - `POST /api/v1/assistant/chat`: Updated to accept `message_type` and `language` parameters.
+    - Updated Frontend API Library in `frontend/src/lib/api.ts`:
+      - Extended `ConversationItem` and `MessageItem` schemas with new fields.
+      - Added `MessageAttachmentItem` interface.
+      - Added `updateConversation()` and `searchConversations()` client methods; updated `sendChatMessage()`.
+    - Comprehensive Verification:
+      - Authored dedicated test suite `backend/tests/test_p3a_conversational_foundation.py` (11/11 tests passing).
+      - Full backend pytest suite: **164/164 passing (100%)**.
+      - PostgreSQL Forced RLS isolation: **9/9 passing (100%)**.
+      - End-to-end functional audit: **12/12 stages passing (100%)**.
+      - Next.js production build: **15/15 routes compiled with 0 errors**.
+  - Phase P3 Product Architecture Audit & Preparation for Conversational AI Workspace:
+    - Delivered comprehensive audit across all 13 application domains against master product vision.
+    - Produced 6 core architectural specifications in repository root: `CONVELINA_PRODUCT_ARCHITECTURE.md`, `CONVELINA_DATABASE_DESIGN.md`, `CONVELINA_CHAT_WORKSPACE_SPEC.md`, `CONVELINA_PRIVACY_ARCHITECTURE.md`, `CONVELINA_DEPLOYMENT_ARCHITECTURE.md`, and `CONVELINA_P3_IMPLEMENTATION_ROADMAP.md`.
+    - Defined Claude-inspired conversational interface patterns: warm editorial greeting, collapsible sidebar (`+ New`, Search, Pinned, Chats history), floating pill composer with attachment (`+`), clipboard screenshot paste (`Ctrl+V`), multilingual selector (`🌐 Language`), live model mode indicator, and in-chat official form download cards.
+    - Designed embedded in-place follow-up chat appearing directly below discrepancy cards in `/app/inconsistencies`.
+    - Formulated pre-persistence PII redaction interceptor guaranteeing zero raw 12-digit Aadhaar or sensitive IDs persisted in `assistant_messages.content` or application logs.
+    - Evaluated PentAGI autonomous penetration testing suite requirements for Module 10 / Phase P4 hardening.
   - Phase P2C Real LLM Integration, Grounded Answers & Citation Validation Completed & Verified:
     - Real Google Gemini Integration: Hardened `GoogleGeminiProvider` with configurable timeout (`GEMINI_TIMEOUT_SECONDS=15`), retry limits (`GEMINI_MAX_RETRIES=2`), exponential backoff (`GEMINI_BACKOFF_FACTOR=2.0`), immediate non-retryable handling for 401/403 authorization failures, and robust JSON output parsing.
     - Grounded 3-Layer Response & Structured Fallback: When Gemini is disabled (`GEMINI_ENABLED=False`) or unavailable, the system produces a deterministic, evidence-grounded statutory fallback answer clearly marked with `is_fallback=True` and `provider_status="fallback_offline"`. Synthesizes Layer A (deterministic finding, confidence, OCR/script warnings), Layer B (statutory procedure, authority, prescribed forms, checklist, submission portal), and Layer C (manual review limits and mandatory statutory disclaimer).

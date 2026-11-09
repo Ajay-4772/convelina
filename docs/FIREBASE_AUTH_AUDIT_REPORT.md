@@ -7,6 +7,11 @@
 
 ---
 
+> [!IMPORTANT]
+> **DEVELOPMENT MODE STATUS**:
+> `LIVE FIREBASE INTEGRATION: PENDING CREDENTIAL CONFIGURATION`  
+> Real Firebase credentials are not configured in the project directory yet. Local development proceeds using mocked Admin SDK tokens and frontend simulated testing. Missing credentials return a safe `HTTP 503 Service Unavailable` error. Unrelated development work is not blocked.
+
 ## 1. Executive Summary
 
 A comprehensive pre-implementation audit was conducted across the frontend (Next.js 14), backend (FastAPI), database (PostgreSQL with forced RLS), and Firebase configuration. The system possesses a sound foundation with no duplicate authentication infrastructure. This audit identifies key components to reuse, enhancements required for Google Sign-In and account linking, and safeguards against credential leakage and privilege escalation.
@@ -84,3 +89,4 @@ A comprehensive pre-implementation audit was conducted across the frontend (Next
    - Author full 18-scenario security and functional test battery.
 6. **Phase 7 & 8 (Checkpoint & Docs)**:
    - Run tests, tsc, Next.js build, OpenQodex review, and push to GitHub.
+

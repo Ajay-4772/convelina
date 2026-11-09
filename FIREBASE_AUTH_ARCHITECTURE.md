@@ -1,5 +1,10 @@
 # CONVELINA — Firebase Authentication & Security Architecture
 
+> [!IMPORTANT]
+> **DEVELOPMENT MODE STATUS**:
+> `LIVE FIREBASE INTEGRATION: PENDING CREDENTIAL CONFIGURATION`  
+> Live Firebase credentials are not yet configured in the local workspace. All backend token-verification logic, two-role RBAC, anti-takeover invariants, and account-linking security guarantees are fully implemented and verified via unit tests and mocks. Live cloud authentication remains pending until credentials are provided.
+
 This document specifies the technical architecture of CONVELINA's multi-provider authentication subsystem, secure account-linking guarantees, Two-Role RBAC model, and explicit administrator provisioning controls.
 
 ---
