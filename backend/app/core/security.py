@@ -16,7 +16,7 @@ class AuthenticationError(HTTPException):
             headers={"WWW-Authenticate": "Bearer"}
         )
 
-def verify_firebase_id_token(token: str) -> Dict[str, Any]:
+def verify_firebase_id_token(token: str, check_revoked: bool = False) -> Dict[str, Any]:
     """
     Verifies a Firebase ID token using the official Firebase Admin SDK.
     Validates signature, issuer, audience, and expiration.
@@ -62,8 +62,8 @@ def verify_firebase_id_token(token: str) -> Dict[str, Any]:
         )
 
     try:
-        # verify_id_token verifies signature, exp, iat, aud, iss
-        decoded_token = firebase_auth.verify_id_token(token, check_revoked=False)
+        # verify_id_token verifies signature, exp, iat, aud, iss, and optionally token revocation
+        decoded_token = firebase_auth.verify_id_token(token, check_revoked=check_revoked)
         return decoded_token
     except firebase_auth.ExpiredIdTokenError:
         raise AuthenticationError("Firebase ID token has expired.")
@@ -73,5 +73,12 @@ def verify_firebase_id_token(token: str) -> Dict[str, Any]:
         logger.warning(f"Invalid ID token rejected: {e}")
         raise AuthenticationError("Invalid Firebase ID token.")
     except Exception as e:
+        err_msg = str(e).lower()
+        if "default credentials were not found" in err_msg or "failed to establish a new connection" in err_msg:
+            logger.error(f"Backend Firebase Admin unavailable or uncredentialed: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Authentication service is currently unavailable. Backend Firebase credentials missing."
+            )
         logger.error(f"Unexpected token verification error: {e}")
         raise AuthenticationError("Authentication failed.")

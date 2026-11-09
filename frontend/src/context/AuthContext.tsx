@@ -50,6 +50,7 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<UserProfile | null>;
   hasPendingLink: boolean;
   pendingLinkEmail: string | null;
+  cancelPendingLink: () => void;
   linkPendingGoogleAccount: (password: string) => Promise<UserProfile | null>;
   linkEmailPasswordAccount: (password: string) => Promise<void>;
   sendEmailOtp: (email: string) => Promise<{ success: boolean; message: string }>;
@@ -406,6 +407,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const cancelPendingLink = useCallback(() => {
+    setPendingLinkCredential(null);
+    setPendingLinkEmail(null);
+    setError(null);
+  }, []);
+
   const linkEmailPasswordAccount = async (password: string): Promise<void> => {
     if (!auth.currentUser || !auth.currentUser.email) {
       throw new Error("You must be authenticated with a verified email to link credentials.");
@@ -558,6 +565,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loginWithGoogle,
         hasPendingLink: Boolean(pendingLinkCredential && pendingLinkEmail),
         pendingLinkEmail,
+        cancelPendingLink,
         linkPendingGoogleAccount,
         linkEmailPasswordAccount,
         sendEmailOtp,

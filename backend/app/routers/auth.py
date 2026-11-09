@@ -243,7 +243,8 @@ def provision_user(
                 {"name": full_name, "uid": existing_by_email["id"]}
             )
             db.commit()
-            row = existing_by_email
+            row = dict(existing_by_email)
+            row["full_name"] = full_name
         else:
             row = db.execute(
                 text(
@@ -338,17 +339,18 @@ def link_authentication_provider(
     Allows an authenticated citizen to link a secondary verified provider credential to their account.
     Security validations:
     1. Caller must already be authenticated with valid primary session (current_user).
-    2. Secondary token must be cryptographically verified and unexpired.
+    2. Secondary token must be cryptographically verified and unexpired (with revocation check).
     3. Secondary token must have verified email ('email_verified' == True).
     4. Secondary token email must match current_user.email (case-insensitive).
-    5. Secondary UID must not already be claimed by a different user.
+    5. Native linkWithCredential guarantee: secondary_uid must equal current_user.firebase_uid.
+       Any attempt to link tokens with mismatched Firebase UIDs is rejected (HTTP 400).
     Preserves:
     - User UUID, documents, conflicts, correction drafts, and forced RLS context.
     Audits:
     - Writes immutable audit log event 'account_provider_linked'.
     """
     set_rls_context(db, current_user.id, current_user.role)
-    secondary_claims = verify_firebase_id_token(req.linking_token)
+    secondary_claims = verify_firebase_id_token(req.linking_token, check_revoked=True)
 
     secondary_uid = secondary_claims.get("uid")
     secondary_email = secondary_claims.get("email")
@@ -359,23 +361,6 @@ def link_authentication_provider(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Secondary token does not contain a valid user identity."
-        )
-
-    if secondary_uid == current_user.firebase_uid:
-        # Already linked to this exact UID
-        return UserResponse(
-            id=current_user.id,
-            firebase_uid=current_user.firebase_uid,
-            email=current_user.email,
-            full_name=current_user.full_name,
-            role=current_user.role,
-            phone_number=current_user.phone_number,
-            date_of_birth=current_user.date_of_birth,
-            address=current_user.address,
-            father_name=current_user.father_name,
-            mother_name=current_user.mother_name,
-            created_at=current_user.created_at,
-            updated_at=current_user.updated_at,
         )
 
     if not secondary_verified:
@@ -390,16 +375,18 @@ def link_authentication_provider(
             detail="Secondary provider email does not match the authenticated account email."
         )
 
-    # Check if another user row is already bound to this secondary UID
-    conflicting_user = db.execute(
-        text("SELECT id, email FROM users WHERE firebase_uid = :fuid AND id != :uid;"),
-        {"fuid": secondary_uid, "uid": current_user.id}
-    ).mappings().first()
-
-    if conflicting_user:
+    if secondary_uid != current_user.firebase_uid:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Target authentication provider is already linked to another account."
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Both authentication providers must belong to the same Firebase UID via linkWithCredential."
+        )
+
+    # Acquire row-level lock on the user to prevent concurrent linking race conditions
+    user = db.query(User).filter(User.id == current_user.id).with_for_update().first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found."
         )
 
     # Record tamper-evident audit event
@@ -407,37 +394,29 @@ def link_authentication_provider(
         db=db,
         action="account_provider_linked",
         entity_type="user",
-        entity_id=current_user.id,
-        user_id=current_user.id,
+        entity_id=user.id,
+        user_id=user.id,
         details={
-            "previous_firebase_uid": current_user.firebase_uid,
-            "new_firebase_uid": secondary_uid,
-            "email": current_user.email,
+            "firebase_uid": user.firebase_uid,
+            "email": user.email,
             "provider": provider,
         },
     )
-
-    # Update firebase_uid on the existing user row, strictly preserving user UUID and data
-    db.execute(
-        text("UPDATE users SET firebase_uid = :fuid, updated_at = NOW() WHERE id = :uid;"),
-        {"fuid": secondary_uid, "uid": current_user.id}
-    )
     db.commit()
 
-    updated_user = db.query(User).filter(User.id == current_user.id).first()
     return UserResponse(
-        id=updated_user.id,
-        firebase_uid=updated_user.firebase_uid,
-        email=updated_user.email,
-        full_name=updated_user.full_name,
-        role=updated_user.role,
-        phone_number=updated_user.phone_number,
-        date_of_birth=updated_user.date_of_birth,
-        address=updated_user.address,
-        father_name=updated_user.father_name,
-        mother_name=updated_user.mother_name,
-        created_at=updated_user.created_at,
-        updated_at=updated_user.updated_at,
+        id=user.id,
+        firebase_uid=user.firebase_uid,
+        email=user.email,
+        full_name=user.full_name,
+        role=user.role,
+        phone_number=user.phone_number,
+        date_of_birth=user.date_of_birth,
+        address=user.address,
+        father_name=user.father_name,
+        mother_name=user.mother_name,
+        created_at=user.created_at,
+        updated_at=user.updated_at,
     )
 
 
