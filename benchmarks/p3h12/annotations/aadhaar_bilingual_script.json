@@ -1,0 +1,21 @@
+{
+  "sample_id": "aadhaar_bilingual_script",
+  "category": "aadhaar",
+  "condition": "bilingual_script",
+  "condition_name": "Bilingual Multi-Script Formatting",
+  "condition_description": "Official layout with dual English and Indic (Hindi/Tamil) field values",
+  "expected_manual_review": false,
+  "profile_id": "prof_2",
+  "image_filename": "aadhaar_bilingual_script.png",
+  "ground_truth_fields": {
+    "full_name": "PRIYA RAMANATHAN",
+    "date_of_birth": "1994-08-25",
+    "gender": "Female",
+    "address": "15, Anna Salai, T Nagar, Chennai, Tamil Nadu",
+    "pincode": "600017",
+    "aadhaar_number": "8765 4321 0987",
+    "document_number": "8765 4321 0987",
+    "issuing_authority": "UIDAI"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nGOVERNMENT OF INDIA / भारत सरकार\nUnique Identification Authority of India (Sample)\nName: PRIYA RAMANATHAN\nDOB: 25/08/1994\nGender: Female\nAddress: 15, Anna Salai, T Nagar, Chennai, Tamil Nadu\nAadhaar Number: 8765 4321 0987"
+}

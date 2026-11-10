@@ -1,0 +1,22 @@
+{
+  "sample_id": "passport_obscured_crease",
+  "category": "passport",
+  "condition": "obscured_crease",
+  "condition_name": "Partially Obscured / Paper Crease",
+  "condition_description": "Paper crease and minor ink smudge across field boundaries",
+  "expected_manual_review": true,
+  "profile_id": "prof_5",
+  "image_filename": "passport_obscured_crease.png",
+  "ground_truth_fields": {
+    "passport_number": "H2345678",
+    "document_number": "H2345678",
+    "issuing_authority": "Ministry of External Affairs",
+    "full_name": "S. K. SHARMA",
+    "gender": "Male",
+    "date_of_birth": "1990-09-19",
+    "father_name": "MAHESH SHARMA",
+    "parent_guardian_name": "MAHESH SHARMA",
+    "mother_name": "KAVITA SHARMA"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nPASSPORT\nREPUBLIC OF INDIA\nPassport No: H2345678\nGiven Name: S. K. SHARMA\nDate of Birth: 19/09/1990\nName of Father: MAHESH SHARMA\nP<INDS.<K.<SHARMA<<<<<<<<<<<<<<<<<<<<\nH23456784IND9009195M<<<<<<<<<<3"
+}

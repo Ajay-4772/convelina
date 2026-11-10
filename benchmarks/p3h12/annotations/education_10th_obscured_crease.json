@@ -1,0 +1,25 @@
+{
+  "sample_id": "education_10th_obscured_crease",
+  "category": "education_10th",
+  "condition": "obscured_crease",
+  "condition_name": "Partially Obscured / Paper Crease",
+  "condition_description": "Paper crease and minor ink smudge across field boundaries",
+  "expected_manual_review": true,
+  "profile_id": "prof_1",
+  "image_filename": "education_10th_obscured_crease.png",
+  "ground_truth_fields": {
+    "roll_number": "6124589",
+    "registration_number": "R/2004/6124589",
+    "document_number": "6124589",
+    "board": "CBSE",
+    "passing_year": "2004",
+    "issuing_authority": "CBSE",
+    "full_name": "RAJESH KUMAR VERMA",
+    "father_name": "SURESH CHANDRA VERMA",
+    "parent_guardian_name": "SURESH CHANDRA VERMA",
+    "mother_name": "SUNITA VERMA",
+    "date_of_birth": "1988-04-12",
+    "result": "PASSED"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nCENTRAL BOARD OF SECONDARY EDUCATION\nSECONDARY SCHOOL EXAMINATION (CLASS X)\nMARKS STATEMENT AND PROVISIONAL CERTIFICATE\nRoll No: 6124589\nRegistration No: R/2004/6124589\nCandidate Name: RAJESH KUMAR VERMA\nFather's Name: SURESH CHANDRA VERMA\nMother's Name: SUNITA VERMA\nDate of Birth: 12/04/1988\nFINAL RESULT: PASSED"
+}

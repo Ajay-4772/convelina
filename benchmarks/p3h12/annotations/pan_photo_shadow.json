@@ -1,0 +1,20 @@
+{
+  "sample_id": "pan_photo_shadow",
+  "category": "pan",
+  "condition": "photo_shadow",
+  "condition_name": "Photographed Appearance with Shadow",
+  "condition_description": "Mobile camera capture with radial gradient lighting and uneven falloff",
+  "expected_manual_review": false,
+  "profile_id": "prof_4",
+  "image_filename": "pan_photo_shadow.png",
+  "ground_truth_fields": {
+    "pan_number": "DFGNP3456J",
+    "document_number": "DFGNP3456J",
+    "issuing_authority": "Income Tax Department",
+    "full_name": "NEHA PATEL",
+    "father_name": "BHAVESH PATEL",
+    "parent_guardian_name": "BHAVESH PATEL",
+    "date_of_birth": "1992-02-03"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nINCOME TAX DEPARTMENT\nGOVT. OF INDIA\nPermanent Account Number: DFGNP3456J\nName: NEHA PATEL\nFather's Name: BHAVESH PATEL\nDate of Birth: 03/02/1992"
+}

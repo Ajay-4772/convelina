@@ -1,0 +1,25 @@
+{
+  "sample_id": "education_12th_low_resolution",
+  "category": "education_12th",
+  "condition": "low_resolution",
+  "condition_name": "Low Resolution Downsampling",
+  "condition_description": "Image downsampled to 480x300 and scaled up; pixelation noise",
+  "expected_manual_review": true,
+  "profile_id": "prof_6",
+  "image_filename": "education_12th_low_resolution.png",
+  "ground_truth_fields": {
+    "roll_number": "9456123",
+    "registration_number": "CBSE/2014/9456123",
+    "document_number": "9456123",
+    "board": "CBSE",
+    "passing_year": "2014",
+    "issuing_authority": "CBSE",
+    "full_name": "LAKSHMI SUNDARAM",
+    "father_name": "R. SUNDARAM",
+    "parent_guardian_name": "R. SUNDARAM",
+    "mother_name": "VASANTHA SUNDARAM",
+    "date_of_birth": "1996-06-30",
+    "result": "PASSED"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nCENTRAL BOARD OF SECONDARY EDUCATION\nSENIOR SCHOOL CERTIFICATE EXAMINATION (CLASS XII)\nMARKS STATEMENT AND PROVISIONAL CERTIFICATE\nRoll No: 9456123\nRegistration No: CBSE/2014/9456123\nCandidate Name: LAKSHMI SUNDARAM\nFather's Name: R. SUNDARAM\nMother's Name: VASANTHA SUNDARAM\nDate of Birth: 30/06/1996\nFINAL RESULT: PASSED"
+}

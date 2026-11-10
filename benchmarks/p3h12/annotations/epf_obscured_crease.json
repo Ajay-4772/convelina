@@ -1,0 +1,22 @@
+{
+  "sample_id": "epf_obscured_crease",
+  "category": "epf",
+  "condition": "obscured_crease",
+  "condition_name": "Partially Obscured / Paper Crease",
+  "condition_description": "Paper crease and minor ink smudge across field boundaries",
+  "expected_manual_review": true,
+  "profile_id": "prof_5",
+  "image_filename": "epf_obscured_crease.png",
+  "ground_truth_fields": {
+    "uan": "100556789012",
+    "document_number": "100556789012",
+    "issuing_authority": "EPFO",
+    "member_id": "RJJAI00567890000045678",
+    "full_name": "S. K. SHARMA",
+    "employer_name": "RAJASTHAN TEXTILE TRADERS PRIVATE LTD",
+    "establishment_id": "RJJAI0056789000",
+    "date_of_joining": "12/03/2013",
+    "date_of_exit": "30/11/2019"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nEMPLOYEES' PROVIDENT FUND ORGANISATION, INDIA\nMEMBER PASSBOOK & REGISTRATION PARTICULARS\nUniversal Account Number (UAN): 100556789012\nMember ID: RJJAI00567890000045678\nMember Name: S. K. SHARMA\nEstablishment: RAJASTHAN TEXTILE TRADERS PRIVATE LTD\nDate of Joining: 12/03/2013\nDate of Exit: 30/11/2019"
+}

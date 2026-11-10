@@ -1,0 +1,21 @@
+{
+  "sample_id": "aadhaar_obscured_crease",
+  "category": "aadhaar",
+  "condition": "obscured_crease",
+  "condition_name": "Partially Obscured / Paper Crease",
+  "condition_description": "Paper crease and minor ink smudge across field boundaries",
+  "expected_manual_review": true,
+  "profile_id": "prof_1",
+  "image_filename": "aadhaar_obscured_crease.png",
+  "ground_truth_fields": {
+    "full_name": "RAJESH KUMAR VERMA",
+    "date_of_birth": "1988-04-12",
+    "gender": "Male",
+    "address": "42, Shanti Vihar, Ring Road, New Delhi",
+    "pincode": "110001",
+    "aadhaar_number": "9876 5432 1098",
+    "document_number": "9876 5432 1098",
+    "issuing_authority": "UIDAI"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nGOVERNMENT OF INDIA\nUnique Identification Authority of India (Sample)\nName: RAJESH KUMAR VERMA\nDOB: 12/04/1988\nGender: Male\nAddress: 42, Shanti Vihar, Ring Road, New Delhi\nAadhaar Number: 9876 5432 1098"
+}

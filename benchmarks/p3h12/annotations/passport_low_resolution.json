@@ -1,0 +1,22 @@
+{
+  "sample_id": "passport_low_resolution",
+  "category": "passport",
+  "condition": "low_resolution",
+  "condition_name": "Low Resolution Downsampling",
+  "condition_description": "Image downsampled to 480x300 and scaled up; pixelation noise",
+  "expected_manual_review": true,
+  "profile_id": "prof_2",
+  "image_filename": "passport_low_resolution.png",
+  "ground_truth_fields": {
+    "passport_number": "M9876543",
+    "document_number": "M9876543",
+    "issuing_authority": "Ministry of External Affairs",
+    "full_name": "PRIYA RAMANATHAN",
+    "gender": "Female",
+    "date_of_birth": "1994-08-25",
+    "father_name": "K. RAMANATHAN",
+    "parent_guardian_name": "K. RAMANATHAN",
+    "mother_name": "MEENAKSHI RAMANATHAN"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nPASSPORT\nREPUBLIC OF INDIA\nPassport No: M9876543\nGiven Name: PRIYA RAMANATHAN\nDate of Birth: 25/08/1994\nName of Father: K. RAMANATHAN\nP<INDPRIYA<RAMANATHAN<<<<<<<<<<<<<<<<<<<<\nM98765434IND9408255M<<<<<<<<<<3"
+}

@@ -1,0 +1,25 @@
+{
+  "sample_id": "education_10th_low_resolution",
+  "category": "education_10th",
+  "condition": "low_resolution",
+  "condition_name": "Low Resolution Downsampling",
+  "condition_description": "Image downsampled to 480x300 and scaled up; pixelation noise",
+  "expected_manual_review": true,
+  "profile_id": "prof_4",
+  "image_filename": "education_10th_low_resolution.png",
+  "ground_truth_fields": {
+    "roll_number": "5123987",
+    "registration_number": "GJ/2008/5123987",
+    "document_number": "5123987",
+    "board": "CBSE",
+    "passing_year": "2008",
+    "issuing_authority": "CBSE",
+    "full_name": "NEHA PATEL",
+    "father_name": "BHAVESH PATEL",
+    "parent_guardian_name": "BHAVESH PATEL",
+    "mother_name": "GITABEN PATEL",
+    "date_of_birth": "1992-02-03",
+    "result": "PASSED"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nCENTRAL BOARD OF SECONDARY EDUCATION\nSECONDARY SCHOOL EXAMINATION (CLASS X)\nMARKS STATEMENT AND PROVISIONAL CERTIFICATE\nRoll No: 5123987\nRegistration No: GJ/2008/5123987\nCandidate Name: NEHA PATEL\nFather's Name: BHAVESH PATEL\nMother's Name: GITABEN PATEL\nDate of Birth: 03/02/1992\nFINAL RESULT: PASSED"
+}

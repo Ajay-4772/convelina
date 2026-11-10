@@ -1,0 +1,20 @@
+{
+  "sample_id": "pan_clean_scan",
+  "category": "pan",
+  "condition": "clean_scan",
+  "condition_name": "Clean High-Resolution Scan",
+  "condition_description": "High resolution, sharp contrast, neutral white background (300 DPI baseline)",
+  "expected_manual_review": false,
+  "profile_id": "prof_3",
+  "image_filename": "pan_clean_scan.png",
+  "ground_truth_fields": {
+    "pan_number": "CDBAB9012H",
+    "document_number": "CDBAB9012H",
+    "issuing_authority": "Income Tax Department",
+    "full_name": "ANIRBAN BANERJEE",
+    "father_name": "SUBRATA BANERJEE",
+    "parent_guardian_name": "SUBRATA BANERJEE",
+    "date_of_birth": "1985-11-14"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nINCOME TAX DEPARTMENT\nGOVT. OF INDIA\nPermanent Account Number: CDBAB9012H\nName: ANIRBAN BANERJEE\nFather's Name: SUBRATA BANERJEE\nDate of Birth: 14/11/1985"
+}

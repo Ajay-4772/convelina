@@ -1,0 +1,22 @@
+{
+  "sample_id": "epf_blur_noise",
+  "category": "epf",
+  "condition": "blur_noise",
+  "condition_name": "Optical Blur & Sensor Noise",
+  "condition_description": "Gaussian blur (radius 1.8) and additive Gaussian speckle noise",
+  "expected_manual_review": true,
+  "profile_id": "prof_3",
+  "image_filename": "epf_blur_noise.png",
+  "ground_truth_fields": {
+    "uan": "100734567890",
+    "document_number": "100734567890",
+    "issuing_authority": "EPFO",
+    "member_id": "WBCAL00789010000023456",
+    "full_name": "ANIRBAN BANERJEE",
+    "employer_name": "BENGAL CONSULTING SERVICES LLP",
+    "establishment_id": "WBCAL0078901000",
+    "date_of_joining": "10/01/2008",
+    "date_of_exit": "15/09/2015"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nEMPLOYEES' PROVIDENT FUND ORGANISATION, INDIA\nMEMBER PASSBOOK & REGISTRATION PARTICULARS\nUniversal Account Number (UAN): 100734567890\nMember ID: WBCAL00789010000023456\nMember Name: ANIRBAN BANERJEE\nEstablishment: BENGAL CONSULTING SERVICES LLP\nDate of Joining: 10/01/2008\nDate of Exit: 15/09/2015"
+}

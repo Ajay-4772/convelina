@@ -1,0 +1,22 @@
+{
+  "sample_id": "passport_photo_shadow",
+  "category": "passport",
+  "condition": "photo_shadow",
+  "condition_name": "Photographed Appearance with Shadow",
+  "condition_description": "Mobile camera capture with radial gradient lighting and uneven falloff",
+  "expected_manual_review": false,
+  "profile_id": "prof_6",
+  "image_filename": "passport_photo_shadow.png",
+  "ground_truth_fields": {
+    "passport_number": "G5678901",
+    "document_number": "G5678901",
+    "issuing_authority": "Ministry of External Affairs",
+    "full_name": "LAKSHMI SUNDARAM",
+    "gender": "Female",
+    "date_of_birth": "1996-06-30",
+    "father_name": "R. SUNDARAM",
+    "parent_guardian_name": "R. SUNDARAM",
+    "mother_name": "VASANTHA SUNDARAM"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nPASSPORT\nREPUBLIC OF INDIA\nPassport No: G5678901\nGiven Name: LAKSHMI SUNDARAM\nDate of Birth: 30/06/1996\nName of Father: R. SUNDARAM\nP<INDLAKSHMI<SUNDARAM<<<<<<<<<<<<<<<<<<<<\nG56789014IND9606305M<<<<<<<<<<3"
+}

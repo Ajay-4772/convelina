@@ -1,0 +1,25 @@
+{
+  "sample_id": "education_12th_photo_shadow",
+  "category": "education_12th",
+  "condition": "photo_shadow",
+  "condition_name": "Photographed Appearance with Shadow",
+  "condition_description": "Mobile camera capture with radial gradient lighting and uneven falloff",
+  "expected_manual_review": false,
+  "profile_id": "prof_4",
+  "image_filename": "education_12th_photo_shadow.png",
+  "ground_truth_fields": {
+    "roll_number": "8934521",
+    "registration_number": "GJ/2010/8934521",
+    "document_number": "8934521",
+    "board": "CBSE",
+    "passing_year": "2010",
+    "issuing_authority": "CBSE",
+    "full_name": "NEHA PATEL",
+    "father_name": "BHAVESH PATEL",
+    "parent_guardian_name": "BHAVESH PATEL",
+    "mother_name": "GITABEN PATEL",
+    "date_of_birth": "1992-02-03",
+    "result": "PASSED"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nCENTRAL BOARD OF SECONDARY EDUCATION\nSENIOR SCHOOL CERTIFICATE EXAMINATION (CLASS XII)\nMARKS STATEMENT AND PROVISIONAL CERTIFICATE\nRoll No: 8934521\nRegistration No: GJ/2010/8934521\nCandidate Name: NEHA PATEL\nFather's Name: BHAVESH PATEL\nMother's Name: GITABEN PATEL\nDate of Birth: 03/02/1992\nFINAL RESULT: PASSED"
+}

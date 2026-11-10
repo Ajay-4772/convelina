@@ -1,0 +1,20 @@
+{
+  "sample_id": "pan_low_resolution",
+  "category": "pan",
+  "condition": "low_resolution",
+  "condition_name": "Low Resolution Downsampling",
+  "condition_description": "Image downsampled to 480x300 and scaled up; pixelation noise",
+  "expected_manual_review": true,
+  "profile_id": "prof_6",
+  "image_filename": "pan_low_resolution.png",
+  "ground_truth_fields": {
+    "pan_number": "FHJLS1234L",
+    "document_number": "FHJLS1234L",
+    "issuing_authority": "Income Tax Department",
+    "full_name": "LAKSHMI SUNDARAM",
+    "father_name": "R. SUNDARAM",
+    "parent_guardian_name": "R. SUNDARAM",
+    "date_of_birth": "1996-06-30"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nINCOME TAX DEPARTMENT\nGOVT. OF INDIA\nPermanent Account Number: FHJLS1234L\nName: LAKSHMI SUNDARAM\nFather's Name: R. SUNDARAM\nDate of Birth: 30/06/1996"
+}

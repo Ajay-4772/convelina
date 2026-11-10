@@ -1,0 +1,25 @@
+{
+  "sample_id": "education_10th_blur_noise",
+  "category": "education_10th",
+  "condition": "blur_noise",
+  "condition_name": "Optical Blur & Sensor Noise",
+  "condition_description": "Gaussian blur (radius 1.8) and additive Gaussian speckle noise",
+  "expected_manual_review": true,
+  "profile_id": "prof_5",
+  "image_filename": "education_10th_blur_noise.png",
+  "ground_truth_fields": {
+    "roll_number": "6234890",
+    "registration_number": "RJ/2006/6234890",
+    "document_number": "6234890",
+    "board": "CBSE",
+    "passing_year": "2006",
+    "issuing_authority": "CBSE",
+    "full_name": "S. K. SHARMA",
+    "father_name": "MAHESH SHARMA",
+    "parent_guardian_name": "MAHESH SHARMA",
+    "mother_name": "KAVITA SHARMA",
+    "date_of_birth": "1990-09-19",
+    "result": "PASSED"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nCENTRAL BOARD OF SECONDARY EDUCATION\nSECONDARY SCHOOL EXAMINATION (CLASS X)\nMARKS STATEMENT AND PROVISIONAL CERTIFICATE\nRoll No: 6234890\nRegistration No: RJ/2006/6234890\nCandidate Name: S. K. SHARMA\nFather's Name: MAHESH SHARMA\nMother's Name: KAVITA SHARMA\nDate of Birth: 19/09/1990\nFINAL RESULT: PASSED"
+}

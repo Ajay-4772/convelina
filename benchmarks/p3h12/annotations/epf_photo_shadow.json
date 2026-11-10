@@ -1,0 +1,21 @@
+{
+  "sample_id": "epf_photo_shadow",
+  "category": "epf",
+  "condition": "photo_shadow",
+  "condition_name": "Photographed Appearance with Shadow",
+  "condition_description": "Mobile camera capture with radial gradient lighting and uneven falloff",
+  "expected_manual_review": false,
+  "profile_id": "prof_6",
+  "image_filename": "epf_photo_shadow.png",
+  "ground_truth_fields": {
+    "uan": "100467890123",
+    "document_number": "100467890123",
+    "issuing_authority": "EPFO",
+    "member_id": "TNMAS00890120000056789",
+    "full_name": "LAKSHMI SUNDARAM",
+    "employer_name": "SOUTHERN HEALTHCARE DIAGNOSTICS",
+    "establishment_id": "TNMAS0089012000",
+    "date_of_joining": "01/09/2018"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nEMPLOYEES' PROVIDENT FUND ORGANISATION, INDIA\nMEMBER PASSBOOK & REGISTRATION PARTICULARS\nUniversal Account Number (UAN): 100467890123\nMember ID: TNMAS00890120000056789\nMember Name: LAKSHMI SUNDARAM\nEstablishment: SOUTHERN HEALTHCARE DIAGNOSTICS\nDate of Joining: 01/09/2018\nDate of Exit: N/A"
+}

@@ -1,0 +1,20 @@
+{
+  "sample_id": "pan_obscured_crease",
+  "category": "pan",
+  "condition": "obscured_crease",
+  "condition_name": "Partially Obscured / Paper Crease",
+  "condition_description": "Paper crease and minor ink smudge across field boundaries",
+  "expected_manual_review": true,
+  "profile_id": "prof_3",
+  "image_filename": "pan_obscured_crease.png",
+  "ground_truth_fields": {
+    "pan_number": "CDBAB9012H",
+    "document_number": "CDBAB9012H",
+    "issuing_authority": "Income Tax Department",
+    "full_name": "ANIRBAN BANERJEE",
+    "father_name": "SUBRATA BANERJEE",
+    "parent_guardian_name": "SUBRATA BANERJEE",
+    "date_of_birth": "1985-11-14"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nINCOME TAX DEPARTMENT\nGOVT. OF INDIA\nPermanent Account Number: CDBAB9012H\nName: ANIRBAN BANERJEE\nFather's Name: SUBRATA BANERJEE\nDate of Birth: 14/11/1985"
+}

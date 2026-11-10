@@ -1,0 +1,22 @@
+{
+  "sample_id": "passport_blur_noise",
+  "category": "passport",
+  "condition": "blur_noise",
+  "condition_name": "Optical Blur & Sensor Noise",
+  "condition_description": "Gaussian blur (radius 1.8) and additive Gaussian speckle noise",
+  "expected_manual_review": true,
+  "profile_id": "prof_3",
+  "image_filename": "passport_blur_noise.png",
+  "ground_truth_fields": {
+    "passport_number": "K3456789",
+    "document_number": "K3456789",
+    "issuing_authority": "Ministry of External Affairs",
+    "full_name": "ANIRBAN BANERJEE",
+    "gender": "Male",
+    "date_of_birth": "1985-11-14",
+    "father_name": "SUBRATA BANERJEE",
+    "parent_guardian_name": "SUBRATA BANERJEE",
+    "mother_name": "APARNA BANERJEE"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nPASSPORT\nREPUBLIC OF INDIA\nPassport No: K3456789\nGiven Name: ANIRBAN BANERJEE\nDate of Birth: 14/11/1985\nName of Father: SUBRATA BANERJEE\nP<INDANIRBAN<BANERJEE<<<<<<<<<<<<<<<<<<<<\nK34567894IND8511145M<<<<<<<<<<3"
+}

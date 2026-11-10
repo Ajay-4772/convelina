@@ -1,0 +1,21 @@
+{
+  "sample_id": "aadhaar_compression",
+  "category": "aadhaar",
+  "condition": "compression",
+  "condition_name": "Heavy JPEG Compression Artifacts",
+  "condition_description": "Low quality JPEG compression (Q=28) with 8x8 DCT boundary ringing",
+  "expected_manual_review": false,
+  "profile_id": "prof_6",
+  "image_filename": "aadhaar_compression.jpg",
+  "ground_truth_fields": {
+    "full_name": "LAKSHMI SUNDARAM",
+    "date_of_birth": "1996-06-30",
+    "gender": "Female",
+    "address": "77, Gandhi Road, West Mambalam, Chennai",
+    "pincode": "600033",
+    "aadhaar_number": "4321 0987 6543",
+    "document_number": "4321 0987 6543",
+    "issuing_authority": "UIDAI"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nGOVERNMENT OF INDIA\nUnique Identification Authority of India (Sample)\nName: LAKSHMI SUNDARAM\nDOB: 30/06/1996\nGender: Female\nAddress: 77, Gandhi Road, West Mambalam, Chennai\nAadhaar Number: 4321 0987 6543"
+}

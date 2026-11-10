@@ -1,0 +1,21 @@
+{
+  "sample_id": "aadhaar_skewed_rot",
+  "category": "aadhaar",
+  "condition": "skewed_rot",
+  "condition_name": "Rotated & Skewed Alignment",
+  "condition_description": "Image rotated by 5.5 degrees clockwise testing deskewing pipeline",
+  "expected_manual_review": false,
+  "profile_id": "prof_3",
+  "image_filename": "aadhaar_skewed_rot.png",
+  "ground_truth_fields": {
+    "full_name": "ANIRBAN BANERJEE",
+    "date_of_birth": "1985-11-14",
+    "gender": "Male",
+    "address": "88/2, Rashbehari Avenue, Ballygunge, Kolkata",
+    "pincode": "700029",
+    "aadhaar_number": "7654 3210 9876",
+    "document_number": "7654 3210 9876",
+    "issuing_authority": "UIDAI"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nGOVERNMENT OF INDIA\nUnique Identification Authority of India (Sample)\nName: ANIRBAN BANERJEE\nDOB: 14/11/1985\nGender: Male\nAddress: 88/2, Rashbehari Avenue, Ballygunge, Kolkata\nAadhaar Number: 7654 3210 9876"
+}

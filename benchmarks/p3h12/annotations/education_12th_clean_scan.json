@@ -1,0 +1,25 @@
+{
+  "sample_id": "education_12th_clean_scan",
+  "category": "education_12th",
+  "condition": "clean_scan",
+  "condition_name": "Clean High-Resolution Scan",
+  "condition_description": "High resolution, sharp contrast, neutral white background (300 DPI baseline)",
+  "expected_manual_review": false,
+  "profile_id": "prof_3",
+  "image_filename": "education_12th_clean_scan.png",
+  "ground_truth_fields": {
+    "roll_number": "5421098",
+    "registration_number": "WB/2003/5421098",
+    "document_number": "5421098",
+    "board": "CBSE",
+    "passing_year": "2003",
+    "issuing_authority": "CBSE",
+    "full_name": "ANIRBAN BANERJEE",
+    "father_name": "SUBRATA BANERJEE",
+    "parent_guardian_name": "SUBRATA BANERJEE",
+    "mother_name": "APARNA BANERJEE",
+    "date_of_birth": "1985-11-14",
+    "result": "PASSED"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nCENTRAL BOARD OF SECONDARY EDUCATION\nSENIOR SCHOOL CERTIFICATE EXAMINATION (CLASS XII)\nMARKS STATEMENT AND PROVISIONAL CERTIFICATE\nRoll No: 5421098\nRegistration No: WB/2003/5421098\nCandidate Name: ANIRBAN BANERJEE\nFather's Name: SUBRATA BANERJEE\nMother's Name: APARNA BANERJEE\nDate of Birth: 14/11/1985\nFINAL RESULT: PASSED"
+}

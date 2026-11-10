@@ -1,0 +1,25 @@
+{
+  "sample_id": "education_12th_skewed_rot",
+  "category": "education_12th",
+  "condition": "skewed_rot",
+  "condition_name": "Rotated & Skewed Alignment",
+  "condition_description": "Image rotated by 5.5 degrees clockwise testing deskewing pipeline",
+  "expected_manual_review": false,
+  "profile_id": "prof_5",
+  "image_filename": "education_12th_skewed_rot.png",
+  "ground_truth_fields": {
+    "roll_number": "9123456",
+    "registration_number": "RJ/2008/9123456",
+    "document_number": "9123456",
+    "board": "CBSE",
+    "passing_year": "2008",
+    "issuing_authority": "CBSE",
+    "full_name": "S. K. SHARMA",
+    "father_name": "MAHESH SHARMA",
+    "parent_guardian_name": "MAHESH SHARMA",
+    "mother_name": "KAVITA SHARMA",
+    "date_of_birth": "1990-09-19",
+    "result": "PASSED"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nCENTRAL BOARD OF SECONDARY EDUCATION\nSENIOR SCHOOL CERTIFICATE EXAMINATION (CLASS XII)\nMARKS STATEMENT AND PROVISIONAL CERTIFICATE\nRoll No: 9123456\nRegistration No: RJ/2008/9123456\nCandidate Name: S. K. SHARMA\nFather's Name: MAHESH SHARMA\nMother's Name: KAVITA SHARMA\nDate of Birth: 19/09/1990\nFINAL RESULT: PASSED"
+}

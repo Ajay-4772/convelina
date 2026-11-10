@@ -1,0 +1,20 @@
+{
+  "sample_id": "pan_skewed_rot",
+  "category": "pan",
+  "condition": "skewed_rot",
+  "condition_name": "Rotated & Skewed Alignment",
+  "condition_description": "Image rotated by 5.5 degrees clockwise testing deskewing pipeline",
+  "expected_manual_review": false,
+  "profile_id": "prof_5",
+  "image_filename": "pan_skewed_rot.png",
+  "ground_truth_fields": {
+    "pan_number": "EGHPS7890K",
+    "document_number": "EGHPS7890K",
+    "issuing_authority": "Income Tax Department",
+    "full_name": "S. K. SHARMA",
+    "father_name": "MAHESH SHARMA",
+    "parent_guardian_name": "MAHESH SHARMA",
+    "date_of_birth": "1990-09-19"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nINCOME TAX DEPARTMENT\nGOVT. OF INDIA\nPermanent Account Number: EGHPS7890K\nName: S. K. SHARMA\nFather's Name: MAHESH SHARMA\nDate of Birth: 19/09/1990"
+}

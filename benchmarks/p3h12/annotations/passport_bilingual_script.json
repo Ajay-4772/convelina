@@ -1,0 +1,22 @@
+{
+  "sample_id": "passport_bilingual_script",
+  "category": "passport",
+  "condition": "bilingual_script",
+  "condition_name": "Bilingual Multi-Script Formatting",
+  "condition_description": "Official layout with dual English and Indic (Hindi/Tamil) field values",
+  "expected_manual_review": false,
+  "profile_id": "prof_6",
+  "image_filename": "passport_bilingual_script.png",
+  "ground_truth_fields": {
+    "passport_number": "G5678901",
+    "document_number": "G5678901",
+    "issuing_authority": "Ministry of External Affairs",
+    "full_name": "LAKSHMI SUNDARAM",
+    "gender": "Female",
+    "date_of_birth": "1996-06-30",
+    "father_name": "R. SUNDARAM",
+    "parent_guardian_name": "R. SUNDARAM",
+    "mother_name": "VASANTHA SUNDARAM"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nPASSPORT / पासपोर्ट\nREPUBLIC OF INDIA / भारत गणराज्य\nPassport No: G5678901\nGiven Name: LAKSHMI SUNDARAM\nDate of Birth: 30/06/1996\nName of Father: R. SUNDARAM\nP<INDLAKSHMI<SUNDARAM<<<<<<<<<<<<<<<<<<<<\nG56789014IND9606305M<<<<<<<<<<3"
+}

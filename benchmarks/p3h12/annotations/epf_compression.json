@@ -1,0 +1,21 @@
+{
+  "sample_id": "epf_compression",
+  "category": "epf",
+  "condition": "compression",
+  "condition_name": "Heavy JPEG Compression Artifacts",
+  "condition_description": "Low quality JPEG compression (Q=28) with 8x8 DCT boundary ringing",
+  "expected_manual_review": false,
+  "profile_id": "prof_4",
+  "image_filename": "epf_compression.jpg",
+  "ground_truth_fields": {
+    "uan": "100645678901",
+    "document_number": "100645678901",
+    "issuing_authority": "EPFO",
+    "member_id": "GJAHD00234560000034567",
+    "full_name": "NEHA PATEL",
+    "employer_name": "GUJARAT POLYMERS & CHEMICALS LTD",
+    "establishment_id": "GJAHD0023456000",
+    "date_of_joining": "01/08/2014"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nEMPLOYEES' PROVIDENT FUND ORGANISATION, INDIA\nMEMBER PASSBOOK & REGISTRATION PARTICULARS\nUniversal Account Number (UAN): 100645678901\nMember ID: GJAHD00234560000034567\nMember Name: NEHA PATEL\nEstablishment: GUJARAT POLYMERS & CHEMICALS LTD\nDate of Joining: 01/08/2014\nDate of Exit: N/A"
+}

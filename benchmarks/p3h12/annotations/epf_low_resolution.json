@@ -1,0 +1,22 @@
+{
+  "sample_id": "epf_low_resolution",
+  "category": "epf",
+  "condition": "low_resolution",
+  "condition_name": "Low Resolution Downsampling",
+  "condition_description": "Image downsampled to 480x300 and scaled up; pixelation noise",
+  "expected_manual_review": true,
+  "profile_id": "prof_2",
+  "image_filename": "epf_low_resolution.png",
+  "ground_truth_fields": {
+    "uan": "100823456789",
+    "document_number": "100823456789",
+    "issuing_authority": "EPFO",
+    "member_id": "TNMAS00456780000012345",
+    "full_name": "PRIYA RAMANATHAN",
+    "employer_name": "CHENNAI INFOTECH ENTERPRISES LIMITED",
+    "establishment_id": "TNMAS0045678000",
+    "date_of_joining": "15/06/2016",
+    "date_of_exit": "28/02/2021"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nEMPLOYEES' PROVIDENT FUND ORGANISATION, INDIA\nMEMBER PASSBOOK & REGISTRATION PARTICULARS\nUniversal Account Number (UAN): 100823456789\nMember ID: TNMAS00456780000012345\nMember Name: PRIYA RAMANATHAN\nEstablishment: CHENNAI INFOTECH ENTERPRISES LIMITED\nDate of Joining: 15/06/2016\nDate of Exit: 28/02/2021"
+}

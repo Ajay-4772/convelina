@@ -1,0 +1,21 @@
+{
+  "sample_id": "aadhaar_clean_scan",
+  "category": "aadhaar",
+  "condition": "clean_scan",
+  "condition_name": "Clean High-Resolution Scan",
+  "condition_description": "High resolution, sharp contrast, neutral white background (300 DPI baseline)",
+  "expected_manual_review": false,
+  "profile_id": "prof_1",
+  "image_filename": "aadhaar_clean_scan.png",
+  "ground_truth_fields": {
+    "full_name": "RAJESH KUMAR VERMA",
+    "date_of_birth": "1988-04-12",
+    "gender": "Male",
+    "address": "42, Shanti Vihar, Ring Road, New Delhi",
+    "pincode": "110001",
+    "aadhaar_number": "9876 5432 1098",
+    "document_number": "9876 5432 1098",
+    "issuing_authority": "UIDAI"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nGOVERNMENT OF INDIA\nUnique Identification Authority of India (Sample)\nName: RAJESH KUMAR VERMA\nDOB: 12/04/1988\nGender: Male\nAddress: 42, Shanti Vihar, Ring Road, New Delhi\nAadhaar Number: 9876 5432 1098"
+}

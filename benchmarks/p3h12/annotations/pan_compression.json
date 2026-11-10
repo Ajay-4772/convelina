@@ -1,0 +1,20 @@
+{
+  "sample_id": "pan_compression",
+  "category": "pan",
+  "condition": "compression",
+  "condition_name": "Heavy JPEG Compression Artifacts",
+  "condition_description": "Low quality JPEG compression (Q=28) with 8x8 DCT boundary ringing",
+  "expected_manual_review": false,
+  "profile_id": "prof_2",
+  "image_filename": "pan_compression.jpg",
+  "ground_truth_fields": {
+    "pan_number": "BKPPR5678G",
+    "document_number": "BKPPR5678G",
+    "issuing_authority": "Income Tax Department",
+    "full_name": "PRIYA RAMANATHAN",
+    "father_name": "K. RAMANATHAN",
+    "parent_guardian_name": "K. RAMANATHAN",
+    "date_of_birth": "1994-08-25"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nINCOME TAX DEPARTMENT\nGOVT. OF INDIA\nPermanent Account Number: BKPPR5678G\nName: PRIYA RAMANATHAN\nFather's Name: K. RAMANATHAN\nDate of Birth: 25/08/1994"
+}

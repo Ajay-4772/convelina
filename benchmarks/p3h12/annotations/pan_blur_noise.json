@@ -1,0 +1,20 @@
+{
+  "sample_id": "pan_blur_noise",
+  "category": "pan",
+  "condition": "blur_noise",
+  "condition_name": "Optical Blur & Sensor Noise",
+  "condition_description": "Gaussian blur (radius 1.8) and additive Gaussian speckle noise",
+  "expected_manual_review": true,
+  "profile_id": "prof_1",
+  "image_filename": "pan_blur_noise.png",
+  "ground_truth_fields": {
+    "pan_number": "ABCDE1234F",
+    "document_number": "ABCDE1234F",
+    "issuing_authority": "Income Tax Department",
+    "full_name": "RAJESH KUMAR VERMA",
+    "father_name": "SURESH CHANDRA VERMA",
+    "parent_guardian_name": "SURESH CHANDRA VERMA",
+    "date_of_birth": "1988-04-12"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nINCOME TAX DEPARTMENT\nGOVT. OF INDIA\nPermanent Account Number: ABCDE1234F\nName: RAJESH KUMAR VERMA\nFather's Name: SURESH CHANDRA VERMA\nDate of Birth: 12/04/1988"
+}

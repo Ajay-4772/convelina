@@ -1,0 +1,25 @@
+{
+  "sample_id": "education_12th_compression",
+  "category": "education_12th",
+  "condition": "compression",
+  "condition_name": "Heavy JPEG Compression Artifacts",
+  "condition_description": "Low quality JPEG compression (Q=28) with 8x8 DCT boundary ringing",
+  "expected_manual_review": false,
+  "profile_id": "prof_2",
+  "image_filename": "education_12th_compression.jpg",
+  "ground_truth_fields": {
+    "roll_number": "7823410",
+    "registration_number": "TN/2012/7823410",
+    "document_number": "7823410",
+    "board": "CBSE",
+    "passing_year": "2012",
+    "issuing_authority": "CBSE",
+    "full_name": "PRIYA RAMANATHAN",
+    "father_name": "K. RAMANATHAN",
+    "parent_guardian_name": "K. RAMANATHAN",
+    "mother_name": "MEENAKSHI RAMANATHAN",
+    "date_of_birth": "1994-08-25",
+    "result": "PASSED"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nCENTRAL BOARD OF SECONDARY EDUCATION\nSENIOR SCHOOL CERTIFICATE EXAMINATION (CLASS XII)\nMARKS STATEMENT AND PROVISIONAL CERTIFICATE\nRoll No: 7823410\nRegistration No: TN/2012/7823410\nCandidate Name: PRIYA RAMANATHAN\nFather's Name: K. RAMANATHAN\nMother's Name: MEENAKSHI RAMANATHAN\nDate of Birth: 25/08/1994\nFINAL RESULT: PASSED"
+}

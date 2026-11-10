@@ -1,0 +1,25 @@
+{
+  "sample_id": "education_10th_skewed_rot",
+  "category": "education_10th",
+  "condition": "skewed_rot",
+  "condition_name": "Rotated & Skewed Alignment",
+  "condition_description": "Image rotated by 5.5 degrees clockwise testing deskewing pipeline",
+  "expected_manual_review": false,
+  "profile_id": "prof_3",
+  "image_filename": "education_10th_skewed_rot.png",
+  "ground_truth_fields": {
+    "roll_number": "3129845",
+    "registration_number": "WB/2001/3129845",
+    "document_number": "3129845",
+    "board": "CBSE",
+    "passing_year": "2001",
+    "issuing_authority": "CBSE",
+    "full_name": "ANIRBAN BANERJEE",
+    "father_name": "SUBRATA BANERJEE",
+    "parent_guardian_name": "SUBRATA BANERJEE",
+    "mother_name": "APARNA BANERJEE",
+    "date_of_birth": "1985-11-14",
+    "result": "PASSED"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nCENTRAL BOARD OF SECONDARY EDUCATION\nSECONDARY SCHOOL EXAMINATION (CLASS X)\nMARKS STATEMENT AND PROVISIONAL CERTIFICATE\nRoll No: 3129845\nRegistration No: WB/2001/3129845\nCandidate Name: ANIRBAN BANERJEE\nFather's Name: SUBRATA BANERJEE\nMother's Name: APARNA BANERJEE\nDate of Birth: 14/11/1985\nFINAL RESULT: PASSED"
+}

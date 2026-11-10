@@ -1,0 +1,21 @@
+{
+  "sample_id": "aadhaar_low_resolution",
+  "category": "aadhaar",
+  "condition": "low_resolution",
+  "condition_name": "Low Resolution Downsampling",
+  "condition_description": "Image downsampled to 480x300 and scaled up; pixelation noise",
+  "expected_manual_review": true,
+  "profile_id": "prof_4",
+  "image_filename": "aadhaar_low_resolution.png",
+  "ground_truth_fields": {
+    "full_name": "NEHA PATEL",
+    "date_of_birth": "1992-02-03",
+    "gender": "Female",
+    "address": "204, Shreerang Society, SG Highway, Ahmedabad",
+    "pincode": "380054",
+    "aadhaar_number": "6543 2109 8765",
+    "document_number": "6543 2109 8765",
+    "issuing_authority": "UIDAI"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nGOVERNMENT OF INDIA\nUnique Identification Authority of India (Sample)\nName: NEHA PATEL\nDOB: 03/02/1992\nGender: Female\nAddress: 204, Shreerang Society, SG Highway, Ahmedabad\nAadhaar Number: 6543 2109 8765"
+}

@@ -1,0 +1,25 @@
+{
+  "sample_id": "education_12th_blur_noise",
+  "category": "education_12th",
+  "condition": "blur_noise",
+  "condition_name": "Optical Blur & Sensor Noise",
+  "condition_description": "Gaussian blur (radius 1.8) and additive Gaussian speckle noise",
+  "expected_manual_review": true,
+  "profile_id": "prof_1",
+  "image_filename": "education_12th_blur_noise.png",
+  "ground_truth_fields": {
+    "roll_number": "8245190",
+    "registration_number": "R/2006/8245190",
+    "document_number": "8245190",
+    "board": "CBSE",
+    "passing_year": "2006",
+    "issuing_authority": "CBSE",
+    "full_name": "RAJESH KUMAR VERMA",
+    "father_name": "SURESH CHANDRA VERMA",
+    "parent_guardian_name": "SURESH CHANDRA VERMA",
+    "mother_name": "SUNITA VERMA",
+    "date_of_birth": "1988-04-12",
+    "result": "PASSED"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nCENTRAL BOARD OF SECONDARY EDUCATION\nSENIOR SCHOOL CERTIFICATE EXAMINATION (CLASS XII)\nMARKS STATEMENT AND PROVISIONAL CERTIFICATE\nRoll No: 8245190\nRegistration No: R/2006/8245190\nCandidate Name: RAJESH KUMAR VERMA\nFather's Name: SURESH CHANDRA VERMA\nMother's Name: SUNITA VERMA\nDate of Birth: 12/04/1988\nFINAL RESULT: PASSED"
+}

@@ -1,0 +1,21 @@
+{
+  "sample_id": "aadhaar_blur_noise",
+  "category": "aadhaar",
+  "condition": "blur_noise",
+  "condition_name": "Optical Blur & Sensor Noise",
+  "condition_description": "Gaussian blur (radius 1.8) and additive Gaussian speckle noise",
+  "expected_manual_review": true,
+  "profile_id": "prof_5",
+  "image_filename": "aadhaar_blur_noise.png",
+  "ground_truth_fields": {
+    "full_name": "S. K. SHARMA",
+    "date_of_birth": "1990-09-19",
+    "gender": "Male",
+    "address": "12, Malviya Nagar, Jaipur, Rajasthan",
+    "pincode": "302017",
+    "aadhaar_number": "5432 1098 7654",
+    "document_number": "5432 1098 7654",
+    "issuing_authority": "UIDAI"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nGOVERNMENT OF INDIA\nUnique Identification Authority of India (Sample)\nName: S. K. SHARMA\nDOB: 19/09/1990\nGender: Male\nAddress: 12, Malviya Nagar, Jaipur, Rajasthan\nAadhaar Number: 5432 1098 7654"
+}

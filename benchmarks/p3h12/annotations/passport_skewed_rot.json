@@ -1,0 +1,22 @@
+{
+  "sample_id": "passport_skewed_rot",
+  "category": "passport",
+  "condition": "skewed_rot",
+  "condition_name": "Rotated & Skewed Alignment",
+  "condition_description": "Image rotated by 5.5 degrees clockwise testing deskewing pipeline",
+  "expected_manual_review": false,
+  "profile_id": "prof_1",
+  "image_filename": "passport_skewed_rot.png",
+  "ground_truth_fields": {
+    "passport_number": "Z1234567",
+    "document_number": "Z1234567",
+    "issuing_authority": "Ministry of External Affairs",
+    "full_name": "RAJESH KUMAR VERMA",
+    "gender": "Male",
+    "date_of_birth": "1988-04-12",
+    "father_name": "SURESH CHANDRA VERMA",
+    "parent_guardian_name": "SURESH CHANDRA VERMA",
+    "mother_name": "SUNITA VERMA"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nPASSPORT\nREPUBLIC OF INDIA\nPassport No: Z1234567\nGiven Name: RAJESH KUMAR VERMA\nDate of Birth: 12/04/1988\nName of Father: SURESH CHANDRA VERMA\nP<INDRAJESH<KUMAR<VERMA<<<<<<<<<<<<<<<<<<<<\nZ12345674IND8804125M<<<<<<<<<<3"
+}

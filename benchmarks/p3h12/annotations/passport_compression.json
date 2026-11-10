@@ -1,0 +1,22 @@
+{
+  "sample_id": "passport_compression",
+  "category": "passport",
+  "condition": "compression",
+  "condition_name": "Heavy JPEG Compression Artifacts",
+  "condition_description": "Low quality JPEG compression (Q=28) with 8x8 DCT boundary ringing",
+  "expected_manual_review": false,
+  "profile_id": "prof_4",
+  "image_filename": "passport_compression.jpg",
+  "ground_truth_fields": {
+    "passport_number": "J7890123",
+    "document_number": "J7890123",
+    "issuing_authority": "Ministry of External Affairs",
+    "full_name": "NEHA PATEL",
+    "gender": "Female",
+    "date_of_birth": "1992-02-03",
+    "father_name": "BHAVESH PATEL",
+    "parent_guardian_name": "BHAVESH PATEL",
+    "mother_name": "GITABEN PATEL"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nPASSPORT\nREPUBLIC OF INDIA\nPassport No: J7890123\nGiven Name: NEHA PATEL\nDate of Birth: 03/02/1992\nName of Father: BHAVESH PATEL\nP<INDNEHA<PATEL<<<<<<<<<<<<<<<<<<<<\nJ78901234IND9202035M<<<<<<<<<<3"
+}

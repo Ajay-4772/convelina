@@ -1,0 +1,22 @@
+{
+  "sample_id": "epf_skewed_rot",
+  "category": "epf",
+  "condition": "skewed_rot",
+  "condition_name": "Rotated & Skewed Alignment",
+  "condition_description": "Image rotated by 5.5 degrees clockwise testing deskewing pipeline",
+  "expected_manual_review": false,
+  "profile_id": "prof_1",
+  "image_filename": "epf_skewed_rot.png",
+  "ground_truth_fields": {
+    "uan": "100912345678",
+    "document_number": "100912345678",
+    "issuing_authority": "EPFO",
+    "member_id": "DLCPM00123450000067890",
+    "full_name": "RAJESH KUMAR VERMA",
+    "employer_name": "TECHCON CLOUD SOLUTIONS PRIVATE LIMITED",
+    "establishment_id": "DLCPM0012345000",
+    "date_of_joining": "01/07/2012",
+    "date_of_exit": "31/03/2018"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nEMPLOYEES' PROVIDENT FUND ORGANISATION, INDIA\nMEMBER PASSBOOK & REGISTRATION PARTICULARS\nUniversal Account Number (UAN): 100912345678\nMember ID: DLCPM00123450000067890\nMember Name: RAJESH KUMAR VERMA\nEstablishment: TECHCON CLOUD SOLUTIONS PRIVATE LIMITED\nDate of Joining: 01/07/2012\nDate of Exit: 31/03/2018"
+}

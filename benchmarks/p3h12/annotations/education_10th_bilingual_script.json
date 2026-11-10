@@ -1,0 +1,25 @@
+{
+  "sample_id": "education_10th_bilingual_script",
+  "category": "education_10th",
+  "condition": "bilingual_script",
+  "condition_name": "Bilingual Multi-Script Formatting",
+  "condition_description": "Official layout with dual English and Indic (Hindi/Tamil) field values",
+  "expected_manual_review": false,
+  "profile_id": "prof_2",
+  "image_filename": "education_10th_bilingual_script.png",
+  "ground_truth_fields": {
+    "roll_number": "4512789",
+    "registration_number": "TN/2010/4512789",
+    "document_number": "4512789",
+    "board": "CBSE",
+    "passing_year": "2010",
+    "issuing_authority": "CBSE",
+    "full_name": "PRIYA RAMANATHAN",
+    "father_name": "K. RAMANATHAN",
+    "parent_guardian_name": "K. RAMANATHAN",
+    "mother_name": "MEENAKSHI RAMANATHAN",
+    "date_of_birth": "1994-08-25",
+    "result": "PASSED"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nCENTRAL BOARD OF SECONDARY EDUCATION\nSECONDARY SCHOOL EXAMINATION (CLASS X)\nMARKS STATEMENT AND PROVISIONAL CERTIFICATE\nRoll No: 4512789\nRegistration No: TN/2010/4512789\nCandidate Name: PRIYA RAMANATHAN\nFather's Name: K. RAMANATHAN\nMother's Name: MEENAKSHI RAMANATHAN\nDate of Birth: 25/08/1994\nFINAL RESULT: PASSED"
+}

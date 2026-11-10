@@ -1,0 +1,386 @@
+[
+  {
+    "sample_id": "aadhaar_clean_scan",
+    "category": "aadhaar",
+    "condition": "clean_scan",
+    "image_path": "benchmarks/p3h12/images/aadhaar_clean_scan.png",
+    "annotation_path": "benchmarks/p3h12/annotations/aadhaar_clean_scan.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "aadhaar_photo_shadow",
+    "category": "aadhaar",
+    "condition": "photo_shadow",
+    "image_path": "benchmarks/p3h12/images/aadhaar_photo_shadow.png",
+    "annotation_path": "benchmarks/p3h12/annotations/aadhaar_photo_shadow.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "aadhaar_skewed_rot",
+    "category": "aadhaar",
+    "condition": "skewed_rot",
+    "image_path": "benchmarks/p3h12/images/aadhaar_skewed_rot.png",
+    "annotation_path": "benchmarks/p3h12/annotations/aadhaar_skewed_rot.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "aadhaar_low_resolution",
+    "category": "aadhaar",
+    "condition": "low_resolution",
+    "image_path": "benchmarks/p3h12/images/aadhaar_low_resolution.png",
+    "annotation_path": "benchmarks/p3h12/annotations/aadhaar_low_resolution.json",
+    "expected_review": true
+  },
+  {
+    "sample_id": "aadhaar_blur_noise",
+    "category": "aadhaar",
+    "condition": "blur_noise",
+    "image_path": "benchmarks/p3h12/images/aadhaar_blur_noise.png",
+    "annotation_path": "benchmarks/p3h12/annotations/aadhaar_blur_noise.json",
+    "expected_review": true
+  },
+  {
+    "sample_id": "aadhaar_compression",
+    "category": "aadhaar",
+    "condition": "compression",
+    "image_path": "benchmarks/p3h12/images/aadhaar_compression.jpg",
+    "annotation_path": "benchmarks/p3h12/annotations/aadhaar_compression.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "aadhaar_obscured_crease",
+    "category": "aadhaar",
+    "condition": "obscured_crease",
+    "image_path": "benchmarks/p3h12/images/aadhaar_obscured_crease.png",
+    "annotation_path": "benchmarks/p3h12/annotations/aadhaar_obscured_crease.json",
+    "expected_review": true
+  },
+  {
+    "sample_id": "aadhaar_bilingual_script",
+    "category": "aadhaar",
+    "condition": "bilingual_script",
+    "image_path": "benchmarks/p3h12/images/aadhaar_bilingual_script.png",
+    "annotation_path": "benchmarks/p3h12/annotations/aadhaar_bilingual_script.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "pan_clean_scan",
+    "category": "pan",
+    "condition": "clean_scan",
+    "image_path": "benchmarks/p3h12/images/pan_clean_scan.png",
+    "annotation_path": "benchmarks/p3h12/annotations/pan_clean_scan.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "pan_photo_shadow",
+    "category": "pan",
+    "condition": "photo_shadow",
+    "image_path": "benchmarks/p3h12/images/pan_photo_shadow.png",
+    "annotation_path": "benchmarks/p3h12/annotations/pan_photo_shadow.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "pan_skewed_rot",
+    "category": "pan",
+    "condition": "skewed_rot",
+    "image_path": "benchmarks/p3h12/images/pan_skewed_rot.png",
+    "annotation_path": "benchmarks/p3h12/annotations/pan_skewed_rot.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "pan_low_resolution",
+    "category": "pan",
+    "condition": "low_resolution",
+    "image_path": "benchmarks/p3h12/images/pan_low_resolution.png",
+    "annotation_path": "benchmarks/p3h12/annotations/pan_low_resolution.json",
+    "expected_review": true
+  },
+  {
+    "sample_id": "pan_blur_noise",
+    "category": "pan",
+    "condition": "blur_noise",
+    "image_path": "benchmarks/p3h12/images/pan_blur_noise.png",
+    "annotation_path": "benchmarks/p3h12/annotations/pan_blur_noise.json",
+    "expected_review": true
+  },
+  {
+    "sample_id": "pan_compression",
+    "category": "pan",
+    "condition": "compression",
+    "image_path": "benchmarks/p3h12/images/pan_compression.jpg",
+    "annotation_path": "benchmarks/p3h12/annotations/pan_compression.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "pan_obscured_crease",
+    "category": "pan",
+    "condition": "obscured_crease",
+    "image_path": "benchmarks/p3h12/images/pan_obscured_crease.png",
+    "annotation_path": "benchmarks/p3h12/annotations/pan_obscured_crease.json",
+    "expected_review": true
+  },
+  {
+    "sample_id": "pan_bilingual_script",
+    "category": "pan",
+    "condition": "bilingual_script",
+    "image_path": "benchmarks/p3h12/images/pan_bilingual_script.png",
+    "annotation_path": "benchmarks/p3h12/annotations/pan_bilingual_script.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "passport_clean_scan",
+    "category": "passport",
+    "condition": "clean_scan",
+    "image_path": "benchmarks/p3h12/images/passport_clean_scan.png",
+    "annotation_path": "benchmarks/p3h12/annotations/passport_clean_scan.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "passport_photo_shadow",
+    "category": "passport",
+    "condition": "photo_shadow",
+    "image_path": "benchmarks/p3h12/images/passport_photo_shadow.png",
+    "annotation_path": "benchmarks/p3h12/annotations/passport_photo_shadow.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "passport_skewed_rot",
+    "category": "passport",
+    "condition": "skewed_rot",
+    "image_path": "benchmarks/p3h12/images/passport_skewed_rot.png",
+    "annotation_path": "benchmarks/p3h12/annotations/passport_skewed_rot.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "passport_low_resolution",
+    "category": "passport",
+    "condition": "low_resolution",
+    "image_path": "benchmarks/p3h12/images/passport_low_resolution.png",
+    "annotation_path": "benchmarks/p3h12/annotations/passport_low_resolution.json",
+    "expected_review": true
+  },
+  {
+    "sample_id": "passport_blur_noise",
+    "category": "passport",
+    "condition": "blur_noise",
+    "image_path": "benchmarks/p3h12/images/passport_blur_noise.png",
+    "annotation_path": "benchmarks/p3h12/annotations/passport_blur_noise.json",
+    "expected_review": true
+  },
+  {
+    "sample_id": "passport_compression",
+    "category": "passport",
+    "condition": "compression",
+    "image_path": "benchmarks/p3h12/images/passport_compression.jpg",
+    "annotation_path": "benchmarks/p3h12/annotations/passport_compression.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "passport_obscured_crease",
+    "category": "passport",
+    "condition": "obscured_crease",
+    "image_path": "benchmarks/p3h12/images/passport_obscured_crease.png",
+    "annotation_path": "benchmarks/p3h12/annotations/passport_obscured_crease.json",
+    "expected_review": true
+  },
+  {
+    "sample_id": "passport_bilingual_script",
+    "category": "passport",
+    "condition": "bilingual_script",
+    "image_path": "benchmarks/p3h12/images/passport_bilingual_script.png",
+    "annotation_path": "benchmarks/p3h12/annotations/passport_bilingual_script.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "education_10th_clean_scan",
+    "category": "education_10th",
+    "condition": "clean_scan",
+    "image_path": "benchmarks/p3h12/images/education_10th_clean_scan.png",
+    "annotation_path": "benchmarks/p3h12/annotations/education_10th_clean_scan.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "education_10th_photo_shadow",
+    "category": "education_10th",
+    "condition": "photo_shadow",
+    "image_path": "benchmarks/p3h12/images/education_10th_photo_shadow.png",
+    "annotation_path": "benchmarks/p3h12/annotations/education_10th_photo_shadow.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "education_10th_skewed_rot",
+    "category": "education_10th",
+    "condition": "skewed_rot",
+    "image_path": "benchmarks/p3h12/images/education_10th_skewed_rot.png",
+    "annotation_path": "benchmarks/p3h12/annotations/education_10th_skewed_rot.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "education_10th_low_resolution",
+    "category": "education_10th",
+    "condition": "low_resolution",
+    "image_path": "benchmarks/p3h12/images/education_10th_low_resolution.png",
+    "annotation_path": "benchmarks/p3h12/annotations/education_10th_low_resolution.json",
+    "expected_review": true
+  },
+  {
+    "sample_id": "education_10th_blur_noise",
+    "category": "education_10th",
+    "condition": "blur_noise",
+    "image_path": "benchmarks/p3h12/images/education_10th_blur_noise.png",
+    "annotation_path": "benchmarks/p3h12/annotations/education_10th_blur_noise.json",
+    "expected_review": true
+  },
+  {
+    "sample_id": "education_10th_compression",
+    "category": "education_10th",
+    "condition": "compression",
+    "image_path": "benchmarks/p3h12/images/education_10th_compression.jpg",
+    "annotation_path": "benchmarks/p3h12/annotations/education_10th_compression.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "education_10th_obscured_crease",
+    "category": "education_10th",
+    "condition": "obscured_crease",
+    "image_path": "benchmarks/p3h12/images/education_10th_obscured_crease.png",
+    "annotation_path": "benchmarks/p3h12/annotations/education_10th_obscured_crease.json",
+    "expected_review": true
+  },
+  {
+    "sample_id": "education_10th_bilingual_script",
+    "category": "education_10th",
+    "condition": "bilingual_script",
+    "image_path": "benchmarks/p3h12/images/education_10th_bilingual_script.png",
+    "annotation_path": "benchmarks/p3h12/annotations/education_10th_bilingual_script.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "education_12th_clean_scan",
+    "category": "education_12th",
+    "condition": "clean_scan",
+    "image_path": "benchmarks/p3h12/images/education_12th_clean_scan.png",
+    "annotation_path": "benchmarks/p3h12/annotations/education_12th_clean_scan.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "education_12th_photo_shadow",
+    "category": "education_12th",
+    "condition": "photo_shadow",
+    "image_path": "benchmarks/p3h12/images/education_12th_photo_shadow.png",
+    "annotation_path": "benchmarks/p3h12/annotations/education_12th_photo_shadow.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "education_12th_skewed_rot",
+    "category": "education_12th",
+    "condition": "skewed_rot",
+    "image_path": "benchmarks/p3h12/images/education_12th_skewed_rot.png",
+    "annotation_path": "benchmarks/p3h12/annotations/education_12th_skewed_rot.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "education_12th_low_resolution",
+    "category": "education_12th",
+    "condition": "low_resolution",
+    "image_path": "benchmarks/p3h12/images/education_12th_low_resolution.png",
+    "annotation_path": "benchmarks/p3h12/annotations/education_12th_low_resolution.json",
+    "expected_review": true
+  },
+  {
+    "sample_id": "education_12th_blur_noise",
+    "category": "education_12th",
+    "condition": "blur_noise",
+    "image_path": "benchmarks/p3h12/images/education_12th_blur_noise.png",
+    "annotation_path": "benchmarks/p3h12/annotations/education_12th_blur_noise.json",
+    "expected_review": true
+  },
+  {
+    "sample_id": "education_12th_compression",
+    "category": "education_12th",
+    "condition": "compression",
+    "image_path": "benchmarks/p3h12/images/education_12th_compression.jpg",
+    "annotation_path": "benchmarks/p3h12/annotations/education_12th_compression.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "education_12th_obscured_crease",
+    "category": "education_12th",
+    "condition": "obscured_crease",
+    "image_path": "benchmarks/p3h12/images/education_12th_obscured_crease.png",
+    "annotation_path": "benchmarks/p3h12/annotations/education_12th_obscured_crease.json",
+    "expected_review": true
+  },
+  {
+    "sample_id": "education_12th_bilingual_script",
+    "category": "education_12th",
+    "condition": "bilingual_script",
+    "image_path": "benchmarks/p3h12/images/education_12th_bilingual_script.png",
+    "annotation_path": "benchmarks/p3h12/annotations/education_12th_bilingual_script.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "epf_clean_scan",
+    "category": "epf",
+    "condition": "clean_scan",
+    "image_path": "benchmarks/p3h12/images/epf_clean_scan.png",
+    "annotation_path": "benchmarks/p3h12/annotations/epf_clean_scan.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "epf_photo_shadow",
+    "category": "epf",
+    "condition": "photo_shadow",
+    "image_path": "benchmarks/p3h12/images/epf_photo_shadow.png",
+    "annotation_path": "benchmarks/p3h12/annotations/epf_photo_shadow.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "epf_skewed_rot",
+    "category": "epf",
+    "condition": "skewed_rot",
+    "image_path": "benchmarks/p3h12/images/epf_skewed_rot.png",
+    "annotation_path": "benchmarks/p3h12/annotations/epf_skewed_rot.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "epf_low_resolution",
+    "category": "epf",
+    "condition": "low_resolution",
+    "image_path": "benchmarks/p3h12/images/epf_low_resolution.png",
+    "annotation_path": "benchmarks/p3h12/annotations/epf_low_resolution.json",
+    "expected_review": true
+  },
+  {
+    "sample_id": "epf_blur_noise",
+    "category": "epf",
+    "condition": "blur_noise",
+    "image_path": "benchmarks/p3h12/images/epf_blur_noise.png",
+    "annotation_path": "benchmarks/p3h12/annotations/epf_blur_noise.json",
+    "expected_review": true
+  },
+  {
+    "sample_id": "epf_compression",
+    "category": "epf",
+    "condition": "compression",
+    "image_path": "benchmarks/p3h12/images/epf_compression.jpg",
+    "annotation_path": "benchmarks/p3h12/annotations/epf_compression.json",
+    "expected_review": false
+  },
+  {
+    "sample_id": "epf_obscured_crease",
+    "category": "epf",
+    "condition": "obscured_crease",
+    "image_path": "benchmarks/p3h12/images/epf_obscured_crease.png",
+    "annotation_path": "benchmarks/p3h12/annotations/epf_obscured_crease.json",
+    "expected_review": true
+  },
+  {
+    "sample_id": "epf_bilingual_script",
+    "category": "epf",
+    "condition": "bilingual_script",
+    "image_path": "benchmarks/p3h12/images/epf_bilingual_script.png",
+    "annotation_path": "benchmarks/p3h12/annotations/epf_bilingual_script.json",
+    "expected_review": false
+  }
+]
