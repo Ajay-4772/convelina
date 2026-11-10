@@ -107,3 +107,4 @@ The `audit_log` table records all security-relevant events (upload, OCR extracti
 ## 5. Verification Sign-Off
 
 The privacy architecture, ephemeral scratch cleanup, and database multi-tenant isolation mechanisms are verified as mathematically and structurally sound.
+

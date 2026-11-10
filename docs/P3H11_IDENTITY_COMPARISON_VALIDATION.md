@@ -100,3 +100,4 @@ In Indian nomenclature, many male and female names differ by only 1 or 2 suffix 
 ## 4. Verification Sign-Off
 
 The deterministic comparison engine satisfies all project safety requirements. Automated regression test `backend/tests/test_p3h11_adversarial_comparison.py` is integrated into CI/CD.
+

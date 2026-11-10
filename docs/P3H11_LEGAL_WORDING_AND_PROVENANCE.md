@@ -76,3 +76,4 @@ The primary directive of this audit is: **Never claim legal compliance merely be
    - `frontend/e2e/p3h10_citizen_journey.spec.ts` passed confirming advisory notices appear on all drafts.
    - All 16 Next.js production routes compiled without warnings.
 2. **Audit Verdict**: **VERIFIED**. All user-facing text conforms strictly to legal and regulatory accuracy principles.
+

@@ -105,3 +105,4 @@ The 8-case confirmation security suite (`test_p3h11_confirmation_security.py`) p
   - All functional, security, privacy, and architectural invariants are strictly enforced and verified by automated regression suites.
 - **Production Cloud Deployment**: **PARTIALLY VERIFIED**
   - Requires live Google Cloud deployment with hardware-backed KMS, certified Firebase identity provider in live mode, and institutional compliance reviews before handling real-world citizen credentials.
+

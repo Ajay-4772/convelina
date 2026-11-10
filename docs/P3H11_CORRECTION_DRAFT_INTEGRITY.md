@@ -78,3 +78,4 @@ Upon final citizen review, the citizen clicks "Confirm Draft" to apply the platf
 ## 4. Verification Sign-Off
 
 The correction drafting engine strictly adheres to the confirmed-facts invariant, applies indelible advisory watermarks, and seals drafts with tamper-evident Ed25519 attestations.
+
