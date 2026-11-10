@@ -52,37 +52,55 @@ import {
 
 const CLASSIFICATION_BADGES: Record<string, { label: string; textClass: string; bgClass: string; borderClass: string }> = {
   EXACT_MATCH: {
-    label: "NO ACTION NEEDED",
+    label: "EXACT MATCH",
     textClass: "text-[#0D652D]",
     bgClass: "bg-[#E6F4EA]",
     borderClass: "border-[#CEEAD6]",
   },
   FORMAT_ONLY_MATCH: {
-    label: "FORMAT DIFFERENCE",
+    label: "FORMATTING-ONLY DIFFERENCE",
     textClass: "text-[#1A73E8]",
     bgClass: "bg-[#E8F0FE]",
     borderClass: "border-[#D2E3FC]",
   },
+  TOKEN_ORDER_VARIATION: {
+    label: "FORMATTING-ONLY DIFFERENCE",
+    textClass: "text-[#1A73E8]",
+    bgClass: "bg-[#E8F0FE]",
+    borderClass: "border-[#D2E3FC]",
+  },
+  TRANSLITERATION_OR_VARIANT: {
+    label: "TRANSLITERATION / SPELLING VARIATION",
+    textClass: "text-[#007B83]",
+    bgClass: "bg-[#E0F2F1]",
+    borderClass: "border-[#B2DFDB]",
+  },
   LIKELY_SAME_PERSON: {
-    label: "LIKELY SAME PERSON",
-    textClass: "text-[#0D652D]",
-    bgClass: "bg-[#E6F4EA]",
-    borderClass: "border-[#CEEAD6]",
+    label: "TRANSLITERATION / SPELLING VARIATION",
+    textClass: "text-[#007B83]",
+    bgClass: "bg-[#E0F2F1]",
+    borderClass: "border-[#B2DFDB]",
+  },
+  TRUNCATION_OR_PARTIAL_MATCH: {
+    label: "POSSIBLE TRUNCATION",
+    textClass: "text-[#B06000]",
+    bgClass: "bg-[#FEF7E0]",
+    borderClass: "border-[#FEEFC3]",
   },
   AMBIGUOUS_NEEDS_REVIEW: {
-    label: "AMBIGUOUS — REVIEW RECOMMENDED",
+    label: "AMBIGUOUS MATCH",
     textClass: "text-[#B06000]",
     bgClass: "bg-[#FEF7E0]",
     borderClass: "border-[#FEEFC3]",
   },
   INITIAL_AMBIGUITY: {
-    label: "AMBIGUOUS — REVIEW RECOMMENDED",
+    label: "AMBIGUOUS MATCH",
     textClass: "text-[#B06000]",
     bgClass: "bg-[#FEF7E0]",
     borderClass: "border-[#FEEFC3]",
   },
-  TRUNCATION_OR_PARTIAL_MATCH: {
-    label: "POSSIBLE TRUNCATION",
+  GENDER_AWARE_SIMILAR_NAME: {
+    label: "AMBIGUOUS MATCH",
     textClass: "text-[#B06000]",
     bgClass: "bg-[#FEF7E0]",
     borderClass: "border-[#FEEFC3]",
@@ -100,16 +118,22 @@ const CLASSIFICATION_BADGES: Record<string, { label: string; textClass: string; 
     borderClass: "border-[#FAD2CF]",
   },
   LOW_CONFIDENCE_NEEDS_REVIEW: {
-    label: "LOW CONFIDENCE — REVIEW REQUIRED",
+    label: "MANUAL REVIEW REQUIRED",
     textClass: "text-[#E37400]",
     bgClass: "bg-[#FEF7E0]",
     borderClass: "border-[#FEEFC3]",
   },
   UNRESOLVABLE_NEEDS_MANUAL_REVIEW: {
-    label: "UNRESOLVABLE — MANUAL REVIEW REQUIRED",
+    label: "MANUAL REVIEW REQUIRED",
     textClass: "text-[#C5221F]",
     bgClass: "bg-[#FCE8E6]",
     borderClass: "border-[#FAD2CF]",
+  },
+  INSUFFICIENT_DATA: {
+    label: "MANUAL REVIEW REQUIRED",
+    textClass: "text-[#777777]",
+    bgClass: "bg-[#F4F3EF]",
+    borderClass: "border-[#E7E5E0]",
   },
 };
 
@@ -617,15 +641,19 @@ export default function InconsistenciesPage() {
               onChange={(e) => setSelectedDocType(e.target.value)}
               className="w-full h-10 px-3 pr-8 bg-white text-[#111111] font-sans text-sm border border-[#E7E5E0] rounded-[4px] focus:border-[#111111] focus:outline-none appearance-none transition-colors"
             >
-              <option value="aadhaar">Aadhaar Card</option>
-              <option value="pan">PAN Card</option>
-              <option value="passport">Passport</option>
-              <option value="education_10th">Class 10 Certificate / Marksheet</option>
-              <option value="education_12th">Class 12 Certificate / Marksheet</option>
-              <option value="epf_record">EPFO / UAN Records</option>
-              <option value="voter_id">Voter ID Card</option>
-              <option value="driving_licence">Driving Licence</option>
-              <option value="other">Other Identity Document</option>
+              <optgroup label="Tier 1 Primary Identity Categories">
+                <option value="aadhaar">Aadhaar Card</option>
+                <option value="pan">PAN Card</option>
+                <option value="passport">Passport</option>
+                <option value="education_10th">Class 10 Certificate / Marksheet</option>
+                <option value="education_12th">Class 12 Certificate / Marksheet</option>
+                <option value="epf_record">EPFO / UAN Records</option>
+              </optgroup>
+              <optgroup label="Secondary Supporting Evidence">
+                <option value="voter_id">Voter ID Card</option>
+                <option value="driving_licence">Driving Licence</option>
+                <option value="other">Other Identity Document</option>
+              </optgroup>
             </select>
             <ChevronDown className="w-4 h-4 text-[#777777] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
@@ -644,8 +672,20 @@ export default function InconsistenciesPage() {
           </label>
         </div>
 
+        {uploading && (
+          <div className="p-3.5 bg-[#FAF9F6] border border-[#111111] rounded-[4px] text-xs font-sans text-[#111111] flex items-center gap-3 animate-pulse">
+            <RefreshCw className="w-4 h-4 animate-spin text-[#111111] shrink-0" />
+            <div className="space-y-0.5">
+              <div className="font-semibold">Processing Credential OCR & Privacy Masking...</div>
+              <div className="text-[11px] text-[#5E5E5E]">
+                Executing in-memory text extraction, demographic attribute isolation, and sensitive identifier masking. In compliance with the Aadhaar Act (2016) Section 29, temporary files are unlinked immediately.
+              </div>
+            </div>
+          </div>
+        )}
+
         <p className="font-sans text-[11px] text-[#777777]">
-          Accepted formats: PDF, PNG, JPEG (up to 10MB). In compliance with the Aadhaar Act (2016) Section 29, raw images are processed in-memory and immediately destroyed.
+          Accepted formats: PDF, PNG, JPEG (up to 10MB). Six Tier 1 primary identity categories are evaluated for statutory discrepancy analysis; secondary documents serve as corroborating evidence.
         </p>
 
         {/* Uploaded Documents List */}
@@ -877,19 +917,22 @@ export default function InconsistenciesPage() {
             </div>
 
             {/* Statutory Disclaimer - Separating Automated Result from Official Verification */}
-            <div className="px-5 py-3 bg-[#FAF9F6] border-b border-[#E7E5E0] text-[11px] font-sans text-[#777777] flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-[#777777] shrink-0" />
-                <span>
-                  <strong>AUTOMATED COMPARISON RESULT • NOT OFFICIAL GOVERNMENT VERIFICATION:</strong> CONVELINA provides automated identity discrepancy detection and statutory guidance. It does not constitute official government verification or certification.
-                </span>
+            <div className="px-5 py-3.5 bg-[#FAF9F6] border-b border-[#E7E5E0] text-xs font-sans text-[#5E5E5E] space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 font-mono text-[10px] uppercase font-bold text-[#111111]">
+                  <AlertCircle className="w-3.5 h-3.5 text-[#777777] shrink-0" />
+                  <span>AUTOMATED COMPARISON RESULT • NOT OFFICIAL GOVERNMENT VERIFICATION</span>
+                </div>
+                <button
+                  onClick={() => setComparisonResult(null)}
+                  className="text-[#777777] hover:text-[#111111] font-medium shrink-0 ml-2"
+                >
+                  Dismiss
+                </button>
               </div>
-              <button
-                onClick={() => setComparisonResult(null)}
-                className="text-[#777777] hover:text-[#111111] font-medium shrink-0 ml-2"
-              >
-                Dismiss
-              </button>
+              <p className="text-[11px] text-[#777777] leading-relaxed">
+                CONVELINA provides automated identity discrepancy detection and statutory guidance. It does not constitute official government verification, certification, or legal determination. CONVELINA does not declare which document is legally correct. Review statutory guidelines or consult competent authorities.
+              </p>
             </div>
 
             {/* Low OCR Confidence Warning Notice */}
@@ -1117,10 +1160,15 @@ export default function InconsistenciesPage() {
                     </div>
                   )}
 
-                  {/* Mandatory Statutory Disclaimer */}
-                  <div className="text-[11px] font-mono text-[#777777] bg-[#FAF9F6] border border-[#E7E5E0] px-3 py-1.5 rounded-[4px] flex items-center gap-2">
-                    <AlertCircle className="w-3.5 h-3.5 text-[#777777] shrink-0" />
-                    <span>AUTOMATED COMPARISON RESULT — NOT OFFICIAL GOVERNMENT VERIFICATION.</span>
+                  {/* Mandatory Statutory Disclaimer & Legal Correctness Notice */}
+                  <div className="text-xs font-sans text-[#5E5E5E] bg-[#FAF9F6] border border-[#E7E5E0] p-3 rounded-[4px] space-y-1">
+                    <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase font-bold text-[#111111]">
+                      <AlertCircle className="w-3.5 h-3.5 text-[#777777] shrink-0" />
+                      <span>AUTOMATED COMPARISON RESULT — NOT OFFICIAL GOVERNMENT VERIFICATION</span>
+                    </div>
+                    <p className="text-[11px] text-[#777777] leading-relaxed">
+                      CONVELINA provides automated identity discrepancy detection and statutory guidance. CONVELINA does not declare which document is legally correct. Review statutory guidelines or consult official authorities.
+                    </p>
                   </div>
 
                   {/* In-Place Context Preview Accordion (Phase P3C) */}
@@ -1418,15 +1466,24 @@ export default function InconsistenciesPage() {
             </div>
 
             {reviewingDoc.is_user_confirmed ? (
-              <div className="p-3 bg-[#E6F4EA] border border-[#CEEAD6] rounded text-xs text-[#0D652D] flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 shrink-0 text-[#0D652D]" />
-                <span>
-                  <strong>Demographic Data Confirmed:</strong> Citizen confirmed these values on {reviewingDoc.confirmed_at ? new Date(reviewingDoc.confirmed_at).toLocaleDateString() : "record"}. These confirmed values are prioritized for deterministic identity comparison.
-                </span>
+              <div className="p-3.5 bg-[#E6F4EA] border border-[#CEEAD6] rounded text-xs text-[#0D652D] space-y-1">
+                <div className="flex items-center gap-1.5 font-semibold">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-[#0D652D]" />
+                  <span>CITIZEN-CONFIRMED DEMOGRAPHIC DATA</span>
+                </div>
+                <p className="text-[11px] text-[#1E4620] leading-relaxed">
+                  Citizen verified and confirmed these demographic attributes on {reviewingDoc.confirmed_at ? new Date(reviewingDoc.confirmed_at).toLocaleDateString() : "record"}. Confirmed values take legal precedence in deterministic identity comparisons. You may still edit and re-confirm if corrections are necessary.
+                </p>
               </div>
             ) : (
-              <div className="p-3 bg-[#FAF9F6] border border-[#E7E5E0] rounded text-xs text-[#5E5E5E] leading-relaxed">
-                Review machine-extracted values below. Low-confidence extractions (&lt;60%) are highlighted with warning indicators. Confirm your demographic data to finalize it for deterministic comparison.
+              <div className="p-3.5 bg-[#FEF7E0] border border-[#FEEFC3] rounded text-xs text-[#B06000] space-y-1">
+                <div className="flex items-center gap-1.5 font-semibold">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-[#B06000]" />
+                  <span>TENTATIVE MACHINE EXTRACTION — CITIZEN CONFIRMATION REQUIRED</span>
+                </div>
+                <p className="text-[11px] text-[#8C5E28] leading-relaxed">
+                  The values below were extracted automatically by OCR. They may contain scanning noise, font misinterpretations, or truncation. Review each field carefully, correct any errors, and click &quot;Confirm &amp; Verify Demographic Data&quot; to authorize these values for deterministic cross-comparison.
+                </p>
               </div>
             )}
 
@@ -1448,7 +1505,7 @@ export default function InconsistenciesPage() {
                           {isLowConf && (
                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#FEF7E0] border border-[#FEEFC3] text-[#B06000]">
                               <AlertTriangle className="w-3 h-3 text-[#B06000]" />
-                              Poor OCR Quality ({Math.round(conf * 100)}%)
+                              Low OCR Confidence ({Math.round(conf * 100)}%) — Manual Review Required
                             </span>
                           )}
                           {!isLowConf && extraction && (
