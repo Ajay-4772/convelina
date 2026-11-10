@@ -52,6 +52,14 @@ export async function provisionTestCitizenApi(
   };
 }
 
+export async function setBrowserSessionToken(page: Page, token: string): Promise<void> {
+  await page.evaluate((tok) => {
+    try {
+      localStorage.setItem("convelina_test_token", tok);
+    } catch {}
+  }, token);
+}
+
 /**
  * Provisions a real citizen in the PostgreSQL database via FastAPI under forced RLS,
  * and sets the active session in browser localStorage.
@@ -62,14 +70,7 @@ export async function authenticateCitizen(
 ): Promise<TestCitizen> {
   const citizen = await provisionTestCitizenApi(options);
 
-  // 1. Register init script so every navigation automatically has the token in localStorage
-  await page.addInitScript((tok) => {
-    try {
-      localStorage.setItem("convelina_test_token", tok);
-    } catch {}
-  }, citizen.token);
-
-  // 2. Set token in browser localStorage immediately on active page
+  // Set token in browser localStorage immediately on active page
   await page.goto("/");
   await page.evaluate((tok) => {
     try {

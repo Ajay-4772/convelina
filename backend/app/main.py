@@ -92,6 +92,11 @@ app.include_router(admin_router)
 app.include_router(pki_router)
 app.include_router(repository_router)
 
+# Development Explorer router (available only in non-production environments)
+if not is_prod:
+    from app.routers.dev import router as dev_router
+    app.include_router(dev_router)
+
 
 @app.get("/")
 def read_root():

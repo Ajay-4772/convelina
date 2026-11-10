@@ -81,6 +81,20 @@
     - [x] Qdrant Durability Across Restart: Executed `docker restart convelina-qdrant`; verified volume `consolin_qdrant_data` preserves collections and point counts (34 and 6); verified BM25 + dense retrieval; verified DOC_043 statutory governance and zero citizen PII in payload stores.
     - [x] Real Browser Persistence & Isolation: Executed Playwright E2E suite (`frontend/e2e/p3h8_1_browser_persistence.spec.ts`) in Chromium; validated complete Citizen A journey and persistence across page reload; verified Citizen B multi-tenant isolation under forced RLS.
     - [x] Four Specialized Audit Deliverables authored in `docs/`: `P3H8_1_ROLE_ARCHITECTURE_AUDIT.md`, `P3H8_1_CREDENTIAL_SECURITY_AUDIT.md`, `P3H8_1_QDRANT_PERSISTENCE_AUDIT.md`, `P3H8_1_BROWSER_PERSISTENCE_ACCEPTANCE.md`.
+  - [x] **Execute Sub-Phase P3H.9: Development Application Explorer & Guided QA Environment**
+    - [x] Development Explorer Route (`/dev/explorer`): Comprehensive, responsive QA dashboard organizing system inspection into 7 tabs with amber dev environment banner and discrete link in citizen workspace sidebar.
+    - [x] Production Guardrails: Client-side guard rendering 404 in production; server-side guard `verify_dev_mode()` raising 403 Forbidden in production; conditional dev router registration.
+    - [x] Seven Functional Explorer Tabs:
+      1. Overview & Live Health: Live telemetry across FastAPI, PostgreSQL 16 (consolith_app, 21 tables RLS forced, named volume consolin_pgdata), Qdrant (statutory_documents collection, volume consolin_qdrant_data), Firebase Auth (marked SIMULATED, live cloud blocked), Gemini (marked BLOCKED, deterministic BM25 active), Tesseract OCR, storage, and PKI signing.
+      2. Route Explorer: Complete catalog of 15 frontend routes and 115 backend endpoints with HTTP method, role scoping, and clickable links.
+      3. Feature Guide: 8 core features detailed with purpose, inputs, outputs, persistence mechanisms, code locations, and development limitations.
+      4. Interactive Workflows: 14 guided step-by-step walkthroughs with expected results and explicit REAL vs SIMULATED operational indicators.
+      5. Test Accounts: One-click session switcher between Citizen A (Aarav Sharma), Citizen B (Priya Patel), and Platform Admin (AJAY M), plus session reset.
+      6. Persistence Inspector: Real-time, read-only diagnostic inspector querying `/api/v1/dev/persistence-inspect` under active caller session to verify user records, documents, conflicts, checklists, and drafts under PostgreSQL forced RLS.
+      7. Admin Explorer: Telemetry, catalog sync, form replacement gate, PKI keystore, and immutable audit log preview.
+    - [x] Automated Playwright Suite (`frontend/e2e/p3h9_explorer_and_qa.spec.ts`): 4/4 tests passed (2.2m) covering Explorer UI, Citizen A full lifecycle with reload persistence, Citizen B multi-tenant isolation, and admin authorization boundaries.
+    - [x] Regression & Security Verification: Live RLS isolation suite (10/10 PASS); Backend persistence suite (4/4 PASS); Frontend TypeScript check (0 errors); Next.js production build (16/16 routes compiled).
+    - [x] Six Complete Documentation Deliverables authored in `docs/`: `P3H9_APPLICATION_EXPLORER.md`, `P3H9_ROUTE_INVENTORY.md`, `P3H9_FEATURE_AND_API_MAP.md`, `P3H9_GUIDED_WORKFLOWS.md`, `P3H9_TEST_RESULTS.md`, `P3H9_KNOWN_LIMITATIONS.md`.
 - [x] **Phase P4: Verification, Security Hardening & Penetration Testing Gate**
   - [x] Comprehensive 37-test platform penetration testing harness authored & passing (`scripts/run_p4_security_audit.py`, 37/37 tests passed, 100%)
   - [x] Audit log concurrency race condition remediated via Migration 018 (`pg_advisory_xact_lock`)

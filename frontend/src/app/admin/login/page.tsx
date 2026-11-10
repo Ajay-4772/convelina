@@ -4,19 +4,17 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Lock, Mail, Eye, EyeOff, AlertCircle, ArrowLeft } from "lucide-react";
-import { signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { auth } from "../../../lib/firebase";
+import { useAuth } from "../../../context/AuthContext";
 import Logo from "../../../components/ui/Logo";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const { loginWithEmail, logout } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,32 +22,18 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      // 1. Firebase Authentication
-      const userCred = await signInWithEmailAndPassword(auth, email.trim(), password);
-      const token = await userCred.user.getIdToken();
-
-      // 2. Server-side Role Verification
-      const res = await fetch(`${apiUrl}/api/v1/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to verify administrative authorization with server.");
+      const userProfile = await loginWithEmail(email.trim(), password);
+      if (!userProfile) {
+        throw new Error("Unable to establish authenticated session.");
       }
 
-      const profile = await res.json();
-
-      // 3. Strict Admin Role Enforcement
-      if (profile.role !== "admin") {
-        await signOut(auth);
+      if (userProfile.role !== "admin") {
+        await logout();
         setError("Access Denied: The authenticated account does not possess administrator privileges.");
         setLoading(false);
         return;
       }
 
-      // 4. Navigate to Admin Dashboard
       router.push("/admin");
     } catch (err: any) {
       console.error("Admin sign in failure:", err);

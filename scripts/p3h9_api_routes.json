@@ -1,0 +1,1772 @@
+[
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/admin/conflicts",
+    "endpoint": "admin_list_conflicts",
+    "summary": "Allows administrators to monitor detected statutory discrepancies platform-wide.",
+    "dependencies": [
+      "admin_list_conflicts",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/admin/documents",
+    "endpoint": "admin_list_documents",
+    "summary": "Allows administrators to monitor document upload and OCR processing states platform-wide.",
+    "dependencies": [
+      "admin_list_documents",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/admin/overview-stats",
+    "endpoint": "get_admin_overview_stats",
+    "summary": "Returns real operational metrics across all modules for the admin console.",
+    "dependencies": [
+      "get_admin_overview_stats",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/admin/system-activity",
+    "endpoint": "get_system_audit_activity",
+    "summary": "Retrieves recent system-wide audit events with SHA-256 cryptographic chain proofs.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_system_audit_activity",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/admin/users",
+    "endpoint": "list_registered_users",
+    "summary": "Allows administrators to search and inspect registered user accounts.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "list_registered_users"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "DELETE"
+    ],
+    "path": "/api/v1/admin/users/{user_id}",
+    "endpoint": "admin_delete_user",
+    "summary": "Admin securely removes a user account and records the action in the audit trail.",
+    "dependencies": [
+      "admin_delete_user",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/admin/users/{user_id}/role",
+    "endpoint": "admin_update_user_role",
+    "summary": "Explicit, authenticated administrator endpoint to assign or modify user roles.",
+    "dependencies": [
+      "admin_update_user_role",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/auth/admin-only",
+    "endpoint": "admin_only_endpoint",
+    "summary": "Protected endpoint accessible only to system administrators.",
+    "dependencies": [
+      "admin_only_endpoint",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/knowledge/admin/collections/health",
+    "endpoint": "admin_get_collections_health",
+    "summary": "Admin-only endpoint to inspect Qdrant collection health, point counts, and vector configuration.",
+    "dependencies": [
+      "admin_get_collections_health",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/knowledge/admin/collections/rollback",
+    "endpoint": "admin_rollback_collection",
+    "summary": "Admin-only endpoint to roll back active Qdrant collections to a previous version.",
+    "dependencies": [
+      "admin_rollback_collection",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/knowledge/admin/forms",
+    "endpoint": "admin_list_all_forms",
+    "summary": "Admin-only endpoint to inspect all forms in the repository across all lifecycle states.",
+    "dependencies": [
+      "admin_list_all_forms",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/knowledge/admin/forms",
+    "endpoint": "admin_create_official_form",
+    "summary": "Admin-only endpoint to register a new official government form in the repository.",
+    "dependencies": [
+      "admin_create_official_form",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/knowledge/admin/forms/sync",
+    "endpoint": "admin_sync_seed_forms",
+    "summary": "Admin-only endpoint to synchronize and seed default verified official statutory forms.",
+    "dependencies": [
+      "admin_sync_seed_forms",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "PUT"
+    ],
+    "path": "/api/v1/knowledge/admin/forms/{form_id}",
+    "endpoint": "admin_update_official_form",
+    "summary": "Admin-only endpoint to update metadata for an existing official government form.",
+    "dependencies": [
+      "admin_update_official_form",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/knowledge/admin/forms/{form_id}/history",
+    "endpoint": "admin_get_form_history",
+    "summary": "Admin-only endpoint to view the version history and retired audit trail of an official form.",
+    "dependencies": [
+      "admin_get_form_history",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/knowledge/admin/forms/{form_id}/replace",
+    "endpoint": "admin_replace_official_form",
+    "summary": "Admin-only replacement workflow:",
+    "dependencies": [
+      "admin_replace_official_form",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/knowledge/admin/forms/{form_id}/upload",
+    "endpoint": "admin_upload_form_asset",
+    "summary": "Admin-only endpoint to upload or replace the physical PDF document for an official form.",
+    "dependencies": [
+      "admin_upload_form_asset",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "PUT"
+    ],
+    "path": "/api/v1/knowledge/admin/forms/{form_id}/verification",
+    "endpoint": "admin_update_form_verification",
+    "summary": "Admin-only endpoint to update verification state and provenance of an official form.",
+    "dependencies": [
+      "admin_update_form_verification",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "PUT"
+    ],
+    "path": "/api/v1/knowledge/admin/forms/{form_id}/verify-and-publish",
+    "endpoint": "admin_verify_and_publish_form",
+    "summary": "Admin-only endpoint to verify and publish an official form.",
+    "dependencies": [
+      "admin_verify_and_publish_form",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/knowledge/admin/ingest",
+    "endpoint": "admin_start_ingestion",
+    "summary": "Admin-only endpoint to start versioned knowledge ingestion.",
+    "dependencies": [
+      "admin_start_ingestion",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/knowledge/admin/ingest/status/{job_id}",
+    "endpoint": "admin_get_ingestion_status",
+    "summary": "Admin-only endpoint to inspect status of an ingestion job.",
+    "dependencies": [
+      "admin_get_ingestion_status",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/knowledge/admin/sources",
+    "endpoint": "admin_list_all_sources",
+    "summary": "Admin-only endpoint to inspect all knowledge sources across all lifecycle states.",
+    "dependencies": [
+      "admin_list_all_sources",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/knowledge/admin/sources/ingest-file",
+    "endpoint": "admin_ingest_knowledge_file",
+    "summary": "Admin-only endpoint to upload, extract, chunk, embed, and index an official knowledge file (PDF, TXT, MD).",
+    "dependencies": [
+      "admin_ingest_knowledge_file",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "PUT"
+    ],
+    "path": "/api/v1/knowledge/admin/sources/{source_id}/verification",
+    "endpoint": "admin_update_source_verification",
+    "summary": "Admin-only endpoint to update verification state of a statutory source.",
+    "dependencies": [
+      "admin_update_source_verification",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/knowledge/retrieval/diagnostics",
+    "endpoint": "admin_retrieval_diagnostics",
+    "summary": "Admin-only endpoint to execute retrieval diagnostic queries.",
+    "dependencies": [
+      "admin_retrieval_diagnostics",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "PUT"
+    ],
+    "path": "/api/v1/repository/admin/resources/{resource_id}/lifecycle",
+    "endpoint": "admin_transition_resource_lifecycle",
+    "summary": "Transitions repository resource lifecycle status (outdated, retired, needs_review, verified).",
+    "dependencies": [
+      "admin_transition_resource_lifecycle",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "PUT"
+    ],
+    "path": "/api/v1/repository/admin/resources/{resource_id}/verify",
+    "endpoint": "admin_verify_resource",
+    "summary": "Admin endpoint to verify or update provenance classification for a repository asset.",
+    "dependencies": [
+      "admin_verify_resource",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "ADMIN"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/",
+    "endpoint": "read_root",
+    "summary": "",
+    "dependencies": [
+      "read_root"
+    ],
+    "role_requirement": "PUBLIC"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/auth/health",
+    "endpoint": "auth_health",
+    "summary": "Returns the operational status of the Firebase authentication provider.",
+    "dependencies": [
+      "auth_health"
+    ],
+    "role_requirement": "PUBLIC"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/auth/otp/send",
+    "endpoint": "send_email_otp",
+    "summary": "Generates and dispatches a secure 6-digit one-time password for email verification.",
+    "dependencies": [
+      "get_db",
+      "send_email_otp"
+    ],
+    "role_requirement": "PUBLIC"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/auth/otp/verify",
+    "endpoint": "verify_email_otp",
+    "summary": "Verifies the submitted email OTP against recorded active non-expired tokens.",
+    "dependencies": [
+      "get_db",
+      "verify_email_otp"
+    ],
+    "role_requirement": "PUBLIC"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/repository/categories",
+    "endpoint": "get_categories_summary",
+    "summary": "Returns high-level summary and document counts across the 6 supported identity categories.",
+    "dependencies": [
+      "get_categories_summary"
+    ],
+    "role_requirement": "PUBLIC"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/repository/checklists/category/{category}",
+    "endpoint": "get_category_checklists",
+    "summary": "Returns all standard checklists for a supported identity category.",
+    "dependencies": [
+      "get_category_checklists"
+    ],
+    "role_requirement": "PUBLIC"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/repository/checklists/{procedure_id}",
+    "endpoint": "get_procedure_checklist",
+    "summary": "Returns evidence-backed supporting document checklist for a procedure.",
+    "dependencies": [
+      "get_procedure_checklist"
+    ],
+    "role_requirement": "PUBLIC"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/repository/resources",
+    "endpoint": "list_repository_resources",
+    "summary": "Searchable, paginated citizen repository listing across the 6 supported identity categories:",
+    "dependencies": [
+      "list_repository_resources"
+    ],
+    "role_requirement": "PUBLIC"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/repository/resources/{resource_id}",
+    "endpoint": "get_repository_resource_detail",
+    "summary": "Returns rich, dedicated document detail view:",
+    "dependencies": [
+      "get_repository_resource_detail"
+    ],
+    "role_requirement": "PUBLIC"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/repository/resources/{resource_id}/download",
+    "endpoint": "download_resource_file",
+    "summary": "Secure file download endpoint with path-traversal prevention.",
+    "dependencies": [
+      "download_resource_file"
+    ],
+    "role_requirement": "PUBLIC"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/repository/resources/{resource_id}/preview",
+    "endpoint": "preview_resource_file",
+    "summary": "Inline preview endpoint with path-traversal prevention.",
+    "dependencies": [
+      "preview_resource_file"
+    ],
+    "role_requirement": "PUBLIC"
+  },
+  {
+    "methods": [
+      "GET",
+      "HEAD"
+    ],
+    "path": "/docs",
+    "endpoint": "swagger_ui_html",
+    "summary": "",
+    "dependencies": [],
+    "role_requirement": "PUBLIC"
+  },
+  {
+    "methods": [
+      "GET",
+      "HEAD"
+    ],
+    "path": "/docs/oauth2-redirect",
+    "endpoint": "swagger_ui_redirect",
+    "summary": "",
+    "dependencies": [],
+    "role_requirement": "PUBLIC"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/health",
+    "endpoint": "health_check",
+    "summary": "",
+    "dependencies": [
+      "health_check"
+    ],
+    "role_requirement": "PUBLIC"
+  },
+  {
+    "methods": [
+      "GET",
+      "HEAD"
+    ],
+    "path": "/openapi.json",
+    "endpoint": "openapi",
+    "summary": "",
+    "dependencies": [],
+    "role_requirement": "PUBLIC"
+  },
+  {
+    "methods": [
+      "GET",
+      "HEAD"
+    ],
+    "path": "/redoc",
+    "endpoint": "redoc_html",
+    "summary": "",
+    "dependencies": [],
+    "role_requirement": "PUBLIC"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/assistant/attachments/cleanup",
+    "endpoint": "cleanup_expired_attachments_endpoint",
+    "summary": "Admin-only triggered cleanup for expired temporary chat attachments.",
+    "dependencies": [
+      "cleanup_expired_attachments_endpoint",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/assistant/attachments/upload",
+    "endpoint": "upload_attachment_endpoint",
+    "summary": "Secure In-Chat Multimodal Document Upload & OCR Processing Endpoint.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "upload_attachment_endpoint"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/assistant/attachments/{attachment_id}",
+    "endpoint": "get_attachment_metadata_endpoint",
+    "summary": "Retrieves metadata and OCR results for a specific attachment owned by citizen.",
+    "dependencies": [
+      "get_attachment_metadata_endpoint",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "DELETE"
+    ],
+    "path": "/api/v1/assistant/attachments/{attachment_id}",
+    "endpoint": "delete_attachment_endpoint",
+    "summary": "Explicitly deletes an attachment and unlinks its temporary file from disk.",
+    "dependencies": [
+      "delete_attachment_endpoint",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "PATCH"
+    ],
+    "path": "/api/v1/assistant/attachments/{attachment_id}",
+    "endpoint": "update_attachment_association_endpoint",
+    "summary": "Links or unlinks an uploaded attachment with an existing discrepancy conflict.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "update_attachment_association_endpoint"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/assistant/attachments/{attachment_id}/preview",
+    "endpoint": "preview_attachment_endpoint",
+    "summary": "Streams authenticated inline preview for citizen's uploaded document.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "preview_attachment_endpoint"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/assistant/chat",
+    "endpoint": "chat_with_assistant",
+    "summary": "Context-aware conversational endpoint.",
+    "dependencies": [
+      "chat_with_assistant",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/assistant/conversations",
+    "endpoint": "create_conversation",
+    "summary": "Explicitly initializes an assistant conversation, optionally linked to an authorized conflict.",
+    "dependencies": [
+      "create_conversation",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/assistant/conversations",
+    "endpoint": "list_conversations",
+    "summary": "Lists conversations belonging to the authenticated citizen, ordered by pin and updated_at.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "list_conversations"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/assistant/conversations/search",
+    "endpoint": "search_conversations",
+    "summary": "Searches conversations and message contents belonging to the authenticated citizen.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "search_conversations"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "PATCH"
+    ],
+    "path": "/api/v1/assistant/conversations/{conversation_id}",
+    "endpoint": "update_conversation",
+    "summary": "Updates conversation properties: title, is_pinned, is_archived, response_language.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "update_conversation"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "DELETE"
+    ],
+    "path": "/api/v1/assistant/conversations/{conversation_id}",
+    "endpoint": "delete_conversation",
+    "summary": "Deletes a conversation and its messages belonging to the authenticated citizen.",
+    "dependencies": [
+      "delete_conversation",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/assistant/conversations/{conversation_id}/messages",
+    "endpoint": "get_conversation_messages",
+    "summary": "Retrieves all messages for a specific conversation belonging to the citizen.",
+    "dependencies": [
+      "get_conversation_messages",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/assistant/explain-conflict/{conflict_id}",
+    "endpoint": "explain_conflict",
+    "summary": "Retrieves the citizen's actual detected conflict under RLS and generates an evidence-backed explanation.",
+    "dependencies": [
+      "explain_conflict",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/assistant/resolution-context/{conflict_id}",
+    "endpoint": "get_resolution_context_endpoint",
+    "summary": "Retrieves the verified, privacy-minimized ResolutionContext for a conflict belonging to the citizen.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_resolution_context_endpoint",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/assistant/resolve-conflict/{conflict_id}",
+    "endpoint": "resolve_conflict",
+    "summary": "Retrieves the citizen's actual conflict and generates step-by-step resolution instructions and official forms.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "resolve_conflict"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/attestations",
+    "endpoint": "create_document_attestation",
+    "summary": "Cryptographically signs a Platform Administrative Attestation for a document using Ed25519.",
+    "dependencies": [
+      "create_document_attestation",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/attestations",
+    "endpoint": "list_attestations",
+    "summary": "Lists document attestations within the caller's permitted RLS scope.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "list_attestations"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/attestations/{attestation_id}",
+    "endpoint": "get_attestation",
+    "summary": "Retrieves full attestation metadata including canonical payload and signature.",
+    "dependencies": [
+      "get_attestation",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/attestations/{attestation_id}/verifications",
+    "endpoint": "get_attestation_verifications",
+    "summary": "Returns historical verification events for a specific attestation.",
+    "dependencies": [
+      "get_attestation_verifications",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/attestations/{attestation_id}/verify",
+    "endpoint": "verify_document_attestation",
+    "summary": "Executes cryptographic signature verification and tamper detection for an attestation:",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "verify_document_attestation"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "DELETE"
+    ],
+    "path": "/api/v1/auth/account",
+    "endpoint": "delete_account",
+    "summary": "Securely removes the user's account and logs the deletion in the audit trail.",
+    "dependencies": [
+      "delete_account",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "require_authenticated_user"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/auth/activity",
+    "endpoint": "get_user_activity",
+    "summary": "Retrieves chronological activity history for the authenticated citizen.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "get_user_activity",
+      "require_authenticated_user"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/auth/citizen-only",
+    "endpoint": "citizen_only_endpoint",
+    "summary": "Transitional backward-compatible alias for /user-only.",
+    "dependencies": [
+      "citizen_only_endpoint",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/auth/link-provider",
+    "endpoint": "link_authentication_provider",
+    "summary": "Explicit, authenticated provider linking endpoint.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "link_authentication_provider",
+      "require_authenticated_user"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/auth/me",
+    "endpoint": "get_me",
+    "summary": "Returns the authenticated user's profile and verified system role.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_me",
+      "get_token_claims",
+      "require_authenticated_user"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "PATCH"
+    ],
+    "path": "/api/v1/auth/profile",
+    "endpoint": "update_profile",
+    "summary": "Updates the user's editable profile information and logs a tamper-evident audit event.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "require_authenticated_user",
+      "update_profile"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/auth/provision",
+    "endpoint": "provision_user",
+    "summary": "Provisions or synchronizes a user account from a verified identity.",
+    "dependencies": [
+      "get_current_token",
+      "get_db",
+      "get_token_claims",
+      "provision_user"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/auth/user-only",
+    "endpoint": "user_only_endpoint",
+    "summary": "Protected endpoint accessible to users with the 'user' role.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "user_only_endpoint"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/conflicts",
+    "endpoint": "list_conflicts",
+    "summary": "Lists conflicts visible to the current authenticated caller.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "list_conflicts"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/conflicts/compare",
+    "endpoint": "compare_documents",
+    "summary": "Executes Phase P1 deterministic, multi-field comparison between selected credentials.",
+    "dependencies": [
+      "compare_documents",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/conflicts/detect",
+    "endpoint": "detect_conflicts",
+    "summary": "Triggers conflict detection across all completed documents belonging to the authenticated citizen.",
+    "dependencies": [
+      "detect_conflicts",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/conflicts/{conflict_id}",
+    "endpoint": "get_conflict",
+    "summary": "Retrieves a single conflict record by ID with ownership enforcement via RLS.",
+    "dependencies": [
+      "get_conflict",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "PATCH"
+    ],
+    "path": "/api/v1/conflicts/{conflict_id}/review",
+    "endpoint": "update_conflict_review",
+    "summary": "Updates the review status of a conflict record.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "update_conflict_review"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/correction-drafts",
+    "endpoint": "create_correction_draft",
+    "summary": "Generates and saves a new administrative correction draft under Forced RLS.",
+    "dependencies": [
+      "create_correction_draft",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/correction-drafts",
+    "endpoint": "list_correction_drafts",
+    "summary": "Retrieves all correction drafts created by the authenticated citizen (strictly isolated via RLS).",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "list_correction_drafts"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/correction-drafts/{draft_id}",
+    "endpoint": "get_correction_draft",
+    "summary": "Retrieves a single correction draft by ID (strictly isolated to owner via RLS).",
+    "dependencies": [
+      "get_correction_draft",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "PATCH"
+    ],
+    "path": "/api/v1/correction-drafts/{draft_id}",
+    "endpoint": "update_correction_draft",
+    "summary": "Updates draft content or metadata.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "update_correction_draft"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "DELETE"
+    ],
+    "path": "/api/v1/correction-drafts/{draft_id}",
+    "endpoint": "delete_correction_draft",
+    "summary": "Deletes a draft and its version history. Records an audit event.",
+    "dependencies": [
+      "delete_correction_draft",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/correction-drafts/{draft_id}/confirm",
+    "endpoint": "confirm_correction_draft",
+    "summary": "Citizen explicitly reviews and confirms an administrative draft version.",
+    "dependencies": [
+      "confirm_correction_draft",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/correction-drafts/{draft_id}/download",
+    "endpoint": "download_correction_draft",
+    "summary": "Downloads the draft as a professionally styled PDF or DOCX file.",
+    "dependencies": [
+      "download_correction_draft",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/correction-drafts/{draft_id}/regenerate",
+    "endpoint": "regenerate_correction_draft",
+    "summary": "Re-runs generation with updated confirmed fields.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "regenerate_correction_draft"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/correction-drafts/{draft_id}/translate",
+    "endpoint": "translate_correction_draft",
+    "summary": "Translates an administrative representation into the requested target language.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "translate_correction_draft"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/documents",
+    "endpoint": "list_documents",
+    "summary": "Lists documents visible to the current authenticated caller.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "list_documents"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/documents/synthetic-samples",
+    "endpoint": "list_synthetic_samples",
+    "summary": "Returns the list of available synthetic development document profiles.",
+    "dependencies": [
+      "list_synthetic_samples"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/documents/synthetic-samples/{category}",
+    "endpoint": "download_synthetic_sample",
+    "summary": "Streams a generated synthetic test document (PDF or PNG) with prominent",
+    "dependencies": [
+      "download_synthetic_sample"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/documents/upload",
+    "endpoint": "upload_document",
+    "summary": "Secure Document Upload & Synchronous Initial OCR Extraction.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "upload_document"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/documents/{document_id}",
+    "endpoint": "get_document",
+    "summary": "Fetches a specific document by ID.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_document",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "DELETE"
+    ],
+    "path": "/api/v1/documents/{document_id}",
+    "endpoint": "delete_document",
+    "summary": "Deletes a document record and purges any associated temporary files.",
+    "dependencies": [
+      "delete_document",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/documents/{document_id}/confirm",
+    "endpoint": "confirm_document_fields",
+    "summary": "Citizen confirms or corrects the demographic fields extracted from their document.",
+    "dependencies": [
+      "confirm_document_fields",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "PATCH"
+    ],
+    "path": "/api/v1/documents/{document_id}/fields",
+    "endpoint": "update_document_fields",
+    "summary": "Allows a citizen to review, correct, or confirm extracted demographic fields",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "update_document_fields"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/documents/{document_id}/profile",
+    "endpoint": "get_document_identity_profile",
+    "summary": "Returns the canonical DocumentIdentityProfile for a specific document.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_document_identity_profile",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/knowledge/corpus/manifest",
+    "endpoint": "get_corpus_manifest",
+    "summary": "Returns the official reconciled corpus manifest across all 47 documents.",
+    "dependencies": [
+      "get_corpus_manifest",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/knowledge/corpus/status",
+    "endpoint": "get_corpus_status",
+    "summary": "Returns current status of knowledge corpus:",
+    "dependencies": [
+      "get_corpus_status",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/knowledge/forms",
+    "endpoint": "list_official_forms",
+    "summary": "Returns statutory correction and update forms catalog.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "list_official_forms"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/knowledge/forms/{form_id}",
+    "endpoint": "get_official_form",
+    "summary": "Returns official form details, purpose, and download URL.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_official_form",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/knowledge/forms/{form_id}/download",
+    "endpoint": "download_official_form",
+    "summary": "Authenticated streaming download for official statutory forms.",
+    "dependencies": [
+      "download_official_form",
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/knowledge/forms/{form_id}/preview",
+    "endpoint": "preview_official_form",
+    "summary": "Authenticated inline streaming preview for official statutory forms.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "preview_official_form"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/knowledge/ingestion",
+    "endpoint": "trigger_knowledge_ingestion",
+    "summary": "Admin-only endpoint to sync official government procedures and forms into PostgreSQL and Qdrant.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "trigger_knowledge_ingestion"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/knowledge/sources",
+    "endpoint": "list_knowledge_sources",
+    "summary": "Returns verified statutory sources and procedures.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "list_knowledge_sources"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/knowledge/sources/{source_id}",
+    "endpoint": "get_knowledge_source",
+    "summary": "Returns statutory knowledge source details and official circular link.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_knowledge_source",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/pki/keys",
+    "endpoint": "list_signing_keys",
+    "summary": "Lists all public signing keys in the keystore.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "list_signing_keys"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/pki/keys",
+    "endpoint": "register_signing_key",
+    "summary": "Registers a new Ed25519 public key in the keystore. Restricted to Admins.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "register_signing_key"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/pki/keys/{key_id}/revoke",
+    "endpoint": "revoke_signing_key",
+    "summary": "Revokes a compromised or decommissioned signing key.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "revoke_signing_key"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/pki/keys/{key_id}/rotate",
+    "endpoint": "rotate_signing_key",
+    "summary": "Rotates an active signing key.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "rotate_signing_key"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/pki/stats",
+    "endpoint": "get_pki_stats",
+    "summary": "Returns platform-wide PKI and attestation statistics for the dashboard.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_pki_stats",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/repository/checklists/{procedure_id}/progress",
+    "endpoint": "get_user_checklist_progress",
+    "summary": "Returns persistent citizen checklist preparation progress for the authenticated user.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "get_user_checklist_progress"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "PUT"
+    ],
+    "path": "/api/v1/repository/checklists/{procedure_id}/progress",
+    "endpoint": "update_user_checklist_progress",
+    "summary": "Updates completion state of a specific checklist item for the authenticated citizen.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "update_user_checklist_progress"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/repository/guidance/personalized",
+    "endpoint": "get_personalized_guidance",
+    "summary": "Retrieves active discrepancies for the authenticated citizen from Module 5 (/api/v1/conflicts)",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_personalized_guidance",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/v1/repository/guidance/synthesize",
+    "endpoint": "synthesize_procedural_guidance",
+    "summary": "Synthesizes grounded step-by-step procedural guidance for citizen questions.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_token_claims",
+      "synthesize_procedural_guidance"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/repository/resources/{resource_id}/checklist-progress",
+    "endpoint": "get_resource_checklist_progress",
+    "summary": "Returns checklist progress for a given resource or its primary associated correction procedure.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_resource_checklist_progress",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/v1/verifications/recent",
+    "endpoint": "get_recent_verifications",
+    "summary": "Returns recent platform verification events within permitted RLS scope.",
+    "dependencies": [
+      "get_current_token",
+      "get_current_user",
+      "get_db",
+      "get_recent_verifications",
+      "get_token_claims"
+    ],
+    "role_requirement": "USER"
+  }
+]

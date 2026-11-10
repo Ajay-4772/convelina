@@ -94,3 +94,4 @@ To verify that one citizen cannot observe or manipulate another citizen's record
 | **Repository Metadata** | Disk Manifests + PostgreSQL | Public / System Reference | N/A | Static / Versioned | Verified on `/app/forms` |
 | **Knowledge Vector State**| Docker Volume `consolin_qdrant_data` | Public / System Reference | N/A | Durable on-disk WAL & payload | **Verified across container restart** |
 | **UI Filter States** | React `useState` (Browser memory) | Ephemeral to tab session | N/A | Session only (Intentionally temporary) | Resets on reload (Expected behavior) |
+

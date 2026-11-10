@@ -101,3 +101,4 @@ To avoid breaking historical database snapshots and foreign key constraints:
 - Query on `pg_policies` for schema `public` confirmed 45 total active policies.
 - Exactly **0 policies** reference `officer` or grant privileges to non-user/non-admin roles.
 - `scripts/test_rls_isolation.py` verified that without an authenticated session, default-deny prevents reading or writing across all tables.
+

@@ -10,6 +10,7 @@ import {
   FolderOpen,
   User,
   X,
+  Terminal,
 } from "lucide-react";
 
 interface WorkspaceSidebarProps {
@@ -116,8 +117,21 @@ export default function WorkspaceSidebar({
         })}
       </nav>
 
+      {/* Development Explorer QA Link */}
+      {process.env.NODE_ENV !== "production" && (
+        <div className="px-3 pt-2 pb-1 border-t border-[#E7E5E0]">
+          <Link
+            href="/dev/explorer"
+            className="flex items-center px-3 py-1.5 rounded text-xs font-mono bg-purple-50 text-purple-700 hover:bg-purple-100 transition"
+          >
+            <Terminal className="w-3.5 h-3.5 mr-2 text-purple-600" />
+            <span>App Explorer (QA)</span>
+          </Link>
+        </div>
+      )}
+
       {/* Subtle Bottom Metadata */}
-      <div className="px-6 py-4 border-t border-[#E7E5E0] text-[11px] text-[#777777] font-sans flex items-center justify-between">
+      <div className="px-6 py-3 border-t border-[#E7E5E0] text-[11px] text-[#777777] font-sans flex items-center justify-between">
         <span>Statutory Assistant</span>
         <span className="font-mono text-[10px] text-[#999999]">v1.0</span>
       </div>

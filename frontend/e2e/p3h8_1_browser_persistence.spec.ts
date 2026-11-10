@@ -228,3 +228,4 @@ test.describe("P3H.8.1 — PostgreSQL Browser Persistence & Multi-Tenant Isolati
     console.log("=== All browser persistence & multi-tenant isolation tests PASSED! ===");
   });
 });
+

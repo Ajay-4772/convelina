@@ -103,3 +103,4 @@ The 27 quarantined documents in `forms/09_IRRELEVANT_QUARANTINE` remain excluded
 
 ### 4.5 Zero Citizen PII in Vector Corpus
 A complete scroll across payload records verified that no citizen demographics (Aadhaar numbers, PANs, phone numbers, or resident names) exist in the Qdrant index. All indexed text is composed exclusively of public, official statutory documents.
+

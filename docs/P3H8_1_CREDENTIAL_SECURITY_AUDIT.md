@@ -85,3 +85,4 @@ When `TEST_MODE_ALLOW_SIMULATED_TOKENS` is `False` (the default in all non-test 
 | Fernet Encryption Key | **MASKED** | Derived or passed via environment variable |
 
 A pre-commit scan verified that no secrets, active tokens, or credentials are staged for version control.
+
