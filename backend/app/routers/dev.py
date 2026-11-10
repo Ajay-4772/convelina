@@ -40,7 +40,7 @@ router = APIRouter(prefix="/api/v1/dev", tags=["Development Explorer"])
 
 def verify_dev_mode():
     """Guards development routes against execution in production."""
-    if settings.ENVIRONMENT.lower() == "production" and not settings.DEBUG:
+    if settings.ENVIRONMENT.lower() == "production":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Development Explorer is strictly disabled in production mode.",
@@ -180,11 +180,12 @@ def get_dev_overview(db: Session = Depends(get_db)):
         "pki_signing": {
             "status": "READY",
             "algorithm": "Ed25519 (RFC 8032)",
-            "purpose": "Internal Platform Document Attestation",
+            "purpose": "Internal Platform Document Attestation (RFC 8032; distinct from statutory eSign)",
         },
         "statutory_catalog": {
             "status": "READY",
             "total_official_resources": 52,
+            "catalog_breakdown": "43 statutory circulars & SOPs + 9 primary forms; 34 forms & 11 acts in active DB schema",
             "doc_043_governance": "RESTRICTED (human_review_required=True)",
         },
         "citizen_checklist": {

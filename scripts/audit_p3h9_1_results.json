@@ -1,0 +1,1347 @@
+{
+  "tables": [
+    {
+      "table_name": "assistant_conversations",
+      "primary_key": "id",
+      "owner_column": "user_id",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 2,
+      "columns": [
+        "id",
+        "user_id",
+        "is_pinned",
+        "is_archived",
+        "active_case_id",
+        "active_conflict_id",
+        "created_at",
+        "updated_at",
+        "title",
+        "response_language"
+      ]
+    },
+    {
+      "table_name": "assistant_messages",
+      "primary_key": "id",
+      "owner_column": "user_id",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 2,
+      "columns": [
+        "id",
+        "conversation_id",
+        "user_id",
+        "citations",
+        "tokens_used",
+        "created_at",
+        "structured_response",
+        "role",
+        "content",
+        "message_type"
+      ]
+    },
+    {
+      "table_name": "attestation_verifications",
+      "primary_key": "id",
+      "owner_column": "none",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 3,
+      "columns": [
+        "id",
+        "attestation_id",
+        "verifier_id",
+        "details",
+        "verified_at",
+        "verification_status"
+      ]
+    },
+    {
+      "table_name": "audit_log",
+      "primary_key": "id",
+      "owner_column": "user_id",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 3,
+      "columns": [
+        "created_at",
+        "user_id",
+        "entity_id",
+        "details",
+        "id",
+        "current_hash",
+        "action",
+        "entity_type",
+        "prev_hash"
+      ]
+    },
+    {
+      "table_name": "case_evidence",
+      "primary_key": "id",
+      "owner_column": "none",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 2,
+      "columns": [
+        "id",
+        "case_id",
+        "document_id",
+        "created_at",
+        "notes"
+      ]
+    },
+    {
+      "table_name": "case_review_requests",
+      "primary_key": "id",
+      "owner_column": "none",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 2,
+      "columns": [
+        "id",
+        "case_id",
+        "officer_id",
+        "citizen_id",
+        "response_timestamp",
+        "created_at",
+        "status",
+        "response_text",
+        "request_details",
+        "request_reason"
+      ]
+    },
+    {
+      "table_name": "cases",
+      "primary_key": "id",
+      "owner_column": "none",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 2,
+      "columns": [
+        "decision_timestamp",
+        "citizen_id",
+        "assigned_officer_id",
+        "resolution_timestamp",
+        "created_at",
+        "updated_at",
+        "conflict_id",
+        "correction_draft_id",
+        "review_started_at",
+        "id",
+        "decision_reason",
+        "status",
+        "title",
+        "evidence_notes",
+        "officer_notes",
+        "resolution_notes",
+        "resolution_signature",
+        "decision"
+      ]
+    },
+    {
+      "table_name": "citizen_checklist_items",
+      "primary_key": "id",
+      "owner_column": "user_id",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 4,
+      "columns": [
+        "updated_at",
+        "user_id",
+        "created_at",
+        "id",
+        "is_completed",
+        "confirmed_at",
+        "procedure_id",
+        "item_id"
+      ]
+    },
+    {
+      "table_name": "conflicts",
+      "primary_key": "id",
+      "owner_column": "user_id",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 2,
+      "columns": [
+        "id",
+        "user_id",
+        "doc_a_id",
+        "doc_b_id",
+        "created_at",
+        "updated_at",
+        "similarity_score",
+        "metadata",
+        "value_b",
+        "description",
+        "status",
+        "comparison_method",
+        "conflict_type",
+        "severity",
+        "field_name",
+        "value_a"
+      ]
+    },
+    {
+      "table_name": "correction_draft_versions",
+      "primary_key": "id",
+      "owner_column": "user_id",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 2,
+      "columns": [
+        "supporting_documents",
+        "source_references",
+        "is_citizen_confirmed",
+        "citizen_confirmed_at",
+        "id",
+        "user_id",
+        "created_at",
+        "version_number",
+        "draft_id",
+        "confirmed_fields",
+        "sha256_hash",
+        "content",
+        "change_type",
+        "recipient_authority",
+        "subject"
+      ]
+    },
+    {
+      "table_name": "correction_drafts",
+      "primary_key": "id",
+      "owner_column": "user_id",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 2,
+      "columns": [
+        "id",
+        "user_id",
+        "conflict_id",
+        "confirmed_fields",
+        "source_references",
+        "version",
+        "created_at",
+        "updated_at",
+        "supporting_documents",
+        "is_citizen_confirmed",
+        "citizen_confirmed_at",
+        "confirmed_version_number",
+        "file_path",
+        "recipient_authority",
+        "subject",
+        "user_explanation",
+        "document_type",
+        "document_category",
+        "status",
+        "title",
+        "content",
+        "requested_action",
+        "language",
+        "disclaimer",
+        "sha256_hash"
+      ]
+    },
+    {
+      "table_name": "digital_signatures",
+      "primary_key": "id",
+      "owner_column": "none",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 2,
+      "columns": [
+        "id",
+        "case_id",
+        "officer_id",
+        "created_at",
+        "signature",
+        "signed_data_hash",
+        "algorithm",
+        "public_key"
+      ]
+    },
+    {
+      "table_name": "document_attestations",
+      "primary_key": "id",
+      "owner_column": "none",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 2,
+      "columns": [
+        "created_at",
+        "document_id",
+        "case_id",
+        "correction_draft_id",
+        "citizen_id",
+        "officer_id",
+        "signing_key_id",
+        "canonical_payload",
+        "expires_at",
+        "id",
+        "status",
+        "signature",
+        "document_type",
+        "document_fingerprint",
+        "algorithm",
+        "key_id"
+      ]
+    },
+    {
+      "table_name": "documents",
+      "primary_key": "id",
+      "owner_column": "user_id",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 2,
+      "columns": [
+        "id",
+        "user_id",
+        "created_at",
+        "updated_at",
+        "confirmed_fields",
+        "is_user_confirmed",
+        "confirmed_at",
+        "field_extractions",
+        "extracted_fields",
+        "document_type",
+        "file_path",
+        "file_hash",
+        "ocr_status",
+        "encrypted_data",
+        "masked_id"
+      ]
+    },
+    {
+      "table_name": "email_otps",
+      "primary_key": "id",
+      "owner_column": "none",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 1,
+      "columns": [
+        "id",
+        "expires_at",
+        "is_verified",
+        "created_at",
+        "email",
+        "otp_code"
+      ]
+    },
+    {
+      "table_name": "knowledge_sources",
+      "primary_key": "id",
+      "owner_column": "none",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 2,
+      "columns": [
+        "is_active",
+        "retrieved_at",
+        "metadata",
+        "created_at",
+        "updated_at",
+        "effective_date",
+        "uploaded_by_user_id",
+        "last_verified_at",
+        "publication_date",
+        "id",
+        "content_hash",
+        "verification_status",
+        "raw_content",
+        "ingestion_status",
+        "review_notes",
+        "correction_category",
+        "source_id",
+        "title",
+        "issuing_authority",
+        "document_type",
+        "document_category",
+        "source_url",
+        "jurisdiction",
+        "language",
+        "version"
+      ]
+    },
+    {
+      "table_name": "message_attachments",
+      "primary_key": "id",
+      "owner_column": "user_id",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 2,
+      "columns": [
+        "deleted_at",
+        "message_id",
+        "user_id",
+        "is_temporary",
+        "expires_at",
+        "created_at",
+        "conversation_id",
+        "conflict_id",
+        "ocr_confidence",
+        "extracted_fields",
+        "id",
+        "file_size_bytes",
+        "file_name",
+        "mime_type",
+        "error_message",
+        "storage_ref",
+        "extracted_text",
+        "ocr_status",
+        "status",
+        "sha256_hash"
+      ]
+    },
+    {
+      "table_name": "official_form_versions",
+      "primary_key": "id",
+      "owner_column": "none",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 2,
+      "columns": [
+        "id",
+        "file_size_bytes",
+        "retired_by_user_id",
+        "retired_at",
+        "created_at",
+        "issuing_authority",
+        "purpose",
+        "official_download_url",
+        "sha256_hash",
+        "verification_status",
+        "storage_path",
+        "provenance",
+        "provenance_notes",
+        "form_id",
+        "version",
+        "form_name",
+        "document_category"
+      ]
+    },
+    {
+      "table_name": "official_forms",
+      "primary_key": "id",
+      "owner_column": "none",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 2,
+      "columns": [
+        "id",
+        "applicable_issue_types",
+        "applicable_conditions",
+        "effective_date",
+        "last_verified_at",
+        "is_active",
+        "created_at",
+        "updated_at",
+        "file_size_bytes",
+        "metadata_payload",
+        "official_source_published_at",
+        "verified_by_user_id",
+        "file_format",
+        "sha256_hash",
+        "verification_status",
+        "storage_path",
+        "description",
+        "provenance_notes",
+        "form_id",
+        "form_name",
+        "document_category",
+        "purpose",
+        "issuing_authority",
+        "official_download_url",
+        "instructions_source_id",
+        "provenance",
+        "mime_type",
+        "language",
+        "version"
+      ]
+    },
+    {
+      "table_name": "schema_migrations",
+      "primary_key": "version",
+      "owner_column": "none",
+      "rls_enabled": false,
+      "rls_forced": false,
+      "policy_count": 0,
+      "columns": [
+        "applied_at",
+        "version"
+      ]
+    },
+    {
+      "table_name": "signing_keys",
+      "primary_key": "id",
+      "owner_column": "none",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 2,
+      "columns": [
+        "id",
+        "valid_from",
+        "valid_until",
+        "revoked_at",
+        "created_by",
+        "created_at",
+        "status",
+        "revocation_reason",
+        "key_id",
+        "public_key",
+        "fingerprint",
+        "algorithm",
+        "purpose"
+      ]
+    },
+    {
+      "table_name": "users",
+      "primary_key": "id",
+      "owner_column": "id",
+      "rls_enabled": true,
+      "rls_forced": true,
+      "policy_count": 2,
+      "columns": [
+        "id",
+        "created_at",
+        "updated_at",
+        "full_name",
+        "role",
+        "father_name",
+        "mother_name",
+        "phone_number",
+        "date_of_birth",
+        "address",
+        "firebase_uid",
+        "email"
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "path": "/openapi.json",
+      "method": "GET",
+      "tag": "Core / System",
+      "name": "openapi",
+      "role": "PUBLIC"
+    },
+    {
+      "path": "/docs",
+      "method": "GET",
+      "tag": "Core / System",
+      "name": "swagger_ui_html",
+      "role": "PUBLIC"
+    },
+    {
+      "path": "/docs/oauth2-redirect",
+      "method": "GET",
+      "tag": "Core / System",
+      "name": "swagger_ui_redirect",
+      "role": "PUBLIC"
+    },
+    {
+      "path": "/redoc",
+      "method": "GET",
+      "tag": "Core / System",
+      "name": "redoc_html",
+      "role": "PUBLIC"
+    },
+    {
+      "path": "/api/v1/auth/health",
+      "method": "GET",
+      "tag": "Authentication",
+      "name": "auth_health",
+      "role": "PUBLIC"
+    },
+    {
+      "path": "/api/v1/auth/otp/send",
+      "method": "POST",
+      "tag": "Authentication",
+      "name": "send_email_otp",
+      "role": "PUBLIC"
+    },
+    {
+      "path": "/api/v1/auth/otp/verify",
+      "method": "POST",
+      "tag": "Authentication",
+      "name": "verify_email_otp",
+      "role": "PUBLIC"
+    },
+    {
+      "path": "/api/v1/auth/provision",
+      "method": "POST",
+      "tag": "Authentication",
+      "name": "provision_user",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/auth/me",
+      "method": "GET",
+      "tag": "Authentication",
+      "name": "get_me",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/auth/link-provider",
+      "method": "POST",
+      "tag": "Authentication",
+      "name": "link_authentication_provider",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/auth/profile",
+      "method": "PATCH",
+      "tag": "Authentication",
+      "name": "update_profile",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/auth/account",
+      "method": "DELETE",
+      "tag": "Authentication",
+      "name": "delete_account",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/auth/activity",
+      "method": "GET",
+      "tag": "Authentication",
+      "name": "get_user_activity",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/auth/user-only",
+      "method": "GET",
+      "tag": "Authentication",
+      "name": "user_only_endpoint",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/auth/citizen-only",
+      "method": "GET",
+      "tag": "Authentication",
+      "name": "citizen_only_endpoint",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/auth/admin-only",
+      "method": "GET",
+      "tag": "Authentication",
+      "name": "admin_only_endpoint",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/documents/synthetic-samples",
+      "method": "GET",
+      "tag": "Documents",
+      "name": "list_synthetic_samples",
+      "role": "PUBLIC"
+    },
+    {
+      "path": "/api/v1/documents/synthetic-samples/{category}",
+      "method": "GET",
+      "tag": "Documents",
+      "name": "download_synthetic_sample",
+      "role": "PUBLIC"
+    },
+    {
+      "path": "/api/v1/documents/upload",
+      "method": "POST",
+      "tag": "Documents",
+      "name": "upload_document",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/documents",
+      "method": "GET",
+      "tag": "Documents",
+      "name": "list_documents",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/documents/{document_id}",
+      "method": "GET",
+      "tag": "Documents",
+      "name": "get_document",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/documents/{document_id}/profile",
+      "method": "GET",
+      "tag": "Documents",
+      "name": "get_document_identity_profile",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/documents/{document_id}/confirm",
+      "method": "POST",
+      "tag": "Documents",
+      "name": "confirm_document_fields",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/documents/{document_id}/fields",
+      "method": "PATCH",
+      "tag": "Documents",
+      "name": "update_document_fields",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/documents/{document_id}",
+      "method": "DELETE",
+      "tag": "Documents",
+      "name": "delete_document",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/conflicts/compare",
+      "method": "POST",
+      "tag": "Conflicts",
+      "name": "compare_documents",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/conflicts/detect",
+      "method": "POST",
+      "tag": "Conflicts",
+      "name": "detect_conflicts",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/conflicts",
+      "method": "GET",
+      "tag": "Conflicts",
+      "name": "list_conflicts",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/conflicts/{conflict_id}",
+      "method": "GET",
+      "tag": "Conflicts",
+      "name": "get_conflict",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/conflicts/{conflict_id}/review",
+      "method": "PATCH",
+      "tag": "Conflicts",
+      "name": "update_conflict_review",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/assistant/chat",
+      "method": "POST",
+      "tag": "AI Resolution Assistant",
+      "name": "chat_with_assistant",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/assistant/resolution-context/{conflict_id}",
+      "method": "GET",
+      "tag": "AI Resolution Assistant",
+      "name": "get_resolution_context_endpoint",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/assistant/explain-conflict/{conflict_id}",
+      "method": "POST",
+      "tag": "AI Resolution Assistant",
+      "name": "explain_conflict",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/assistant/resolve-conflict/{conflict_id}",
+      "method": "POST",
+      "tag": "AI Resolution Assistant",
+      "name": "resolve_conflict",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/assistant/conversations",
+      "method": "POST",
+      "tag": "AI Resolution Assistant",
+      "name": "create_conversation",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/assistant/conversations",
+      "method": "GET",
+      "tag": "AI Resolution Assistant",
+      "name": "list_conversations",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/assistant/conversations/search",
+      "method": "GET",
+      "tag": "AI Resolution Assistant",
+      "name": "search_conversations",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/assistant/conversations/{conversation_id}",
+      "method": "PATCH",
+      "tag": "AI Resolution Assistant",
+      "name": "update_conversation",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/assistant/conversations/{conversation_id}/messages",
+      "method": "GET",
+      "tag": "AI Resolution Assistant",
+      "name": "get_conversation_messages",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/assistant/conversations/{conversation_id}",
+      "method": "DELETE",
+      "tag": "AI Resolution Assistant",
+      "name": "delete_conversation",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/assistant/attachments/upload",
+      "method": "POST",
+      "tag": "AI Resolution Assistant",
+      "name": "upload_attachment_endpoint",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/assistant/attachments/{attachment_id}",
+      "method": "GET",
+      "tag": "AI Resolution Assistant",
+      "name": "get_attachment_metadata_endpoint",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/assistant/attachments/{attachment_id}/preview",
+      "method": "GET",
+      "tag": "AI Resolution Assistant",
+      "name": "preview_attachment_endpoint",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/assistant/attachments/{attachment_id}",
+      "method": "DELETE",
+      "tag": "AI Resolution Assistant",
+      "name": "delete_attachment_endpoint",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/assistant/attachments/{attachment_id}",
+      "method": "PATCH",
+      "tag": "AI Resolution Assistant",
+      "name": "update_attachment_association_endpoint",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/assistant/attachments/cleanup",
+      "method": "POST",
+      "tag": "AI Resolution Assistant",
+      "name": "cleanup_expired_attachments_endpoint",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/knowledge/sources",
+      "method": "GET",
+      "tag": "Knowledge & Official Forms",
+      "name": "list_knowledge_sources",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/knowledge/sources/{source_id}",
+      "method": "GET",
+      "tag": "Knowledge & Official Forms",
+      "name": "get_knowledge_source",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/knowledge/forms",
+      "method": "GET",
+      "tag": "Knowledge & Official Forms",
+      "name": "list_official_forms",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/knowledge/forms/{form_id}",
+      "method": "GET",
+      "tag": "Knowledge & Official Forms",
+      "name": "get_official_form",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/knowledge/forms/{form_id}/download",
+      "method": "GET",
+      "tag": "Knowledge & Official Forms",
+      "name": "download_official_form",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/knowledge/forms/{form_id}/preview",
+      "method": "GET",
+      "tag": "Knowledge & Official Forms",
+      "name": "preview_official_form",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/knowledge/admin/forms",
+      "method": "GET",
+      "tag": "Knowledge & Official Forms",
+      "name": "admin_list_all_forms",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/knowledge/admin/forms",
+      "method": "POST",
+      "tag": "Knowledge & Official Forms",
+      "name": "admin_create_official_form",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/knowledge/admin/forms/{form_id}",
+      "method": "PUT",
+      "tag": "Knowledge & Official Forms",
+      "name": "admin_update_official_form",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/knowledge/admin/forms/{form_id}/upload",
+      "method": "POST",
+      "tag": "Knowledge & Official Forms",
+      "name": "admin_upload_form_asset",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/knowledge/admin/forms/{form_id}/verification",
+      "method": "PUT",
+      "tag": "Knowledge & Official Forms",
+      "name": "admin_update_form_verification",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/knowledge/admin/forms/sync",
+      "method": "POST",
+      "tag": "Knowledge & Official Forms",
+      "name": "admin_sync_seed_forms",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/knowledge/admin/forms/{form_id}/history",
+      "method": "GET",
+      "tag": "Knowledge & Official Forms",
+      "name": "admin_get_form_history",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/knowledge/admin/forms/{form_id}/replace",
+      "method": "POST",
+      "tag": "Knowledge & Official Forms",
+      "name": "admin_replace_official_form",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/knowledge/admin/forms/{form_id}/verify-and-publish",
+      "method": "PUT",
+      "tag": "Knowledge & Official Forms",
+      "name": "admin_verify_and_publish_form",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/knowledge/ingestion",
+      "method": "POST",
+      "tag": "Knowledge & Official Forms",
+      "name": "trigger_knowledge_ingestion",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/knowledge/admin/sources",
+      "method": "GET",
+      "tag": "Knowledge & Official Forms",
+      "name": "admin_list_all_sources",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/knowledge/admin/sources/{source_id}/verification",
+      "method": "PUT",
+      "tag": "Knowledge & Official Forms",
+      "name": "admin_update_source_verification",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/knowledge/admin/sources/ingest-file",
+      "method": "POST",
+      "tag": "Knowledge & Official Forms",
+      "name": "admin_ingest_knowledge_file",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/knowledge/corpus/status",
+      "method": "GET",
+      "tag": "Knowledge & Official Forms",
+      "name": "get_corpus_status",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/knowledge/corpus/manifest",
+      "method": "GET",
+      "tag": "Knowledge & Official Forms",
+      "name": "get_corpus_manifest",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/knowledge/admin/ingest",
+      "method": "POST",
+      "tag": "Knowledge & Official Forms",
+      "name": "admin_start_ingestion",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/knowledge/admin/ingest/status/{job_id}",
+      "method": "GET",
+      "tag": "Knowledge & Official Forms",
+      "name": "admin_get_ingestion_status",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/knowledge/admin/collections/health",
+      "method": "GET",
+      "tag": "Knowledge & Official Forms",
+      "name": "admin_get_collections_health",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/knowledge/admin/collections/rollback",
+      "method": "POST",
+      "tag": "Knowledge & Official Forms",
+      "name": "admin_rollback_collection",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/knowledge/retrieval/diagnostics",
+      "method": "POST",
+      "tag": "Knowledge & Official Forms",
+      "name": "admin_retrieval_diagnostics",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/correction-drafts",
+      "method": "POST",
+      "tag": "Correction Drafts",
+      "name": "create_correction_draft",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/correction-drafts",
+      "method": "GET",
+      "tag": "Correction Drafts",
+      "name": "list_correction_drafts",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/correction-drafts/{draft_id}",
+      "method": "GET",
+      "tag": "Correction Drafts",
+      "name": "get_correction_draft",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/correction-drafts/{draft_id}",
+      "method": "PATCH",
+      "tag": "Correction Drafts",
+      "name": "update_correction_draft",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/correction-drafts/{draft_id}/regenerate",
+      "method": "POST",
+      "tag": "Correction Drafts",
+      "name": "regenerate_correction_draft",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/correction-drafts/{draft_id}/translate",
+      "method": "POST",
+      "tag": "Correction Drafts",
+      "name": "translate_correction_draft",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/correction-drafts/{draft_id}/confirm",
+      "method": "POST",
+      "tag": "Correction Drafts",
+      "name": "confirm_correction_draft",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/correction-drafts/{draft_id}",
+      "method": "DELETE",
+      "tag": "Correction Drafts",
+      "name": "delete_correction_draft",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/correction-drafts/{draft_id}/download",
+      "method": "GET",
+      "tag": "Correction Drafts",
+      "name": "download_correction_draft",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/admin/overview-stats",
+      "method": "GET",
+      "tag": "Admin Management",
+      "name": "get_admin_overview_stats",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/admin/users",
+      "method": "GET",
+      "tag": "Admin Management",
+      "name": "list_registered_users",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/admin/users/{user_id}",
+      "method": "DELETE",
+      "tag": "Admin Management",
+      "name": "admin_delete_user",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/admin/users/{user_id}/role",
+      "method": "POST",
+      "tag": "Admin Management",
+      "name": "admin_update_user_role",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/admin/system-activity",
+      "method": "GET",
+      "tag": "Admin Management",
+      "name": "get_system_audit_activity",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/admin/conflicts",
+      "method": "GET",
+      "tag": "Admin Management",
+      "name": "admin_list_conflicts",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/admin/documents",
+      "method": "GET",
+      "tag": "Admin Management",
+      "name": "admin_list_documents",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/pki/stats",
+      "method": "GET",
+      "tag": "authenticity_and_pki",
+      "name": "get_pki_stats",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/pki/keys",
+      "method": "GET",
+      "tag": "authenticity_and_pki",
+      "name": "list_signing_keys",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/pki/keys",
+      "method": "POST",
+      "tag": "authenticity_and_pki",
+      "name": "register_signing_key",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/pki/keys/{key_id}/rotate",
+      "method": "POST",
+      "tag": "authenticity_and_pki",
+      "name": "rotate_signing_key",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/pki/keys/{key_id}/revoke",
+      "method": "POST",
+      "tag": "authenticity_and_pki",
+      "name": "revoke_signing_key",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/attestations",
+      "method": "POST",
+      "tag": "authenticity_and_pki",
+      "name": "create_document_attestation",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/attestations",
+      "method": "GET",
+      "tag": "authenticity_and_pki",
+      "name": "list_attestations",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/attestations/{attestation_id}",
+      "method": "GET",
+      "tag": "authenticity_and_pki",
+      "name": "get_attestation",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/attestations/{attestation_id}/verify",
+      "method": "POST",
+      "tag": "authenticity_and_pki",
+      "name": "verify_document_attestation",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/attestations/{attestation_id}/verifications",
+      "method": "GET",
+      "tag": "authenticity_and_pki",
+      "name": "get_attestation_verifications",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/verifications/recent",
+      "method": "GET",
+      "tag": "authenticity_and_pki",
+      "name": "get_recent_verifications",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/repository/resources",
+      "method": "GET",
+      "tag": "Citizen Document Repository",
+      "name": "list_repository_resources",
+      "role": "PUBLIC"
+    },
+    {
+      "path": "/api/v1/repository/resources/{resource_id}",
+      "method": "GET",
+      "tag": "Citizen Document Repository",
+      "name": "get_repository_resource_detail",
+      "role": "PUBLIC"
+    },
+    {
+      "path": "/api/v1/repository/categories",
+      "method": "GET",
+      "tag": "Citizen Document Repository",
+      "name": "get_categories_summary",
+      "role": "PUBLIC"
+    },
+    {
+      "path": "/api/v1/repository/resources/{resource_id}/download",
+      "method": "GET",
+      "tag": "Citizen Document Repository",
+      "name": "download_resource_file",
+      "role": "PUBLIC"
+    },
+    {
+      "path": "/api/v1/repository/resources/{resource_id}/preview",
+      "method": "GET",
+      "tag": "Citizen Document Repository",
+      "name": "preview_resource_file",
+      "role": "PUBLIC"
+    },
+    {
+      "path": "/api/v1/repository/checklists/{procedure_id}",
+      "method": "GET",
+      "tag": "Citizen Document Repository",
+      "name": "get_procedure_checklist",
+      "role": "PUBLIC"
+    },
+    {
+      "path": "/api/v1/repository/checklists/category/{category}",
+      "method": "GET",
+      "tag": "Citizen Document Repository",
+      "name": "get_category_checklists",
+      "role": "PUBLIC"
+    },
+    {
+      "path": "/api/v1/repository/checklists/{procedure_id}/progress",
+      "method": "GET",
+      "tag": "Citizen Document Repository",
+      "name": "get_user_checklist_progress",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/repository/checklists/{procedure_id}/progress",
+      "method": "PUT",
+      "tag": "Citizen Document Repository",
+      "name": "update_user_checklist_progress",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/repository/resources/{resource_id}/checklist-progress",
+      "method": "GET",
+      "tag": "Citizen Document Repository",
+      "name": "get_resource_checklist_progress",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/repository/guidance/synthesize",
+      "method": "POST",
+      "tag": "Citizen Document Repository",
+      "name": "synthesize_procedural_guidance",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/repository/guidance/personalized",
+      "method": "GET",
+      "tag": "Citizen Document Repository",
+      "name": "get_personalized_guidance",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/repository/admin/resources/{resource_id}/verify",
+      "method": "PUT",
+      "tag": "Citizen Document Repository",
+      "name": "admin_verify_resource",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/repository/admin/resources/{resource_id}/lifecycle",
+      "method": "PUT",
+      "tag": "Citizen Document Repository",
+      "name": "admin_transition_resource_lifecycle",
+      "role": "ADMIN"
+    },
+    {
+      "path": "/api/v1/dev/overview",
+      "method": "GET",
+      "tag": "Development Explorer",
+      "name": "get_dev_overview",
+      "role": "DEV_ONLY"
+    },
+    {
+      "path": "/api/v1/dev/persistence-inspect",
+      "method": "GET",
+      "tag": "Development Explorer",
+      "name": "inspect_persistence",
+      "role": "USER"
+    },
+    {
+      "path": "/api/v1/dev/provision-test-account",
+      "method": "POST",
+      "tag": "Development Explorer",
+      "name": "provision_test_account",
+      "role": "DEV_ONLY"
+    },
+    {
+      "path": "/",
+      "method": "GET",
+      "tag": "Core / System",
+      "name": "read_root",
+      "role": "PUBLIC"
+    },
+    {
+      "path": "/health",
+      "method": "GET",
+      "tag": "Core / System",
+      "name": "health_check",
+      "role": "PUBLIC"
+    }
+  ]
+}

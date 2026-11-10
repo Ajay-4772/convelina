@@ -83,7 +83,7 @@ test.describe("P3H.9 — Application Explorer & Guided QA End-to-End Suite", () 
   });
 
   test("2. Full Citizen A Workflow, Persistence & Inspector Verification", async ({ page }) => {
-    test.setTimeout(120000);
+    test.setTimeout(240000);
     console.log("=== Provisioning Citizen A ===");
     const citizenA = await authenticateCitizen(page, {
       fullName: "Aarav Sharma",

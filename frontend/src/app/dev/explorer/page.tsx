@@ -526,7 +526,7 @@ export default function DevExplorerPage() {
       category: "Drafting",
       route: "/app/inconsistencies",
       role: "USER",
-      description: "Generate a personalized administrative petition letter to government authorities and preview/download it.",
+      description: "Generate an advisory administrative representation draft to government authorities (distinct from judicial petitions or automatic official approval).",
       steps: [
         "On any discrepancy card, click 'Generate Correction Draft'.",
         "Select petition template (e.g. Formal Name Correction Request).",
@@ -937,7 +937,7 @@ export default function DevExplorerPage() {
                   </div>
                   <p className="text-[11px] text-zinc-500">RFC 8032 Canonical Digest Signing</p>
                   <div className="text-[10px] font-mono text-zinc-400">
-                    Platform Document Attestation & Tamper Verification
+                    Platform Document Attestation (Internal; distinct from statutory eSign)
                   </div>
                 </div>
 
