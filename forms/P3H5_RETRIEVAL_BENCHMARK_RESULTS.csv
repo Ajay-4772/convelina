@@ -10,5 +10,5 @@ MRR,0.5841,0.4359,PASS
 nDCG@3,0.7682,0.5122,PASS
 nDCG@5,0.8524,0.5858,PASS
 Negative-Query Abstention,15/15 (100%),15/15 (100%),PASS
-Latency Mean (ms),6.97,< 50.0,PASS
-Latency P95 (ms),17.04,< 100.0,PASS
+Latency Mean (ms),18.30,< 50.0,PASS
+Latency P95 (ms),46.64,< 100.0,PASS

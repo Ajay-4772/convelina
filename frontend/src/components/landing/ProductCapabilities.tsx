@@ -94,7 +94,7 @@ export default function ProductCapabilities() {
               </div>
 
               <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-200 text-xs text-blue-950 space-y-2">
-                <span className="font-semibold block">Grounded Sourcing Guarantee:</span>
+                <span className="font-semibold block">Grounded Sourcing Policy:</span>
                 <p className="text-blue-900/90 leading-relaxed">
                   Answers cite official statutory regulations. If verified procedure information is not available, the assistant declines to answer rather than guessing.
                 </p>
@@ -164,7 +164,7 @@ export default function ProductCapabilities() {
               </div>
 
               <div className="p-4 rounded-xl bg-[#faf9f6] border border-[#e5e2dc] text-xs sm:text-sm text-zinc-600 space-y-1.5">
-                <span className="font-semibold text-zinc-900 block">Privacy Guarantee:</span>
+                <span className="font-semibold text-zinc-900 block">Privacy Protection Architecture:</span>
                 <p>
                   Document scans are processed in temporary memory and unlinked immediately after extraction. Numbers like Aadhaar are permanently masked.
                 </p>

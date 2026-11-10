@@ -1,8 +1,8 @@
 """
 CONVELINA Server-Side PII Sanitizer & Redaction Service.
 Implements pre-persistence masking for Aadhaar, PAN, phone numbers,
-and sensitive identity identifiers to guarantee compliance with the
-Aadhaar Act (2016) Section 29, DPDPA (2023), and IT Act (2000).
+and sensitive identity identifiers to support privacy-preserving workflows
+and minimize identity exposure.
 """
 
 import re

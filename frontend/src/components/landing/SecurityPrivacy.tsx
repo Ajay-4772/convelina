@@ -8,7 +8,7 @@ export default function SecurityPrivacy() {
     {
       icon: <EyeOff className="w-5 h-5 text-zinc-900" />,
       title: "Automatic Identity Masking",
-      desc: "In compliance with Indian privacy regulations, sensitive numbers like Aadhaar are automatically masked across all user interfaces, logs, and database records so your full identity number is never exposed.",
+      desc: "Sensitive numbers like Aadhaar and PAN are automatically masked (showing only the last 4 digits) across all user interfaces, logs, and database records to minimize identity exposure.",
     },
     {
       icon: <Lock className="w-5 h-5 text-zinc-900" />,

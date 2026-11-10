@@ -678,14 +678,14 @@ export default function InconsistenciesPage() {
             <div className="space-y-0.5">
               <div className="font-semibold">Processing Credential OCR & Privacy Masking...</div>
               <div className="text-[11px] text-[#5E5E5E]">
-                Executing in-memory text extraction, demographic attribute isolation, and sensitive identifier masking. In compliance with the Aadhaar Act (2016) Section 29, temporary files are unlinked immediately.
+                Executing in-memory text extraction, demographic attribute isolation, and sensitive identifier masking. Ephemeral processing active: temporary upload files are unlinked immediately after extraction; sensitive fields are masked in views.
               </div>
             </div>
           </div>
         )}
 
         <p className="font-sans text-[11px] text-[#777777]">
-          Accepted formats: PDF, PNG, JPEG (up to 10MB). Six Tier 1 primary identity categories are evaluated for statutory discrepancy analysis; secondary documents serve as corroborating evidence.
+          Accepted formats: PDF, PNG, JPEG (up to 10MB). Six Tier 1 primary identity categories are evaluated for statutory discrepancy analysis; secondary documents serve as corroborating evidence. Ephemeral processing active: temporary files are unlinked immediately.
         </p>
 
         {/* Uploaded Documents List */}

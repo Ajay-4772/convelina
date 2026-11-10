@@ -16,8 +16,8 @@ test.describe("4.3 Document Upload & Ephemeral Ingestion", () => {
     await expect(docSelect.locator("option[value='pan']")).toHaveText("PAN Card");
     await expect(docSelect.locator("option[value='passport']")).toHaveText("Passport");
 
-    // Verify Aadhaar Act Section 29 privacy notice
-    await expect(page.locator("text=Aadhaar Act (2016) Section 29").or(page.locator("text=in-memory and immediately destroyed"))).toBeVisible();
+    // Verify Ephemeral processing privacy notice
+    await expect(page.locator("text=Ephemeral processing active").or(page.locator("text=Aadhaar Act (2016) Section 29")).or(page.locator("text=in-memory and immediately destroyed"))).toBeVisible();
 
     // Verify Detect Conflicts / Inconsistencies button exists
     const detectBtn = page.locator("button:has-text('Detect All Inconsistencies')").or(page.locator("button:has-text('Detect Conflicts')"));

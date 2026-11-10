@@ -1326,7 +1326,7 @@ export default function AssistantWorkspace({
                               </span>
                             </div>
                             <span className="text-[10px] font-mono text-[#999893]">
-                              Statutory Compliance Notice
+                              Advisory Draft Notice
                             </span>
                           </div>
                         )}

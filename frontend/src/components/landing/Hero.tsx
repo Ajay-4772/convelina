@@ -104,7 +104,7 @@ export default function Hero() {
               <FileCheck className="w-5 h-5 text-purple-600 shrink-0 mt-0.5" />
               <div>
                 <div className="text-sm font-semibold text-zinc-900">Cryptographic PKI</div>
-                <div className="text-xs text-zinc-500 leading-snug">Ed25519 digital signatures and audit chaining</div>
+                <div className="text-xs text-zinc-500 leading-snug">Ed25519 platform attestation and hash audit chaining</div>
               </div>
             </div>
           </div>

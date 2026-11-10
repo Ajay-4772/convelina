@@ -39,11 +39,11 @@ export default function FaqSection() {
     },
     {
       q: "How are my uploaded identity documents handled and stored?",
-      a: "CONVELINA adheres strictly to statutory privacy regulations. Uploaded files are processed in temporary memory and unlinked immediately after text extraction. Raw document images are never stored in long-term cloud storage. Extracted Aadhaar numbers are masked to their final 4 digits ('XXXX-XXXX-1234'), and demographic details are encrypted at rest.",
+      a: "Uploaded files are processed in temporary memory and unlinked immediately after text extraction. Raw document images are never stored in long-term cloud storage. Extracted Aadhaar numbers are masked to their final 4 digits ('XXXX-XXXX-1234'), and demographic details are encrypted at rest.",
     },
     {
       q: "Do I need an account to use CONVELINA?",
-      a: "Yes. To ensure strict data isolation and privacy, a verified account (via email and OTP verification) is required. This guarantees that your uploaded document records, conflict analysis reports, and affidavit drafts remain private and are accessible only by you.",
+      a: "Yes. To ensure strict data isolation and privacy, a verified account (via email and OTP verification) is required. This ensures that your uploaded document records, conflict analysis reports, and affidavit drafts remain private and are accessible only by you.",
     },
   ];
 
