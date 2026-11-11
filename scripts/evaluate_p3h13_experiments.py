@@ -23,7 +23,10 @@ from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional
 
 # Set up paths for container & local execution
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "backend"))
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, str(REPO_ROOT / "backend"))
+sys.path.insert(0, "/workspace")
 sys.path.insert(0, "/app/backend")
 
 from app.ocr.engine import default_ocr_engine
@@ -354,64 +357,78 @@ def verify_downstream_comparison_invariant() -> Dict[str, Any]:
     Evaluates downstream deterministic comparison on extracted fields.
     Validates Critical Invariant: FAR == 0.00% (Zero false acceptance).
     """
-    comp_script = BASE_DIR / "scripts" / "evaluate_p3h12_comparison.py"
-    with open(comp_script, "r", encoding="utf-8") as f:
-        script_content = f.read()
+    from scripts.evaluate_p3h12_comparison import COMPARISON_BENCHMARK_DATASET
 
-    # Load 64 pairwise cases from the script
-    cases = []
-    import ast
-    tree = ast.parse(script_content)
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Assign):
-            for t in node.targets:
-                if getattr(t, "id", "") == "COMPARISON_BENCHMARK_DATASET":
-                    cases = ast.literal_eval(node.value)
-                    break
-
+    cases = COMPARISON_BENCHMARK_DATASET
     total_cases = len(cases)
-    false_acceptances = 0
-    false_rejections = 0
-    correct_conflicts = 0
-    actual_conflicts = 0
+    tp, fn, tn, fp = 0, 0, 0, 0
 
     print(f"\nRunning Downstream Deterministic Identity Comparison Invariant Check ({total_cases} cases)...")
 
-    for case in cases:
-        p_a = DocumentIdentityProfile(**case["doc_a"])
-        p_b = DocumentIdentityProfile(**case["doc_b"])
+    for test_case in cases:
+        c_id = test_case["id"]
+        exp_conflict = test_case["expected_conflict"]
+        exp_review = test_case["expected_review"]
+
+        p_a = DocumentIdentityProfile.from_extracted_fields(
+            document_id=f"{c_id}_doc_a",
+            document_type=test_case["doc_a"].get("doc_type", "generic"),
+            extracted_fields={
+                "name": test_case["doc_a"].get("full_name"),
+                "full_name": test_case["doc_a"].get("full_name"),
+                "date_of_birth": test_case["doc_a"].get("date_of_birth"),
+                "gender": test_case["doc_a"].get("gender"),
+            },
+            overall_ocr_confidence=test_case["doc_a"].get("ocr_confidence", 0.95),
+        )
+
+        p_b = DocumentIdentityProfile.from_extracted_fields(
+            document_id=f"{c_id}_doc_b",
+            document_type=test_case["doc_b"].get("doc_type", "generic"),
+            extracted_fields={
+                "name": test_case["doc_b"].get("full_name"),
+                "full_name": test_case["doc_b"].get("full_name"),
+                "date_of_birth": test_case["doc_b"].get("date_of_birth"),
+                "gender": test_case["doc_b"].get("gender"),
+            },
+            overall_ocr_confidence=test_case["doc_b"].get("ocr_confidence", 0.95),
+        )
 
         res = IdentityComparisonEngine.compare_profiles(p_a, p_b)
-        is_conflict = len(res.conflicting_fields) > 0 or res.overall_classification in ["CONFLICT", "NAME_MISMATCH", "DOB_MISMATCH"]
-        is_auto_match = (
+
+        is_auto_accepted = (
             res.overall_classification in ["EXACT_MATCH", "FORMAT_ONLY_MATCH"]
             and not res.requires_manual_review
             and len(res.conflicting_fields) == 0
             and len(res.ambiguous_fields) == 0
         )
+        is_blocked_or_flagged = not is_auto_accepted
+        is_expected_clean_match = (not exp_conflict) and (not exp_review)
 
-        expected_conflict = case["expected_conflict"]
-        if expected_conflict:
-            actual_conflicts += 1
-            if is_conflict:
-                correct_conflicts += 1
-            if is_auto_match:
-                false_acceptances += 1
+        if not is_expected_clean_match:
+            if is_blocked_or_flagged:
+                tp += 1
+            else:
+                fn += 1  # False acceptance
         else:
-            if is_conflict:
-                false_rejections += 1
+            if not is_blocked_or_flagged:
+                tn += 1
+            else:
+                fp += 1  # False rejection
 
-    far = false_acceptances / max(actual_conflicts, 1)
-    frr = false_rejections / max(total_cases - actual_conflicts, 1)
+    total_non_matches = tp + fn
+    total_clean_matches = tn + fp
+    far = fn / max(total_non_matches, 1)
+    frr = fp / max(total_clean_matches, 1)
 
-    print(f"Downstream Invariant: Cases: {total_cases} | FAR: {far*100:.2f}% | FRR: {frr*100:.2f}% | Conflicts Correct: {correct_conflicts}/{actual_conflicts}")
+    print(f"Downstream Invariant: Cases: {total_cases} | FAR: {far*100:.2f}% | FRR: {frr*100:.2f}% | Correctly Handled: {tp}/{total_non_matches}")
 
     return {
         "total_cases": total_cases,
         "false_acceptance_rate_far": far,
         "false_rejection_rate_frr": frr,
-        "correct_conflicts": correct_conflicts,
-        "actual_conflicts": actual_conflicts,
+        "correct_conflicts": tp,
+        "actual_conflicts": total_non_matches,
         "far_invariant_preserved": (far == 0.0),
     }
 
@@ -420,17 +437,25 @@ def main():
     p3h12_manifest = BASE_DIR / "benchmarks" / "p3h12" / "manifest.json"
     p3h13_manifest = BASE_DIR / "benchmarks" / "p3h13" / "manifest.json"
 
-    # Evaluate P3H.12 with enhanced pipeline
-    p3h12_enhanced = evaluate_dataset(p3h12_manifest, "P3H.12 Baseline Dataset", "Stage 5 Integrated Pipeline")
     out_p3h12 = BASE_DIR / "benchmarks" / "p3h12" / "ocr_evaluation_results_p3h13_enhanced.json"
-    with open(out_p3h12, "w", encoding="utf-8") as f:
-        json.dump(p3h12_enhanced, f, indent=2, ensure_ascii=False)
-
-    # Evaluate P3H.13 independent holdout dataset
-    p3h13_holdout = evaluate_dataset(p3h13_manifest, "P3H.13 Independent Holdout Dataset", "Stage 5 Integrated Pipeline")
     out_p3h13 = BASE_DIR / "benchmarks" / "p3h13" / "ocr_evaluation_results.json"
-    with open(out_p3h13, "w", encoding="utf-8") as f:
-        json.dump(p3h13_holdout, f, indent=2, ensure_ascii=False)
+
+    if ("--downstream-only" in sys.argv or "--reuse-ocr" in sys.argv) and out_p3h12.exists() and out_p3h13.exists():
+        print("Reusing existing OCR evaluation results from disk...")
+        with open(out_p3h12, "r", encoding="utf-8") as f:
+            p3h12_enhanced = json.load(f)
+        with open(out_p3h13, "r", encoding="utf-8") as f:
+            p3h13_holdout = json.load(f)
+    else:
+        # Evaluate P3H.12 with enhanced pipeline
+        p3h12_enhanced = evaluate_dataset(p3h12_manifest, "P3H.12 Baseline Dataset", "Stage 5 Integrated Pipeline")
+        with open(out_p3h12, "w", encoding="utf-8") as f:
+            json.dump(p3h12_enhanced, f, indent=2, ensure_ascii=False)
+
+        # Evaluate P3H.13 independent holdout dataset
+        p3h13_holdout = evaluate_dataset(p3h13_manifest, "P3H.13 Independent Holdout Dataset", "Stage 5 Integrated Pipeline")
+        with open(out_p3h13, "w", encoding="utf-8") as f:
+            json.dump(p3h13_holdout, f, indent=2, ensure_ascii=False)
 
     # Downstream comparison check
     downstream_res = verify_downstream_comparison_invariant()

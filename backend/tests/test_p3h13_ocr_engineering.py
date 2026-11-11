@@ -44,6 +44,9 @@ from app.ocr.parsers.pan import PANParser
 from app.ocr.parsers.passport import PassportParser
 from app.ocr.parsers.education import EducationCertificateParser
 from app.ocr.parsers.epf import EPFRecordParser
+from app.services.identity_matching.models import DocumentIdentityProfile
+from app.services.identity_matching.engine import IdentityComparisonEngine
+from app.services.identity_matching.classification import OverallIdentityClassification, NameMatchClassification
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -381,3 +384,226 @@ def test_holdout_zero_identity_leakage():
             
     overlap = p12_names.intersection(p13_names)
     assert len(overlap) == 0, f"CRITICAL LEAKAGE DETECTED: Overlapping identities between baseline and holdout: {overlap}"
+
+
+# ============================================================================
+# 7. Downstream Comparison Invariant Recovery & Safety Tests (P3H.13.1)
+# ============================================================================
+
+def test_downstream_invariant_1_ocr_uncertainty_blocks_auto_match():
+    """Invariant 1: OCR uncertainty must not become a confirmed identity match."""
+    # Even with identical names, degraded OCR confidence (< 0.60) must halt auto-match
+    prof_a = DocumentIdentityProfile.from_extracted_fields(
+        document_id="doc_uncert_a",
+        document_type="aadhaar",
+        extracted_fields={"full_name": "RAJESH KUMAR VERMA", "date_of_birth": "1988-04-12"},
+        overall_ocr_confidence=0.45,  # Sub-threshold confidence
+    )
+    prof_b = DocumentIdentityProfile.from_extracted_fields(
+        document_id="doc_uncert_b",
+        document_type="pan",
+        extracted_fields={"full_name": "RAJESH KUMAR VERMA", "date_of_birth": "1988-04-12"},
+        overall_ocr_confidence=0.92,
+    )
+    res = IdentityComparisonEngine.compare_profiles(prof_a, prof_b)
+
+    assert res.overall_classification == OverallIdentityClassification.LOW_CONFIDENCE_NEEDS_REVIEW
+    assert res.requires_manual_review is True
+    assert res.confidence_score < 0.60
+    # Clean auto-acceptance is strictly prohibited
+    is_auto_match = (
+        res.overall_classification in [OverallIdentityClassification.EXACT_MATCH, OverallIdentityClassification.FORMAT_ONLY_MATCH]
+        and not res.requires_manual_review
+    )
+    assert is_auto_match is False
+
+
+def test_downstream_invariant_2_missing_fields_never_match():
+    """Invariant 2: Missing fields must not be treated as matching fields."""
+    prof_a = DocumentIdentityProfile.from_extracted_fields(
+        document_id="doc_missing_a",
+        document_type="aadhaar",
+        extracted_fields={"full_name": None, "date_of_birth": "1994-08-25"},
+        overall_ocr_confidence=0.95,
+    )
+    prof_b = DocumentIdentityProfile.from_extracted_fields(
+        document_id="doc_missing_b",
+        document_type="pan",
+        extracted_fields={"full_name": "PRIYA RAMANATHAN", "date_of_birth": "1994-08-25"},
+        overall_ocr_confidence=0.95,
+    )
+    res = IdentityComparisonEngine.compare_profiles(prof_a, prof_b)
+
+    assert "full_name" not in res.matched_fields
+    assert res.requires_manual_review is True
+    # Overall cannot be an exact match when name is absent
+    assert res.overall_classification not in [
+        OverallIdentityClassification.EXACT_MATCH,
+        OverallIdentityClassification.FORMAT_ONLY_MATCH,
+    ]
+
+
+def test_downstream_invariant_3_incorrectly_extracted_values_never_accepted():
+    """Invariant 3: Incorrectly extracted values must not be silently accepted."""
+    prof_a = DocumentIdentityProfile.from_extracted_fields(
+        document_id="doc_garbled_a",
+        document_type="aadhaar",
+        extracted_fields={"full_name": "RAJESH KUMAR VERMA", "date_of_birth": "1988-04-12"},
+        overall_ocr_confidence=0.95,
+    )
+    # Garbled/corrupted extraction on document B
+    prof_b = DocumentIdentityProfile.from_extracted_fields(
+        document_id="doc_garbled_b",
+        document_type="pan",
+        extracted_fields={"full_name": "R4J3SH KM4R VRMA", "date_of_birth": "1988-04-12"},
+        overall_ocr_confidence=0.75,
+    )
+    res = IdentityComparisonEngine.compare_profiles(prof_a, prof_b)
+
+    is_auto_accepted = (
+        res.overall_classification in [OverallIdentityClassification.EXACT_MATCH, OverallIdentityClassification.FORMAT_ONLY_MATCH]
+        and not res.requires_manual_review
+        and len(res.conflicting_fields) == 0
+        and len(res.ambiguous_fields) == 0
+    )
+    assert is_auto_accepted is False
+    assert res.requires_manual_review is True
+
+
+def test_downstream_invariant_4_ambiguous_values_preserve_manual_review():
+    """Invariant 4: Ambiguous values must preserve the manual-review outcome."""
+    # Initial expansion without corroborating parental record must require manual review
+    prof_a = DocumentIdentityProfile.from_extracted_fields(
+        document_id="doc_init_a",
+        document_type="aadhaar",
+        extracted_fields={"full_name": "K. RAMANATHAN", "date_of_birth": "1990-05-10"},
+        overall_ocr_confidence=0.95,
+    )
+    prof_b = DocumentIdentityProfile.from_extracted_fields(
+        document_id="doc_init_b",
+        document_type="passport",
+        extracted_fields={"full_name": "KUMAR RAMANATHAN", "date_of_birth": "1990-05-10"},
+        overall_ocr_confidence=0.95,
+    )
+    res = IdentityComparisonEngine.compare_profiles(prof_a, prof_b)
+
+    assert res.requires_manual_review is True
+    # Cannot be resolved to an automatic unverified match without corroboration
+    assert res.overall_classification in [
+        OverallIdentityClassification.AMBIGUOUS_NEEDS_REVIEW,
+        OverallIdentityClassification.LIKELY_SAME_PERSON,
+    ]
+    if res.overall_classification == OverallIdentityClassification.AMBIGUOUS_NEEDS_REVIEW:
+        assert res.requires_manual_review is True
+
+
+def test_downstream_invariant_5_genuine_discrepancies_detected():
+    """Invariant 5: Genuine discrepancies must remain detectable."""
+    # Gender-differentiated lookalike pair (Deepak vs Deepika)
+    prof_a = DocumentIdentityProfile.from_extracted_fields(
+        document_id="doc_gender_a",
+        document_type="aadhaar",
+        extracted_fields={"full_name": "DEEPAK SHARMA", "date_of_birth": "1992-06-15", "gender": "male"},
+        overall_ocr_confidence=0.95,
+    )
+    prof_b = DocumentIdentityProfile.from_extracted_fields(
+        document_id="doc_gender_b",
+        document_type="pan",
+        extracted_fields={"full_name": "DEEPIKA SHARMA", "date_of_birth": "1992-06-15", "gender": "female"},
+        overall_ocr_confidence=0.95,
+    )
+    res = IdentityComparisonEngine.compare_profiles(prof_a, prof_b)
+
+    assert "full_name" in res.conflicting_fields
+    assert res.requires_manual_review is True
+    assert res.overall_classification in [
+        OverallIdentityClassification.MISMATCH,
+        OverallIdentityClassification.HIGH_RISK_GENUINE_MISMATCH,
+    ]
+
+    # Date of birth conflict
+    prof_c = DocumentIdentityProfile.from_extracted_fields(
+        document_id="doc_dob_a",
+        document_type="aadhaar",
+        extracted_fields={"full_name": "AMIT PATEL", "date_of_birth": "1985-03-20"},
+        overall_ocr_confidence=0.95,
+    )
+    prof_d = DocumentIdentityProfile.from_extracted_fields(
+        document_id="doc_dob_b",
+        document_type="passport",
+        extracted_fields={"full_name": "AMIT PATEL", "date_of_birth": "1988-11-10"},
+        overall_ocr_confidence=0.95,
+    )
+    res_dob = IdentityComparisonEngine.compare_profiles(prof_c, prof_d)
+
+    assert "date_of_birth" in res_dob.conflicting_fields
+    assert res_dob.requires_manual_review is True
+    assert res_dob.overall_classification in [
+        OverallIdentityClassification.MISMATCH,
+        OverallIdentityClassification.HIGH_RISK_GENUINE_MISMATCH,
+    ]
+
+
+def test_downstream_invariant_6_preprocessing_immutability():
+    """Invariant 6: OCR preprocessing must not alter the original uploaded document."""
+    preprocessor = ImagePreprocessor()
+    test_img_path = P3H13_DIR / "images" / "pan_clean_scan.png"
+    assert test_img_path.exists()
+
+    with open(test_img_path, "rb") as f:
+        original_bytes = f.read()
+
+    img = Image.open(test_img_path)
+    img_np_before = np.array(img).copy()
+
+    # Preprocess
+    processed = preprocessor.preprocess(img)
+
+    # 1. Disk immutability: File on disk was not modified
+    with open(test_img_path, "rb") as f:
+        bytes_after = f.read()
+    assert original_bytes == bytes_after, "Source image on disk was mutated during preprocessing!"
+
+    # 2. In-memory immutability: Original PIL Image passed in was not altered
+    img_np_after = np.array(img)
+    assert np.array_equal(img_np_before, img_np_after), "Input PIL Image array was mutated in memory!"
+    # 3. Processed is a distinct object
+    assert processed is not img
+
+
+def test_downstream_invariant_7_comparison_classification_deterministic():
+    """Invariant 7: Comparison classification must remain strictly deterministic."""
+    test_pairs = [
+        # Pair 1: Exact match
+        (
+            {"full_name": "NEHA PATEL", "date_of_birth": "1992-02-03", "gender": "female"},
+            {"full_name": "NEHA PATEL", "date_of_birth": "1992-02-03", "gender": "female"},
+        ),
+        # Pair 2: Format variation
+        (
+            {"full_name": "M AJAY", "date_of_birth": "1995-10-12"},
+            {"full_name": "m. ajay", "date_of_birth": "1995-10-12"},
+        ),
+        # Pair 3: Genuine mismatch
+        (
+            {"full_name": "VIKRAM SINGH", "date_of_birth": "1980-05-15"},
+            {"full_name": "VIKRAM RAO", "date_of_birth": "1980-05-15"},
+        ),
+    ]
+
+    for doc_a, doc_b in test_pairs:
+        p_a = DocumentIdentityProfile.from_extracted_fields("da", "aadhaar", doc_a, overall_ocr_confidence=0.95)
+        p_b = DocumentIdentityProfile.from_extracted_fields("db", "pan", doc_b, overall_ocr_confidence=0.95)
+
+        base_res = IdentityComparisonEngine.compare_profiles(p_a, p_b)
+
+        # Run 50 iterations and verify bit-for-bit identical results
+        for _ in range(50):
+            iter_res = IdentityComparisonEngine.compare_profiles(p_a, p_b)
+            assert iter_res.overall_classification == base_res.overall_classification
+            assert iter_res.confidence_score == base_res.confidence_score
+            assert iter_res.requires_manual_review == base_res.requires_manual_review
+            assert iter_res.matched_fields == base_res.matched_fields
+            assert iter_res.conflicting_fields == base_res.conflicting_fields
+            assert iter_res.ambiguous_fields == base_res.ambiguous_fields
+

@@ -7,7 +7,12 @@ CONVELINA operates under strict security, privacy, and infrastructure invariants
 2. **Deterministic, Offline Execution**: OCR extraction must run locally inside Dockerized microservices.
 3. **Lean Container Footprint**: Microservices must start quickly and run reliably within constrained container memory budgets ($< 1$ GB RAM).
 
-This evaluation benchmarks **Tesseract 5.5.0** (with Leptonica 1.84.1) against candidate offline deep learning alternatives: **PaddleOCR (PP-OCRv4)** and **EasyOCR (CRAFT + CRNN)**.
+> [!IMPORTANT]
+> **Engine Evaluation & Deployment Scope**:
+> - **Tesseract 5.5.0** (with Leptonica 1.84.1) is the **active, installed, and executed production engine** inside the `convelina-backend` Linux container.
+> - **PaddleOCR (PP-OCRv4)** and **EasyOCR (CRAFT + CRNN)** were **investigated and architecturally evaluated through technical profiling, licensing analysis, dependency benchmarking, and literature baselines**. They were **intentionally NOT installed into the production Docker image** to avoid container bloat (+850 MB to +1.85 GB), PyTorch RAM overhead, and LGPL 3.0 copyleft legal hazards.
+
+This evaluation benchmarks **Tesseract 5.5.0** against the candidate offline deep learning alternatives based on empirical system constraints and architectural trade-offs.
 
 ---
 

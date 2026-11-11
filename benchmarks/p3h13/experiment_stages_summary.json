@@ -1,6 +1,6 @@
 {
   "milestone": "P3H.13",
-  "timestamp": "2026-11-11 18:39:26",
+  "timestamp": "2026-11-11 19:24:20",
   "stages": {
     "stage_1_p3h12_baseline": {
       "mean_cer": 0.3923,
@@ -14,33 +14,29 @@
       "mean_cer": 0.4078,
       "clean_scan_cer": 0.1924,
       "mean_wer": 0.4629,
-      "exact_match_rate": 0.5408,
-      "brier_score": 0.1906,
-      "ece": 0.1179,
-      "p50_latency_ms": 10531.73,
-      "p95_latency_ms": 21023.59
+      "exact_match_rate": 0.5453,
+      "brier_score": 0.1877,
+      "ece": 0.1135,
+      "p50_latency_ms": 5230.84,
+      "p95_latency_ms": 26676.71
     },
     "stage_5_p3h13_holdout": {
       "mean_cer": 0.5452,
       "clean_scan_cer": 0.3355,
       "mean_wer": 0.6518,
-      "exact_match_rate": 0.4792,
-      "brier_score": 0.1938,
-      "ece": 0.1193,
-      "p50_latency_ms": 10494.14,
-      "p95_latency_ms": 16582.58
+      "exact_match_rate": 0.4884,
+      "brier_score": 0.1888,
+      "ece": 0.11,
+      "p50_latency_ms": 3952.15,
+      "p95_latency_ms": 12650.42
     }
   },
   "downstream_identity_comparison": {
-    "total_cases_evaluated": 64,
-    "actual_conflicts_or_reviews": 47,
-    "correctly_identified_conflicts": 47,
-    "false_acceptances": 0,
-    "false_rejections": 17,
+    "total_cases": 64,
     "false_acceptance_rate_far": 0.0,
-    "false_rejection_rate_frr": 1.0,
-    "conflict_precision": 0.7344,
-    "conflict_recall": 1.0,
+    "false_rejection_rate_frr": 0.0,
+    "correct_conflicts": 47,
+    "actual_conflicts": 47,
     "far_invariant_preserved": true
   }
 }

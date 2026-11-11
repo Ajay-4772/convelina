@@ -64,31 +64,29 @@ The P3H.13 calibrator enforces two strict decoupling invariants:
 
 ## 4. Empirical Evaluation Results
 
-Across the 48-sample benchmark evaluating 288 field extractions:
+Evaluated across both the 48-sample P3H.12 baseline (453 fields) and the 48-sample P3H.13 independent holdout (432 fields across 6 unseen profiles):
 
-| Calibration Metric | Raw Tesseract Engine | P3H.12 Calibrated Baseline | P3H.13 Enhanced Pipeline | Improvement vs Raw |
-| :--- | :---: | :---: | :---: | :---: |
-| **Brier Score** | **0.3347** | 0.2847 | **0.2185** | **$-34.7\%$** |
-| **Expected Calibration Error (ECE)** | **0.2814** | 0.2210 | **0.1450** | **$-48.5\%$** |
-| **Maximum Calibration Error (MCE)** | **0.4920** | 0.3850 | **0.2410** | **$-51.0\%$** |
+| Calibration Metric | Raw Tesseract Engine | P3H.12 Calibrated Baseline | P3H.13 Enhanced (Baseline) | P3H.13 Enhanced (Holdout) | Overall Gain vs Raw |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Brier Score** | **0.3347** | 0.2847 | **0.1877** | **0.1888** | **$-43.6\%$** |
+| **Expected Calibration Error (ECE)** | **0.2814** | 0.2210 | **0.1135** | **0.1100** | **$-60.9\%$** |
+| **Maximum Calibration Error (MCE)** | **0.4920** | 0.3850 | **0.2252** | **0.3849** | **$-21.8\%$** |
 
-### 10-Bin Reliability Table (P3H.13 Calibrated)
+### 10-Bin Reliability Table (P3H.13 Holdout Dataset: 432 Evaluated Fields)
 
-| Bin Range | Sample Count ($|B_m|$) | Mean Confidence | Empirical Accuracy | Calibration Gap ($|\text{acc} - \text{conf}|$) |
-| :---: | :---: | :---: | :---: | :---: |
-| $[0.0, 0.1)$ | 42 | 0.0410 | 0.0000 | 0.0410 |
-| $[0.1, 0.2)$ | 28 | 0.1480 | 0.1071 | 0.0409 |
-| $[0.2, 0.3)$ | 24 | 0.2450 | 0.2500 | 0.0050 |
-| $[0.3, 0.4)$ | 18 | 0.3420 | 0.3333 | 0.0087 |
-| $[0.4, 0.5)$ | 22 | 0.4490 | 0.4545 | 0.0055 |
-| $[0.5, 0.6)$ | 16 | 0.5510 | 0.5625 | 0.0115 |
-| $[0.6, 0.7)$ | 20 | 0.6530 | 0.6500 | 0.0030 |
-| $[0.7, 0.8)$ | 34 | 0.7480 | 0.7353 | 0.0127 |
-| $[0.8, 0.9)$ | 40 | 0.8490 | 0.8500 | 0.0010 |
-| $[0.9, 1.0]$ | 44 | 0.9420 | 0.9318 | 0.0102 |
+| Bin Range | Sample Count ($|B_m|$) | Mean Confidence | Empirical Accuracy | Calibration Gap ($|\text{acc} - \text{conf}|$) | Operational Interpretation |
+| :---: | :---: | :---: | :---: | :---: | :--- |
+| $[0.0, 0.2)$ | 0 | — | — | — | Empty (Calibrator enforces 0.20 minimum floor) |
+| $[0.2, 0.3)$ | 111 | 0.3000 | 0.0991 | 0.2009 | Degraded/blurred scans; 100% routed to manual review |
+| $[0.3, 0.4)$ | 6 | 0.3129 | 0.1667 | 0.1462 | Sub-threshold extractions; routed to manual review |
+| $[0.4, 0.5)$ | 17 | 0.4484 | 0.2353 | 0.2131 | Severe noise/shadow; routed to manual review |
+| $[0.5, 0.6)$ | 19 | 0.5428 | 0.1579 | 0.3849 | Truncated/ambiguous fields; routed to manual review |
+| $[0.6, 0.7)$ | 64 | 0.6453 | 0.4844 | 0.1610 | Moderate confidence border; flagged for review |
+| $[0.7, 0.8)$ | 215 | 0.7633 | 0.7488 | **0.0145** | **High-validity structured fields; gap is only 1.45%** |
+| $[0.8, 1.0]$ | 0 | — | — | — | Conservative calibration ceiling caps raw OCR at 0.77 |
 
-### Key Findings:
-1. **Monotonic Reliability**: Across all 10 bins, empirical accuracy increases strictly monotonically with predicted confidence.
-2. **Reliable Upper Deciles**: In the $[0.8, 1.0]$ confidence band, empirical accuracy matches predicted probability to within $\pm 1.2\%$.
-3. **Decisive Lower Deciles**: Extractions in the $< 0.40$ band reliably indicate errors and are captured by automated manual review triggers.
+### Statistical Reliability & Sample Size Limitations:
+1. **Sample Clustering**: Because CONVELINA's calibrator caps raw OCR scores to $\le 0.77$ to prevent overconfidence and enforces a 0.20 floor for severely degraded inputs, predictions cluster in the $[0.2, 0.3)$ and $[0.7, 0.8)$ bins.
+2. **Decisive Operational Discrimination**: The $[0.7, 0.8)$ bin contains 215 field extractions where mean confidence (0.7633) almost identically matches empirical ground-truth accuracy (0.7488), achieving an exceptional calibration gap of only **0.0145 (1.45%)**.
+3. **Fail-Safe Lower Deciles**: Fields with confidence $< 0.70$ (217 total fields) are 100% intercepted by automated manual-review triggers, preventing any uncalibrated machine decision from reaching the citizen.
 

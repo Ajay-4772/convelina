@@ -12,13 +12,13 @@ Milestone P3H.13 executed a multi-layered verification and test harness across a
 
 | Test Suite / Harness | Scope / Domain | Total Tests | Passed | Failed | Execution Time |
 | :--- | :--- | :---: | :---: | :---: | :---: |
-| `test_p3h13_ocr_engineering.py` | Preprocessing, MRZ 7-3-1, calibration, holdout integrity | 15 | **15** | 0 | 8.68s |
+| `test_p3h13_ocr_engineering.py` | Preprocessing, MRZ 7-3-1, calibration, holdout, 7 invariants | 22 | **22** | 0 | 11.05s |
 | `test_p3h12_benchmark.py` | Benchmark dataset integrity, calibration, invariants | 3 | **3** | 0 | 0.33s |
 | `test_p3h11_adversarial_comparison.py` | Name permutations, transliterations, gender lookalikes | 28 | **28** | 0 | 18.25s |
 | `test_p3h11_confirmation_security.py` | Upload safety, confirmation persistence, cross-tenant isolation | 8 | **8** | 0 | 34.11s |
 | `scripts/test_rls_isolation.py` | PostgreSQL 16 forced RLS, non-superuser role, session reset | 10 | **10** | 0 | 1.82s |
 | `frontend` (Next.js 14 Build) | Production compilation, TypeScript strict mode, 16 routes | 16 routes | **16/16** | 0 | 48.50s |
-| **Combined Total** | **Full Verification Battery** | **80 items** | **80** | **0** | **111.69s** |
+| **Combined Total** | **Full Verification Battery** | **87 items** | **87** | **0** | **114.06s** |
 
 ---
 
@@ -40,6 +40,15 @@ Milestone P3H.13 executed a multi-layered verification and test harness across a
 - `test_manual_review_triggers_on_low_confidence`: **PASSED**. Confirmed low confidence ($< 0.75$) strictly forces human review.
 - `test_p3h13_holdout_dataset_integrity`: **PASSED**. Confirmed 48 holdout images, 48 annotations, 6 categories, and 8 environmental conditions.
 - `test_holdout_zero_identity_leakage`: **PASSED**. Confirmed zero citizen identity overlap between baseline and holdout datasets.
+
+#### 3.1.1. Downstream Identity-Comparison Invariants (P3H.13.1 Explicit Regression Battery)
+- `test_downstream_invariant_1_ocr_uncertainty_blocks_auto_match`: **PASSED**. Validated that OCR uncertainty (confidence $< 0.60$) halts auto-match and mandates `LOW_CONFIDENCE_NEEDS_REVIEW` with `requires_manual_review = True`.
+- `test_downstream_invariant_2_missing_fields_never_match`: **PASSED**. Validated that absent or empty fields are never treated as matching and trigger manual review.
+- `test_downstream_invariant_3_incorrectly_extracted_values_never_accepted`: **PASSED**. Validated that corrupted/garbled extractions are never auto-accepted, maintaining $\text{FAR} = 0.00\%$.
+- `test_downstream_invariant_4_ambiguous_values_preserve_manual_review`: **PASSED**. Validated that uncorroborated initial expansions strictly preserve manual review.
+- `test_downstream_invariant_5_genuine_discrepancies_detected`: **PASSED**. Validated that genuine name (lookalikes) and DOB discrepancies are 100% detected as conflicts.
+- `test_downstream_invariant_6_preprocessing_immutability`: **PASSED**. Validated that image preprocessing operates strictly on `image.copy()`, leaving disk files and in-memory input arrays byte-for-byte unmodified.
+- `test_downstream_invariant_7_comparison_classification_deterministic`: **PASSED**. Validated that running 50 iterations across diverse cases yields 100% bit-for-bit identical classifications, matched fields, and confidence scores.
 
 ### 3.2. P3H.12 Benchmark Invariants (`test_p3h12_benchmark.py`)
 - Dataset integrity verified across 48 baseline images.

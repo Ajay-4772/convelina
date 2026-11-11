@@ -79,20 +79,23 @@ flowchart TD
 
 ---
 
-## 3. Comparative Extraction Metrics: Baseline vs P3H.13
+## 3. Comparative Extraction Metrics: Baseline vs P3H.13 Enhanced
 
-| Document Category | Baseline Field Match (%) | Baseline Missing (%) | P3H.13 Field Match (%) | P3H.13 Missing (%) | Improvement ($\Delta$) |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Aadhaar Card** | 43.75% | 20.31% | **61.25%** | **11.25%** | **+17.50%** |
-| **PAN Card** | 48.21% | 19.64% | **62.50%** | **10.71%** | **+14.29%** |
-| **Passport** | 30.56% | 34.72% | **46.88%** | **18.75%** | **+16.32%** |
-| **Class 10 Certificate**| 38.54% | 27.08% | **60.42%** | **14.58%** | **+21.88%** |
-| **Class 12 Certificate**| 37.50% | 29.17% | **61.46%** | **13.54%** | **+23.96%** |
-| **EPFO / UAN Records** | 24.31% | 28.47% | **44.44%** | **16.67%** | **+20.13%** |
-| **Overall Aggregate** | **37.09%** | **26.61%** | **56.16%** | **14.25%** | **+19.07%** |
+Evaluated across all 48 benchmark samples (453 evaluated ground-truth fields on P3H.12 baseline, and 432 fields on P3H.13 independent holdout):
+
+| Document Category | Baseline Field Match (%) | Baseline Missing (%) | P3H.12 Enhanced Match (%) | P3H.12 Enhanced Missing (%) | P3H.13 Holdout Match (%) | P3H.13 Holdout Missing (%) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Aadhaar Card** | 34.38% (22/64) | 56.25% (36/64) | **60.94% (39/64)** | **31.25% (20/64)** | **42.19% (27/64)** | **45.31% (29/64)** |
+| **PAN Card** | 42.86% (24/56) | 48.21% (27/56) | **62.50% (35/56)** | **30.36% (17/56)** | **31.25% (15/48)** | **56.25% (27/48)** |
+| **Passport** | 22.22% (16/72) | 68.06% (49/72) | **50.00% (36/72)** | **43.06% (31/72)** | **44.44% (32/72)** | **44.44% (32/72)** |
+| **Class 10 Certificate**| 41.67% (40/96) | 50.00% (48/96) | **62.50% (60/96)** | **33.33% (32/96)** | **53.41% (47/88)** | **36.36% (32/88)** |
+| **Class 12 Certificate**| 41.67% (40/96) | 50.00% (48/96) | **60.42% (58/96)** | **35.42% (34/96)** | **59.09% (52/88)** | **32.95% (29/88)** |
+| **EPFO / UAN Records** | 37.74% (26/69) | 56.52% (39/69) | **27.54% (19/69)** | **50.72% (35/69)** | **52.78% (38/72)** | **34.72% (25/72)** |
+| **Overall Aggregate** | **37.09% (168/453)**| **54.53% (247/453)**| **54.53% (247/453)**| **37.31% (169/453)**| **48.84% (211/432)**| **40.28% (174/432)**|
 
 ### Summary of Extraction Results:
-- Overall field exact match rate improved by **+19.07 percentage points** across the 48-sample benchmark.
-- Missing field rate dropped by **12.36 percentage points** (from 26.61% down to 14.25%).
-- Zero data leakage: Enhancements strictly conform to statutory schema boundaries and generalize seamlessly to unseen citizen identities.
+- Overall field exact match rate improved from **37.09% to 54.53%** on baseline data (+17.44 percentage points absolute gain).
+- On the independent holdout dataset (unseen profiles with zero identity overlap), the pipeline achieved **48.84% exact match** (211/432 fields).
+- Missing field rate dropped from **54.53% down to 37.31%** on baseline data and **40.28%** on holdout data.
+- Incorrect field rate remained tightly bounded at **8.17% (37/453)** on baseline and **10.88% (47/432)** on holdout, with 100% of degraded scans flagged for manual review.
 
