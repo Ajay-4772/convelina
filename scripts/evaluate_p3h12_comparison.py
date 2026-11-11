@@ -898,7 +898,8 @@ def run_comparison_evaluation():
     for p_name, p_stat in p_summary.items():
         print(f"  - {p_name:<26}: 7-Class Match: {p_stat['category_accuracy']*100:5.1f}% | FA: {p_stat['false_accepts']} | FR: {p_stat['false_rejects']}")
     print("\n7-Class Confusion Matrix (Rows=Expected, Cols=Detected):")
-    header = f"{'Expected \\ Detected':<34}" + "".join(f"{c[:10]:>11}" for c in SEVEN_CLASSES)
+    hdr_title = "Expected \\ Detected"
+    header = f"{hdr_title:<34}" + "".join(f"{c[:10]:>11}" for c in SEVEN_CLASSES)
     print(header)
     print("-" * len(header))
     for exp_c in SEVEN_CLASSES:

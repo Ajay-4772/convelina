@@ -1,0 +1,23 @@
+{
+  "sample_id": "education_12th_compression",
+  "category": "education_12th",
+  "condition": "compression",
+  "condition_name": "Heavy JPEG Compression Artifacts",
+  "expected_manual_review": false,
+  "profile_id": "prof_h5",
+  "image_filename": "education_12th_compression.jpg",
+  "ground_truth_fields": {
+    "board": "CBSE",
+    "issuing_authority": "CBSE",
+    "passing_year": "2013",
+    "roll_number": "9456789",
+    "registration_number": "MH/2013/9456789",
+    "document_number": "9456789",
+    "full_name": "KAVITA ANAND JOSHI",
+    "father_name": "ANAND MORESHWAR JOSHI",
+    "parent_guardian_name": "ANAND MORESHWAR JOSHI",
+    "mother_name": "SADHANA ANAND JOSHI",
+    "date_of_birth": "1995-08-28"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nCENTRAL BOARD OF SECONDARY EDUCATION\nSENIOR SCHOOL CERTIFICATE EXAMINATION (CLASS XII)\nRoll No: 9456789\nRegistration No: MH/2013/9456789\nCandidate Name: KAVITA ANAND JOSHI\nFather's Name: ANAND MORESHWAR JOSHI\nMother's Name: SADHANA ANAND JOSHI\nDate of Birth: 28/08/1995"
+}

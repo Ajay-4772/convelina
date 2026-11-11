@@ -26,6 +26,7 @@ class AadhaarParser(BaseDocumentParser):
             last_4 = match.group(3)
             masked_id = f"XXXX-XXXX-{last_4}"
             fields["aadhaar_last_4"] = last_4
+            fields["aadhaar_number"] = f"{match.group(1)} {match.group(2)} {match.group(3)}"
         else:
             # Check for already masked patterns like XXXX XXXX 1234
             masked_pattern = r"\b[Xx]{4}[\s-]?[Xx]{4}[\s-]?(\d{4})\b"
@@ -34,6 +35,7 @@ class AadhaarParser(BaseDocumentParser):
                 last_4 = m_match.group(1)
                 masked_id = f"XXXX-XXXX-{last_4}"
                 fields["aadhaar_last_4"] = last_4
+                fields["aadhaar_number"] = f"XXXX XXXX {last_4}"
                 fields["verhoeff_valid"] = None
 
         # 2. Date of Birth / Year of Birth extraction
@@ -111,11 +113,13 @@ class AadhaarParser(BaseDocumentParser):
             fields["pincode"] = pin_match.group(1)
 
         # 6. Address extraction
-        addr_match = re.search(r"(?:Address|पता)[:\s]+(.*?)(?=\b\d{4}\b|\bUnique\b|\bHelpdesk\b|\n\n|$)", raw_text, re.DOTALL | re.IGNORECASE)
+        addr_match = re.search(r"(?:Address|पता|முகவரி)[:\s]+(.*?)(?=\b\d{4}\s*\d{4}\s*\d{4}\b|\bUnique\b|\bHelpdesk\b|\n\n|$)", raw_text, re.DOTALL | re.IGNORECASE)
         if addr_match:
             raw_addr = addr_match.group(1).replace("\n", " ").strip()
-            # Clean up redundant spaces
-            fields["address"] = re.sub(r"\s+", " ", raw_addr)[:200].strip()
+            # Clean up redundant spaces and trailing labels
+            cleaned_addr = re.sub(r"\s+", " ", raw_addr)
+            cleaned_addr = re.sub(r"\bAadhaar\s*(?:Number|No\.?)?.*$", "", cleaned_addr, flags=re.IGNORECASE).strip()
+            fields["address"] = cleaned_addr[:200].strip()
 
         return {
             "masked_id": masked_id,

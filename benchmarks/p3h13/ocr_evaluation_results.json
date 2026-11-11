@@ -1,0 +1,4093 @@
+{
+  "metadata": {
+    "dataset": "P3H.13 Independent Holdout Dataset",
+    "stage": "Stage 5 Integrated Pipeline",
+    "total_samples": 48,
+    "ocr_engine": "Tesseract 5.5.0 + Leptonica + Poppler C++ (P3H.13 Preprocessing & Parsers Enhanced)"
+  },
+  "aggregate_metrics": {
+    "mean_cer": 0.5452,
+    "mean_wer": 0.6518,
+    "overall_field_exact_match_rate": 0.4792,
+    "overall_missing_field_rate": 0.4028,
+    "overall_incorrect_field_rate": 0.1181,
+    "brier_score": 0.1938,
+    "expected_calibration_error_ece": 0.1193,
+    "maximum_calibration_error_mce": 0.3849,
+    "manual_review_precision": 0.375,
+    "manual_review_recall": 1.0,
+    "manual_review_f1": 0.5455,
+    "confusion_matrix": {
+      "tp": 18,
+      "fp": 30,
+      "tn": 0,
+      "fn": 0
+    },
+    "latency_p50_ms": 10494.14,
+    "latency_p95_ms": 16582.58
+  },
+  "by_category": {
+    "aadhaar": {
+      "mean_cer": 0.5327,
+      "mean_wer": 0.59,
+      "exact_match_rate": 0.4219,
+      "missing_field_rate": 0.5625,
+      "incorrect_field_rate": 0.0156,
+      "sample_count": 8
+    },
+    "pan": {
+      "mean_cer": 0.5926,
+      "mean_wer": 0.7143,
+      "exact_match_rate": 0.3125,
+      "missing_field_rate": 0.3542,
+      "incorrect_field_rate": 0.3333,
+      "sample_count": 8
+    },
+    "passport": {
+      "mean_cer": 0.7565,
+      "mean_wer": 0.9081,
+      "exact_match_rate": 0.4444,
+      "missing_field_rate": 0.2361,
+      "incorrect_field_rate": 0.3194,
+      "sample_count": 8
+    },
+    "education_10th": {
+      "mean_cer": 0.4705,
+      "mean_wer": 0.5843,
+      "exact_match_rate": 0.5341,
+      "missing_field_rate": 0.4205,
+      "incorrect_field_rate": 0.0455,
+      "sample_count": 8
+    },
+    "education_12th": {
+      "mean_cer": 0.4635,
+      "mean_wer": 0.5472,
+      "exact_match_rate": 0.5909,
+      "missing_field_rate": 0.3864,
+      "incorrect_field_rate": 0.0227,
+      "sample_count": 8
+    },
+    "epf": {
+      "mean_cer": 0.4555,
+      "mean_wer": 0.5667,
+      "exact_match_rate": 0.4722,
+      "missing_field_rate": 0.4583,
+      "incorrect_field_rate": 0.0694,
+      "sample_count": 8
+    }
+  },
+  "by_condition": {
+    "clean_scan": {
+      "mean_cer": 0.3355,
+      "mean_wer": 0.4619,
+      "exact_match_rate": 0.7778,
+      "missing_field_rate": 0.0741,
+      "incorrect_field_rate": 0.1481,
+      "sample_count": 6
+    },
+    "photo_shadow": {
+      "mean_cer": 0.9425,
+      "mean_wer": 0.976,
+      "exact_match_rate": 0.1296,
+      "missing_field_rate": 0.7963,
+      "incorrect_field_rate": 0.0741,
+      "sample_count": 6
+    },
+    "skewed_rot": {
+      "mean_cer": 0.3336,
+      "mean_wer": 0.4073,
+      "exact_match_rate": 0.7778,
+      "missing_field_rate": 0.1481,
+      "incorrect_field_rate": 0.0741,
+      "sample_count": 6
+    },
+    "low_resolution": {
+      "mean_cer": 0.6763,
+      "mean_wer": 0.8529,
+      "exact_match_rate": 0.1852,
+      "missing_field_rate": 0.6852,
+      "incorrect_field_rate": 0.1296,
+      "sample_count": 6
+    },
+    "blur_noise": {
+      "mean_cer": 0.99,
+      "mean_wer": 0.9917,
+      "exact_match_rate": 0.0741,
+      "missing_field_rate": 0.9259,
+      "incorrect_field_rate": 0.0,
+      "sample_count": 6
+    },
+    "compression": {
+      "mean_cer": 0.3783,
+      "mean_wer": 0.533,
+      "exact_match_rate": 0.5,
+      "missing_field_rate": 0.3148,
+      "incorrect_field_rate": 0.1852,
+      "sample_count": 6
+    },
+    "obscured_crease": {
+      "mean_cer": 0.3582,
+      "mean_wer": 0.522,
+      "exact_match_rate": 0.6481,
+      "missing_field_rate": 0.1667,
+      "incorrect_field_rate": 0.1852,
+      "sample_count": 6
+    },
+    "bilingual_script": {
+      "mean_cer": 0.3473,
+      "mean_wer": 0.4694,
+      "exact_match_rate": 0.7407,
+      "missing_field_rate": 0.1111,
+      "incorrect_field_rate": 0.1481,
+      "sample_count": 6
+    }
+  },
+  "by_field": {
+    "full_name": {
+      "accuracy": 0.2917,
+      "missing_rate": 0.375,
+      "incorrect_rate": 0.3333,
+      "total_occurrences": 48
+    },
+    "date_of_birth": {
+      "accuracy": 0.45,
+      "missing_rate": 0.5,
+      "incorrect_rate": 0.05,
+      "total_occurrences": 40
+    },
+    "gender": {
+      "accuracy": 0.4375,
+      "missing_rate": 0.5625,
+      "incorrect_rate": 0.0,
+      "total_occurrences": 16
+    },
+    "address": {
+      "accuracy": 0.25,
+      "missing_rate": 0.625,
+      "incorrect_rate": 0.125,
+      "total_occurrences": 8
+    },
+    "pincode": {
+      "accuracy": 0.0,
+      "missing_rate": 1.0,
+      "incorrect_rate": 0.0,
+      "total_occurrences": 8
+    },
+    "aadhaar_number": {
+      "accuracy": 0.625,
+      "missing_rate": 0.375,
+      "incorrect_rate": 0.0,
+      "total_occurrences": 8
+    },
+    "document_number": {
+      "accuracy": 0.3542,
+      "missing_rate": 0.3958,
+      "incorrect_rate": 0.25,
+      "total_occurrences": 48
+    },
+    "issuing_authority": {
+      "accuracy": 0.9167,
+      "missing_rate": 0.0833,
+      "incorrect_rate": 0.0,
+      "total_occurrences": 48
+    },
+    "father_name": {
+      "accuracy": 0.375,
+      "missing_rate": 0.4583,
+      "incorrect_rate": 0.1667,
+      "total_occurrences": 24
+    },
+    "pan_number": {
+      "accuracy": 0.0,
+      "missing_rate": 0.375,
+      "incorrect_rate": 0.625,
+      "total_occurrences": 8
+    },
+    "passport_number": {
+      "accuracy": 0.0,
+      "missing_rate": 0.125,
+      "incorrect_rate": 0.875,
+      "total_occurrences": 8
+    },
+    "surname": {
+      "accuracy": 0.75,
+      "missing_rate": 0.125,
+      "incorrect_rate": 0.125,
+      "total_occurrences": 8
+    },
+    "date_of_issue": {
+      "accuracy": 0.625,
+      "missing_rate": 0.375,
+      "incorrect_rate": 0.0,
+      "total_occurrences": 8
+    },
+    "expiry_date": {
+      "accuracy": 0.625,
+      "missing_rate": 0.375,
+      "incorrect_rate": 0.0,
+      "total_occurrences": 8
+    },
+    "board": {
+      "accuracy": 0.75,
+      "missing_rate": 0.25,
+      "incorrect_rate": 0.0,
+      "total_occurrences": 16
+    },
+    "passing_year": {
+      "accuracy": 0.5625,
+      "missing_rate": 0.375,
+      "incorrect_rate": 0.0625,
+      "total_occurrences": 16
+    },
+    "roll_number": {
+      "accuracy": 0.5,
+      "missing_rate": 0.5,
+      "incorrect_rate": 0.0,
+      "total_occurrences": 16
+    },
+    "registration_number": {
+      "accuracy": 0.5625,
+      "missing_rate": 0.375,
+      "incorrect_rate": 0.0625,
+      "total_occurrences": 16
+    },
+    "parent_guardian_name": {
+      "accuracy": 0.5625,
+      "missing_rate": 0.4375,
+      "incorrect_rate": 0.0,
+      "total_occurrences": 16
+    },
+    "mother_name": {
+      "accuracy": 0.375,
+      "missing_rate": 0.5625,
+      "incorrect_rate": 0.0625,
+      "total_occurrences": 16
+    },
+    "uan": {
+      "accuracy": 0.5,
+      "missing_rate": 0.5,
+      "incorrect_rate": 0.0,
+      "total_occurrences": 8
+    },
+    "member_id": {
+      "accuracy": 0.5,
+      "missing_rate": 0.5,
+      "incorrect_rate": 0.0,
+      "total_occurrences": 8
+    },
+    "employer_name": {
+      "accuracy": 0.625,
+      "missing_rate": 0.375,
+      "incorrect_rate": 0.0,
+      "total_occurrences": 8
+    },
+    "establishment_id": {
+      "accuracy": 0.0,
+      "missing_rate": 1.0,
+      "incorrect_rate": 0.0,
+      "total_occurrences": 8
+    },
+    "date_of_joining": {
+      "accuracy": 0.5,
+      "missing_rate": 0.5,
+      "incorrect_rate": 0.0,
+      "total_occurrences": 8
+    },
+    "date_of_exit": {
+      "accuracy": 0.625,
+      "missing_rate": 0.375,
+      "incorrect_rate": 0.0,
+      "total_occurrences": 8
+    }
+  },
+  "calibration_bins": [
+    {
+      "bin_index": 0,
+      "lower_bound": 0.0,
+      "upper_bound": 0.1,
+      "sample_count": 0,
+      "mean_confidence": 0.05,
+      "empirical_accuracy": 0.0,
+      "calibration_gap": 0.0
+    },
+    {
+      "bin_index": 1,
+      "lower_bound": 0.1,
+      "upper_bound": 0.2,
+      "sample_count": 0,
+      "mean_confidence": 0.15,
+      "empirical_accuracy": 0.0,
+      "calibration_gap": 0.0
+    },
+    {
+      "bin_index": 2,
+      "lower_bound": 0.2,
+      "upper_bound": 0.3,
+      "sample_count": 111,
+      "mean_confidence": 0.3,
+      "empirical_accuracy": 0.0991,
+      "calibration_gap": 0.2009
+    },
+    {
+      "bin_index": 3,
+      "lower_bound": 0.3,
+      "upper_bound": 0.4,
+      "sample_count": 6,
+      "mean_confidence": 0.3129,
+      "empirical_accuracy": 0.1667,
+      "calibration_gap": 0.1462
+    },
+    {
+      "bin_index": 4,
+      "lower_bound": 0.4,
+      "upper_bound": 0.5,
+      "sample_count": 17,
+      "mean_confidence": 0.4484,
+      "empirical_accuracy": 0.2353,
+      "calibration_gap": 0.2131
+    },
+    {
+      "bin_index": 5,
+      "lower_bound": 0.5,
+      "upper_bound": 0.6,
+      "sample_count": 19,
+      "mean_confidence": 0.5428,
+      "empirical_accuracy": 0.1579,
+      "calibration_gap": 0.3849
+    },
+    {
+      "bin_index": 6,
+      "lower_bound": 0.6,
+      "upper_bound": 0.7,
+      "sample_count": 64,
+      "mean_confidence": 0.6453,
+      "empirical_accuracy": 0.4844,
+      "calibration_gap": 0.161
+    },
+    {
+      "bin_index": 7,
+      "lower_bound": 0.7,
+      "upper_bound": 0.8,
+      "sample_count": 215,
+      "mean_confidence": 0.7633,
+      "empirical_accuracy": 0.7302,
+      "calibration_gap": 0.0331
+    },
+    {
+      "bin_index": 8,
+      "lower_bound": 0.8,
+      "upper_bound": 0.9,
+      "sample_count": 0,
+      "mean_confidence": 0.85,
+      "empirical_accuracy": 0.0,
+      "calibration_gap": 0.0
+    },
+    {
+      "bin_index": 9,
+      "lower_bound": 0.9,
+      "upper_bound": 1.0,
+      "sample_count": 0,
+      "mean_confidence": 0.9501,
+      "empirical_accuracy": 0.0,
+      "calibration_gap": 0.0
+    }
+  ],
+  "samples": [
+    {
+      "sample_id": "aadhaar_clean_scan",
+      "category": "aadhaar",
+      "condition": "clean_scan",
+      "cer": 0.2509,
+      "wer": 0.35,
+      "latency_ms": 9380.7,
+      "calibrated_confidence": 0.799,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.75,
+      "fields": {
+        "full_name": {
+          "ground_truth": "VIKRAMADITYA PRASAD SINGH",
+          "extracted": "vikramaditya prasad singh",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1987-07-18",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "gender": {
+          "ground_truth": "Male",
+          "extracted": "Male",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "address": {
+          "ground_truth": "55, Gomti Nagar, Sector 4, Lucknow, Uttar Pradesh",
+          "extracted": "55, gomti nagar, sector 4, lucknow, uttar pradesh",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "pincode": {
+          "ground_truth": "226010",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "aadhaar_number": {
+          "ground_truth": "8901 2345 6789",
+          "extracted": "8901 2345 6789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "8901 2345 6789",
+          "extracted": "8901 2345 6789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "UIDAI",
+          "extracted": "UIDAI",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "aadhaar_photo_shadow",
+      "category": "aadhaar",
+      "condition": "photo_shadow",
+      "cer": 1.0,
+      "wer": 1.0,
+      "latency_ms": 5976.58,
+      "calibrated_confidence": 0.3,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.125,
+      "fields": {
+        "full_name": {
+          "ground_truth": "VIKRAMADITYA PRASAD SINGH",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1987-07-18",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "gender": {
+          "ground_truth": "Male",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "address": {
+          "ground_truth": "55, Gomti Nagar, Sector 4, Lucknow, Uttar Pradesh",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "pincode": {
+          "ground_truth": "226010",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "aadhaar_number": {
+          "ground_truth": "8901 2345 6789",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "8901 2345 6789",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "UIDAI",
+          "extracted": "UIDAI",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "aadhaar_skewed_rot",
+      "category": "aadhaar",
+      "condition": "skewed_rot",
+      "cer": 0.2686,
+      "wer": 0.35,
+      "latency_ms": 10163.29,
+      "calibrated_confidence": 0.7437,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.625,
+      "fields": {
+        "full_name": {
+          "ground_truth": "VIKRAMADITYA PRASAD SINGH",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1987-07-18",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "gender": {
+          "ground_truth": "Male",
+          "extracted": "Male",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "address": {
+          "ground_truth": "55, Gomti Nagar, Sector 4, Lucknow, Uttar Pradesh",
+          "extracted": "55, gomti nagar, sector 4, lucknow, uttar pradesh",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "pincode": {
+          "ground_truth": "226010",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "aadhaar_number": {
+          "ground_truth": "8901 2345 6789",
+          "extracted": "8901 2345 6789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "8901 2345 6789",
+          "extracted": "8901 2345 6789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "UIDAI",
+          "extracted": "UIDAI",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "aadhaar_low_resolution",
+      "category": "aadhaar",
+      "condition": "low_resolution",
+      "cer": 0.8021,
+      "wer": 0.825,
+      "latency_ms": 5131.19,
+      "calibrated_confidence": 0.5559,
+      "requires_manual_review": true,
+      "expected_manual_review": true,
+      "exact_match_ratio": 0.375,
+      "fields": {
+        "full_name": {
+          "ground_truth": "VIKRAMADITYA PRASAD SINGH",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1987-07-18",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "gender": {
+          "ground_truth": "Male",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "address": {
+          "ground_truth": "55, Gomti Nagar, Sector 4, Lucknow, Uttar Pradesh",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "pincode": {
+          "ground_truth": "226010",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "aadhaar_number": {
+          "ground_truth": "8901 2345 6789",
+          "extracted": "8901 2345 6789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "8901 2345 6789",
+          "extracted": "8901 2345 6789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "UIDAI",
+          "extracted": "UIDAI",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "aadhaar_blur_noise",
+      "category": "aadhaar",
+      "condition": "blur_noise",
+      "cer": 0.9399,
+      "wer": 0.95,
+      "latency_ms": 7823.21,
+      "calibrated_confidence": 0.412,
+      "requires_manual_review": true,
+      "expected_manual_review": true,
+      "exact_match_ratio": 0.125,
+      "fields": {
+        "full_name": {
+          "ground_truth": "VIKRAMADITYA PRASAD SINGH",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1987-07-18",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "gender": {
+          "ground_truth": "Male",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "address": {
+          "ground_truth": "55, Gomti Nagar, Sector 4, Lucknow, Uttar Pradesh",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "pincode": {
+          "ground_truth": "226010",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "aadhaar_number": {
+          "ground_truth": "8901 2345 6789",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "8901 2345 6789",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "UIDAI",
+          "extracted": "UIDAI",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "aadhaar_compression",
+      "category": "aadhaar",
+      "condition": "compression",
+      "cer": 0.3816,
+      "wer": 0.4,
+      "latency_ms": 8485.86,
+      "calibrated_confidence": 0.7696,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.5,
+      "fields": {
+        "full_name": {
+          "ground_truth": "VIKRAMADITYA PRASAD SINGH",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1987-07-18",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "gender": {
+          "ground_truth": "Male",
+          "extracted": "Male",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "address": {
+          "ground_truth": "55, Gomti Nagar, Sector 4, Lucknow, Uttar Pradesh",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "pincode": {
+          "ground_truth": "226010",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "aadhaar_number": {
+          "ground_truth": "8901 2345 6789",
+          "extracted": "8901 2345 6789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "8901 2345 6789",
+          "extracted": "8901 2345 6789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "UIDAI",
+          "extracted": "UIDAI",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "aadhaar_obscured_crease",
+      "category": "aadhaar",
+      "condition": "obscured_crease",
+      "cer": 0.2968,
+      "wer": 0.45,
+      "latency_ms": 8597.44,
+      "calibrated_confidence": 0.7659,
+      "requires_manual_review": true,
+      "expected_manual_review": true,
+      "exact_match_ratio": 0.375,
+      "fields": {
+        "full_name": {
+          "ground_truth": "VIKRAMADITYA PRASAD SINGH",
+          "extracted": "vikramaditya prasad singh",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1987-07-18",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "gender": {
+          "ground_truth": "Male",
+          "extracted": "Male",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "address": {
+          "ground_truth": "55, Gomti Nagar, Sector 4, Lucknow, Uttar Pradesh",
+          "extracted": "55, gomti nagar, 4, lucknow, uttar pradesh",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "pincode": {
+          "ground_truth": "226010",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "aadhaar_number": {
+          "ground_truth": "8901 2345 6789",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "8901 2345 6789",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "UIDAI",
+          "extracted": "UIDAI",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "aadhaar_bilingual_script",
+      "category": "aadhaar",
+      "condition": "bilingual_script",
+      "cer": 0.3214,
+      "wer": 0.3953,
+      "latency_ms": 11689.43,
+      "calibrated_confidence": 0.7893,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.5,
+      "fields": {
+        "full_name": {
+          "ground_truth": "VIKRAMADITYA PRASAD SINGH",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1987-07-18",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "gender": {
+          "ground_truth": "Male",
+          "extracted": "Male",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "address": {
+          "ground_truth": "55, Gomti Nagar, Sector 4, Lucknow, Uttar Pradesh",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "pincode": {
+          "ground_truth": "226010",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "aadhaar_number": {
+          "ground_truth": "8901 2345 6789",
+          "extracted": "8901 2345 6789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "8901 2345 6789",
+          "extracted": "8901 2345 6789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "UIDAI",
+          "extracted": "UIDAI",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "pan_clean_scan",
+      "category": "pan",
+      "condition": "clean_scan",
+      "cer": 0.4231,
+      "wer": 0.5357,
+      "latency_ms": 8285.46,
+      "calibrated_confidence": 0.7599,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.5,
+      "fields": {
+        "full_name": {
+          "ground_truth": "MEENAKSHI SOUNDARARAJAN",
+          "extracted": "meenakshi soundararajan",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "father_name": {
+          "ground_truth": "K. SOUNDARARAJAN",
+          "extracted": "k soundararajan",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "date_of_birth": {
+          "ground_truth": "1993-10-22",
+          "extracted": "1993-10-22",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "pan_number": {
+          "ground_truth": "CVBMS9012Q",
+          "extracted": "CVBMS9012O",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "document_number": {
+          "ground_truth": "CVBMS9012Q",
+          "extracted": "CVBMS9012O",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "issuing_authority": {
+          "ground_truth": "Income Tax Department",
+          "extracted": "Income Tax Department",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "pan_photo_shadow",
+      "category": "pan",
+      "condition": "photo_shadow",
+      "cer": 1.0,
+      "wer": 1.0,
+      "latency_ms": 3185.15,
+      "calibrated_confidence": 0.3,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.1667,
+      "fields": {
+        "full_name": {
+          "ground_truth": "MEENAKSHI SOUNDARARAJAN",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "father_name": {
+          "ground_truth": "K. SOUNDARARAJAN",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1993-10-22",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "pan_number": {
+          "ground_truth": "CVBMS9012Q",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "CVBMS9012Q",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "Income Tax Department",
+          "extracted": "Income Tax Department",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "pan_skewed_rot",
+      "category": "pan",
+      "condition": "skewed_rot",
+      "cer": 0.4279,
+      "wer": 0.5714,
+      "latency_ms": 13895.33,
+      "calibrated_confidence": 0.7315,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.5,
+      "fields": {
+        "full_name": {
+          "ground_truth": "MEENAKSHI SOUNDARARAJAN",
+          "extracted": "meenakshi soundararajan",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "father_name": {
+          "ground_truth": "K. SOUNDARARAJAN",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1993-10-22",
+          "extracted": "1993-10-22",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "pan_number": {
+          "ground_truth": "CVBMS9012Q",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "CVBMS9012Q",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "Income Tax Department",
+          "extracted": "Income Tax Department",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "pan_low_resolution",
+      "category": "pan",
+      "condition": "low_resolution",
+      "cer": 0.601,
+      "wer": 0.8571,
+      "latency_ms": 12060.71,
+      "calibrated_confidence": 0.3129,
+      "requires_manual_review": true,
+      "expected_manual_review": true,
+      "exact_match_ratio": 0.1667,
+      "fields": {
+        "full_name": {
+          "ground_truth": "MEENAKSHI SOUNDARARAJAN",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "father_name": {
+          "ground_truth": "K. SOUNDARARAJAN",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1993-10-22",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "pan_number": {
+          "ground_truth": "CVBMS9012Q",
+          "extracted": "CVBMS9012O",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "document_number": {
+          "ground_truth": "CVBMS9012Q",
+          "extracted": "CVBMS9012O",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "issuing_authority": {
+          "ground_truth": "Income Tax Department",
+          "extracted": "Income Tax Department",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "pan_blur_noise",
+      "category": "pan",
+      "condition": "blur_noise",
+      "cer": 1.0,
+      "wer": 1.0,
+      "latency_ms": 6857.88,
+      "calibrated_confidence": 0.3,
+      "requires_manual_review": true,
+      "expected_manual_review": true,
+      "exact_match_ratio": 0.1667,
+      "fields": {
+        "full_name": {
+          "ground_truth": "MEENAKSHI SOUNDARARAJAN",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "father_name": {
+          "ground_truth": "K. SOUNDARARAJAN",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1993-10-22",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "pan_number": {
+          "ground_truth": "CVBMS9012Q",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "CVBMS9012Q",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "Income Tax Department",
+          "extracted": "Income Tax Department",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "pan_compression",
+      "category": "pan",
+      "condition": "compression",
+      "cer": 0.4375,
+      "wer": 0.6071,
+      "latency_ms": 13129.12,
+      "calibrated_confidence": 0.607,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.1667,
+      "fields": {
+        "full_name": {
+          "ground_truth": "MEENAKSHI SOUNDARARAJAN",
+          "extracted": "meenaksh soundararajan",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "father_name": {
+          "ground_truth": "K. SOUNDARARAJAN",
+          "extracted": "k soundararajan",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "date_of_birth": {
+          "ground_truth": "1993-10-22",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "pan_number": {
+          "ground_truth": "CVBMS9012Q",
+          "extracted": "CVBMS9012O",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "document_number": {
+          "ground_truth": "CVBMS9012Q",
+          "extracted": "CVBMS9012O",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "issuing_authority": {
+          "ground_truth": "Income Tax Department",
+          "extracted": "Income Tax Department",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "pan_obscured_crease",
+      "category": "pan",
+      "condition": "obscured_crease",
+      "cer": 0.4279,
+      "wer": 0.6071,
+      "latency_ms": 6240.29,
+      "calibrated_confidence": 0.7316,
+      "requires_manual_review": true,
+      "expected_manual_review": true,
+      "exact_match_ratio": 0.3333,
+      "fields": {
+        "full_name": {
+          "ground_truth": "MEENAKSHI SOUNDARARAJAN",
+          "extracted": "meenaksh boundararajan",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "father_name": {
+          "ground_truth": "K. SOUNDARARAJAN",
+          "extracted": "k soundararajan",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "date_of_birth": {
+          "ground_truth": "1993-10-22",
+          "extracted": "1993-10-22",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "pan_number": {
+          "ground_truth": "CVBMS9012Q",
+          "extracted": "CVBMS9012O",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "document_number": {
+          "ground_truth": "CVBMS9012Q",
+          "extracted": "CVBMS9012O",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "issuing_authority": {
+          "ground_truth": "Income Tax Department",
+          "extracted": "Income Tax Department",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "pan_bilingual_script",
+      "category": "pan",
+      "condition": "bilingual_script",
+      "cer": 0.4231,
+      "wer": 0.5357,
+      "latency_ms": 9226.47,
+      "calibrated_confidence": 0.7599,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.5,
+      "fields": {
+        "full_name": {
+          "ground_truth": "MEENAKSHI SOUNDARARAJAN",
+          "extracted": "meenakshi soundararajan",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "father_name": {
+          "ground_truth": "K. SOUNDARARAJAN",
+          "extracted": "k soundararajan",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "date_of_birth": {
+          "ground_truth": "1993-10-22",
+          "extracted": "1993-10-22",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "pan_number": {
+          "ground_truth": "CVBMS9012Q",
+          "extracted": "CVBMS9012O",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "document_number": {
+          "ground_truth": "CVBMS9012Q",
+          "extracted": "CVBMS9012O",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "issuing_authority": {
+          "ground_truth": "Income Tax Department",
+          "extracted": "Income Tax Department",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "passport_clean_scan",
+      "category": "passport",
+      "condition": "clean_scan",
+      "cer": 0.7,
+      "wer": 0.8913,
+      "latency_ms": 16582.58,
+      "calibrated_confidence": 0.6664,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.5556,
+      "fields": {
+        "passport_number": {
+          "ground_truth": "N6789012",
+          "extracted": "N67890120",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "document_number": {
+          "ground_truth": "N6789012",
+          "extracted": "N67890120",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "issuing_authority": {
+          "ground_truth": "Ministry of External Affairs",
+          "extracted": "Ministry of External Affairs",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "surname": {
+          "ground_truth": "GREWAL",
+          "extracted": "GREWAL",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "HARPREET KAUR GREWAL",
+          "extracted": "harpreet kaur k k grewal",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "gender": {
+          "ground_truth": "Female",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1991-05-05",
+          "extracted": "1991-05-05",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "date_of_issue": {
+          "ground_truth": "2018-05-10",
+          "extracted": "2018-05-10",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "expiry_date": {
+          "ground_truth": "2028-05-09",
+          "extracted": "09/05/2028",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "passport_photo_shadow",
+      "category": "passport",
+      "condition": "photo_shadow",
+      "cer": 0.7552,
+      "wer": 0.878,
+      "latency_ms": 15722.94,
+      "calibrated_confidence": 0.7804,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.4444,
+      "fields": {
+        "passport_number": {
+          "ground_truth": "N6789012",
+          "extracted": "N67890120",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "document_number": {
+          "ground_truth": "N6789012",
+          "extracted": "N67890120",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "issuing_authority": {
+          "ground_truth": "Ministry of External Affairs",
+          "extracted": "Ministry of External Affairs",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "surname": {
+          "ground_truth": "GREWAL",
+          "extracted": "GREWAL",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "HARPREET KAUR GREWAL",
+          "extracted": "harpreet kaur ddeddddd grewal",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "gender": {
+          "ground_truth": "Female",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1991-05-05",
+          "extracted": "1991-05-05",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "date_of_issue": {
+          "ground_truth": "2018-05-10",
+          "extracted": "2018-05-10",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "expiry_date": {
+          "ground_truth": "2028-05-09",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "passport_skewed_rot",
+      "category": "passport",
+      "condition": "skewed_rot",
+      "cer": 0.7069,
+      "wer": 0.8222,
+      "latency_ms": 16119.77,
+      "calibrated_confidence": 0.7264,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.5556,
+      "fields": {
+        "passport_number": {
+          "ground_truth": "N6789012",
+          "extracted": "N67890120",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "document_number": {
+          "ground_truth": "N6789012",
+          "extracted": "N67890120",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "issuing_authority": {
+          "ground_truth": "Ministry of External Affairs",
+          "extracted": "Ministry of External Affairs",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "surname": {
+          "ground_truth": "GREWAL",
+          "extracted": "GREWAL",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "HARPREET KAUR GREWAL",
+          "extracted": "harpreet kaurk k ssscs grewal",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "gender": {
+          "ground_truth": "Female",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1991-05-05",
+          "extracted": "1991-05-05",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "date_of_issue": {
+          "ground_truth": "2018-05-10",
+          "extracted": "2018-05-10",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "expiry_date": {
+          "ground_truth": "2028-05-09",
+          "extracted": "09/05/2028",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "passport_low_resolution",
+      "category": "passport",
+      "condition": "low_resolution",
+      "cer": 0.8448,
+      "wer": 1.0,
+      "latency_ms": 13954.04,
+      "calibrated_confidence": 0.3,
+      "requires_manual_review": true,
+      "expected_manual_review": true,
+      "exact_match_ratio": 0.1111,
+      "fields": {
+        "passport_number": {
+          "ground_truth": "N6789012",
+          "extracted": "5678%0120",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "document_number": {
+          "ground_truth": "N6789012",
+          "extracted": "5678%0120",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "issuing_authority": {
+          "ground_truth": "Ministry of External Affairs",
+          "extracted": "Ministry of External Affairs",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "surname": {
+          "ground_truth": "GREWAL",
+          "extracted": "GREWAL CHARPREET“RADACCCCECEदडुंदुदुददू",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "full_name": {
+          "ground_truth": "HARPREET KAUR GREWAL",
+          "extracted": "grewal charpreet radaccccece",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "gender": {
+          "ground_truth": "Female",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1991-05-05",
+          "extracted": "2005-05-09",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "date_of_issue": {
+          "ground_truth": "2018-05-10",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "expiry_date": {
+          "ground_truth": "2028-05-09",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "passport_blur_noise",
+      "category": "passport",
+      "condition": "blur_noise",
+      "cer": 1.0,
+      "wer": 1.0,
+      "latency_ms": 7540.15,
+      "calibrated_confidence": 0.3,
+      "requires_manual_review": true,
+      "expected_manual_review": true,
+      "exact_match_ratio": 0.1111,
+      "fields": {
+        "passport_number": {
+          "ground_truth": "N6789012",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "N6789012",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "Ministry of External Affairs",
+          "extracted": "Ministry of External Affairs",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "surname": {
+          "ground_truth": "GREWAL",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "HARPREET KAUR GREWAL",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "gender": {
+          "ground_truth": "Female",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1991-05-05",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_issue": {
+          "ground_truth": "2018-05-10",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "expiry_date": {
+          "ground_truth": "2028-05-09",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "passport_compression",
+      "category": "passport",
+      "condition": "compression",
+      "cer": 0.7138,
+      "wer": 0.8611,
+      "latency_ms": 13198.77,
+      "calibrated_confidence": 0.6582,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.6667,
+      "fields": {
+        "passport_number": {
+          "ground_truth": "N6789012",
+          "extracted": "NG€789012",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "document_number": {
+          "ground_truth": "N6789012",
+          "extracted": "NG€789012",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "issuing_authority": {
+          "ground_truth": "Ministry of External Affairs",
+          "extracted": "Ministry of External Affairs",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "surname": {
+          "ground_truth": "GREWAL",
+          "extracted": "GREWAL",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "HARPREET KAUR GREWAL",
+          "extracted": "harpreet kaurs cccecccd grewal",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "gender": {
+          "ground_truth": "Female",
+          "extracted": "Female",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1991-05-05",
+          "extracted": "1991-05-05",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "date_of_issue": {
+          "ground_truth": "2018-05-10",
+          "extracted": "2018-05-10",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "expiry_date": {
+          "ground_truth": "2028-05-09",
+          "extracted": "09/05/2028",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "passport_obscured_crease",
+      "category": "passport",
+      "condition": "obscured_crease",
+      "cer": 0.631,
+      "wer": 0.9211,
+      "latency_ms": 13265.66,
+      "calibrated_confidence": 0.7103,
+      "requires_manual_review": true,
+      "expected_manual_review": true,
+      "exact_match_ratio": 0.5556,
+      "fields": {
+        "passport_number": {
+          "ground_truth": "N6789012",
+          "extracted": "N67890120",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "document_number": {
+          "ground_truth": "N6789012",
+          "extracted": "N67890120",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "issuing_authority": {
+          "ground_truth": "Ministry of External Affairs",
+          "extracted": "Ministry of External Affairs",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "surname": {
+          "ground_truth": "GREWAL",
+          "extracted": "GREWAL",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "HARPREET KAUR GREWAL",
+          "extracted": "harpreet kaur grewal",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "gender": {
+          "ground_truth": "Female",
+          "extracted": "Female",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1991-05-05",
+          "extracted": "09/05/2028",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "date_of_issue": {
+          "ground_truth": "2018-05-10",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "expiry_date": {
+          "ground_truth": "2028-05-09",
+          "extracted": "09/05/2028",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "passport_bilingual_script",
+      "category": "passport",
+      "condition": "bilingual_script",
+      "cer": 0.7,
+      "wer": 0.8913,
+      "latency_ms": 13964.46,
+      "calibrated_confidence": 0.6664,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.5556,
+      "fields": {
+        "passport_number": {
+          "ground_truth": "N6789012",
+          "extracted": "N67890120",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "document_number": {
+          "ground_truth": "N6789012",
+          "extracted": "N67890120",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "issuing_authority": {
+          "ground_truth": "Ministry of External Affairs",
+          "extracted": "Ministry of External Affairs",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "surname": {
+          "ground_truth": "GREWAL",
+          "extracted": "GREWAL",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "HARPREET KAUR GREWAL",
+          "extracted": "harpreet kaur k k grewal",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "gender": {
+          "ground_truth": "Female",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1991-05-05",
+          "extracted": "1991-05-05",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "date_of_issue": {
+          "ground_truth": "2018-05-10",
+          "extracted": "2018-05-10",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "expiry_date": {
+          "ground_truth": "2028-05-09",
+          "extracted": "09/05/2028",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "education_10th_clean_scan",
+      "category": "education_10th",
+      "condition": "clean_scan",
+      "cer": 0.236,
+      "wer": 0.3721,
+      "latency_ms": 13166.3,
+      "calibrated_confidence": 0.7577,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.9091,
+      "fields": {
+        "board": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "passing_year": {
+          "ground_truth": "2002",
+          "extracted": "2002",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "roll_number": {
+          "ground_truth": "3890124",
+          "extracted": "3890124",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "registration_number": {
+          "ground_truth": "WB/2002/3890124",
+          "extracted": "WB/2002/3890124",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "3890124",
+          "extracted": "3890124",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "ARJUN DEB CHAUDHURY",
+          "extracted": "name",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "father_name": {
+          "ground_truth": "PRANAB KUMAR CHAUDHURY",
+          "extracted": "pranab kumar chaudhury",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "parent_guardian_name": {
+          "ground_truth": "PRANAB KUMAR CHAUDHURY",
+          "extracted": "PRANAB KUMAR CHAUDHURY",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "mother_name": {
+          "ground_truth": "SHARMILA CHAUDHURY",
+          "extracted": "sharmila chaudhury",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1986-12-11",
+          "extracted": "1986-12-11",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "education_10th_photo_shadow",
+      "category": "education_10th",
+      "condition": "photo_shadow",
+      "cer": 0.9534,
+      "wer": 1.0,
+      "latency_ms": 8972.3,
+      "calibrated_confidence": 0.5333,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.0,
+      "fields": {
+        "board": {
+          "ground_truth": "CBSE",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "CBSE",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "passing_year": {
+          "ground_truth": "2002",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "roll_number": {
+          "ground_truth": "3890124",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "registration_number": {
+          "ground_truth": "WB/2002/3890124",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "3890124",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "ARJUN DEB CHAUDHURY",
+          "extracted": "audhury",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "father_name": {
+          "ground_truth": "PRANAB KUMAR CHAUDHURY",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "parent_guardian_name": {
+          "ground_truth": "PRANAB KUMAR CHAUDHURY",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "mother_name": {
+          "ground_truth": "SHARMILA CHAUDHURY",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1986-12-11",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "education_10th_skewed_rot",
+      "category": "education_10th",
+      "condition": "skewed_rot",
+      "cer": 0.2174,
+      "wer": 0.2558,
+      "latency_ms": 12356.74,
+      "calibrated_confidence": 0.7686,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 1.0,
+      "fields": {
+        "board": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "passing_year": {
+          "ground_truth": "2002",
+          "extracted": "2002",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "roll_number": {
+          "ground_truth": "3890124",
+          "extracted": "3890124",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "registration_number": {
+          "ground_truth": "WB/2002/3890124",
+          "extracted": "WB/2002/3890124",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "3890124",
+          "extracted": "3890124",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "ARJUN DEB CHAUDHURY",
+          "extracted": "arjun deb chaudhury",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "father_name": {
+          "ground_truth": "PRANAB KUMAR CHAUDHURY",
+          "extracted": "pranab kumar chaudhury",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "parent_guardian_name": {
+          "ground_truth": "PRANAB KUMAR CHAUDHURY",
+          "extracted": "PRANAB KUMAR CHAUDHURY",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "mother_name": {
+          "ground_truth": "SHARMILA CHAUDHURY",
+          "extracted": "sharmila chaudhury",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1986-12-11",
+          "extracted": "1986-12-11",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "education_10th_low_resolution",
+      "category": "education_10th",
+      "condition": "low_resolution",
+      "cer": 0.5155,
+      "wer": 0.7907,
+      "latency_ms": 17564.17,
+      "calibrated_confidence": 0.3,
+      "requires_manual_review": true,
+      "expected_manual_review": true,
+      "exact_match_ratio": 0.1818,
+      "fields": {
+        "board": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "passing_year": {
+          "ground_truth": "2002",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "roll_number": {
+          "ground_truth": "3890124",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "registration_number": {
+          "ground_truth": "WB/2002/3890124",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "3890124",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "ARJUN DEB CHAUDHURY",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "father_name": {
+          "ground_truth": "PRANAB KUMAR CHAUDHURY",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "parent_guardian_name": {
+          "ground_truth": "PRANAB KUMAR CHAUDHURY",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "mother_name": {
+          "ground_truth": "SHARMILA CHAUDHURY",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1986-12-11",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "education_10th_blur_noise",
+      "category": "education_10th",
+      "condition": "blur_noise",
+      "cer": 1.0,
+      "wer": 1.0,
+      "latency_ms": 3525.89,
+      "calibrated_confidence": 0.3,
+      "requires_manual_review": true,
+      "expected_manual_review": true,
+      "exact_match_ratio": 0.0,
+      "fields": {
+        "board": {
+          "ground_truth": "CBSE",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "CBSE",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "passing_year": {
+          "ground_truth": "2002",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "roll_number": {
+          "ground_truth": "3890124",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "registration_number": {
+          "ground_truth": "WB/2002/3890124",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "3890124",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "ARJUN DEB CHAUDHURY",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "father_name": {
+          "ground_truth": "PRANAB KUMAR CHAUDHURY",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "parent_guardian_name": {
+          "ground_truth": "PRANAB KUMAR CHAUDHURY",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "mother_name": {
+          "ground_truth": "SHARMILA CHAUDHURY",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1986-12-11",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "education_10th_compression",
+      "category": "education_10th",
+      "condition": "compression",
+      "cer": 0.2453,
+      "wer": 0.4186,
+      "latency_ms": 13461.34,
+      "calibrated_confidence": 0.6783,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.5455,
+      "fields": {
+        "board": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "passing_year": {
+          "ground_truth": "2002",
+          "extracted": "2007",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "roll_number": {
+          "ground_truth": "3890124",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "registration_number": {
+          "ground_truth": "WB/2002/3890124",
+          "extracted": "WB/2002/3890124",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "3890124",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "ARJUN DEB CHAUDHURY",
+          "extracted": "arjun deb chaudhury",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "father_name": {
+          "ground_truth": "PRANAB KUMAR CHAUDHURY",
+          "extracted": "pranab kumar chaudhury",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "parent_guardian_name": {
+          "ground_truth": "PRANAB KUMAR CHAUDHURY",
+          "extracted": "PRANAB KUMAR CHAUDHURY",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "mother_name": {
+          "ground_truth": "SHARMILA CHAUDHURY",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1986-12-11",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "education_10th_obscured_crease",
+      "category": "education_10th",
+      "condition": "obscured_crease",
+      "cer": 0.3602,
+      "wer": 0.4651,
+      "latency_ms": 11008.42,
+      "calibrated_confidence": 0.7742,
+      "requires_manual_review": true,
+      "expected_manual_review": true,
+      "exact_match_ratio": 0.7273,
+      "fields": {
+        "board": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "passing_year": {
+          "ground_truth": "2002",
+          "extracted": "2002",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "roll_number": {
+          "ground_truth": "3890124",
+          "extracted": "3890124",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "registration_number": {
+          "ground_truth": "WB/2002/3890124",
+          "extracted": "WB/2002/3890124",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "3890124",
+          "extracted": "3890124",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "ARJUN DEB CHAUDHURY",
+          "extracted": "arjun deb chaudhury",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "father_name": {
+          "ground_truth": "PRANAB KUMAR CHAUDHURY",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "parent_guardian_name": {
+          "ground_truth": "PRANAB KUMAR CHAUDHURY",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "mother_name": {
+          "ground_truth": "SHARMILA CHAUDHURY",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1986-12-11",
+          "extracted": "1986-12-11",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "education_10th_bilingual_script",
+      "category": "education_10th",
+      "condition": "bilingual_script",
+      "cer": 0.236,
+      "wer": 0.3721,
+      "latency_ms": 10707.02,
+      "calibrated_confidence": 0.7577,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.9091,
+      "fields": {
+        "board": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "passing_year": {
+          "ground_truth": "2002",
+          "extracted": "2002",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "roll_number": {
+          "ground_truth": "3890124",
+          "extracted": "3890124",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "registration_number": {
+          "ground_truth": "WB/2002/3890124",
+          "extracted": "WB/2002/3890124",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "3890124",
+          "extracted": "3890124",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "ARJUN DEB CHAUDHURY",
+          "extracted": "name",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "father_name": {
+          "ground_truth": "PRANAB KUMAR CHAUDHURY",
+          "extracted": "pranab kumar chaudhury",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "parent_guardian_name": {
+          "ground_truth": "PRANAB KUMAR CHAUDHURY",
+          "extracted": "PRANAB KUMAR CHAUDHURY",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "mother_name": {
+          "ground_truth": "SHARMILA CHAUDHURY",
+          "extracted": "sharmila chaudhury",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1986-12-11",
+          "extracted": "1986-12-11",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "education_12th_clean_scan",
+      "category": "education_12th",
+      "condition": "clean_scan",
+      "cer": 0.2199,
+      "wer": 0.3111,
+      "latency_ms": 14898.57,
+      "calibrated_confidence": 0.7624,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 1.0,
+      "fields": {
+        "board": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "passing_year": {
+          "ground_truth": "2013",
+          "extracted": "2013",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "roll_number": {
+          "ground_truth": "9456789",
+          "extracted": "9456789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "registration_number": {
+          "ground_truth": "MH/2013/9456789",
+          "extracted": "MH/2013/9456789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "9456789",
+          "extracted": "9456789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "KAVITA ANAND JOSHI",
+          "extracted": "kavita anand joshi",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "father_name": {
+          "ground_truth": "ANAND MORESHWAR JOSHI",
+          "extracted": "anand moreshwar joshi",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "parent_guardian_name": {
+          "ground_truth": "ANAND MORESHWAR JOSHI",
+          "extracted": "ANAND MORESHWAR JOSHI",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "mother_name": {
+          "ground_truth": "SADHANA ANAND JOSHI",
+          "extracted": "sadhana anand joshi",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1995-08-28",
+          "extracted": "1995-08-28",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "education_12th_photo_shadow",
+      "category": "education_12th",
+      "condition": "photo_shadow",
+      "cer": 1.0,
+      "wer": 1.0,
+      "latency_ms": 3926.75,
+      "calibrated_confidence": 0.3,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.0,
+      "fields": {
+        "board": {
+          "ground_truth": "CBSE",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "CBSE",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "passing_year": {
+          "ground_truth": "2013",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "roll_number": {
+          "ground_truth": "9456789",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "registration_number": {
+          "ground_truth": "MH/2013/9456789",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "9456789",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "KAVITA ANAND JOSHI",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "father_name": {
+          "ground_truth": "ANAND MORESHWAR JOSHI",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "parent_guardian_name": {
+          "ground_truth": "ANAND MORESHWAR JOSHI",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "mother_name": {
+          "ground_truth": "SADHANA ANAND JOSHI",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1995-08-28",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "education_12th_skewed_rot",
+      "category": "education_12th",
+      "condition": "skewed_rot",
+      "cer": 0.2108,
+      "wer": 0.2444,
+      "latency_ms": 14759.26,
+      "calibrated_confidence": 0.7827,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 1.0,
+      "fields": {
+        "board": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "passing_year": {
+          "ground_truth": "2013",
+          "extracted": "2013",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "roll_number": {
+          "ground_truth": "9456789",
+          "extracted": "9456789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "registration_number": {
+          "ground_truth": "MH/2013/9456789",
+          "extracted": "MH/2013/9456789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "9456789",
+          "extracted": "9456789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "KAVITA ANAND JOSHI",
+          "extracted": "kavita anand joshi",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "father_name": {
+          "ground_truth": "ANAND MORESHWAR JOSHI",
+          "extracted": "anand moreshwar joshi",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "parent_guardian_name": {
+          "ground_truth": "ANAND MORESHWAR JOSHI",
+          "extracted": "ANAND MORESHWAR JOSHI",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "mother_name": {
+          "ground_truth": "SADHANA ANAND JOSHI",
+          "extracted": "sadhana anand joshi",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1995-08-28",
+          "extracted": "1995-08-28",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "education_12th_low_resolution",
+      "category": "education_12th",
+      "condition": "low_resolution",
+      "cer": 0.5693,
+      "wer": 0.7556,
+      "latency_ms": 3824.54,
+      "calibrated_confidence": 0.3,
+      "requires_manual_review": true,
+      "expected_manual_review": true,
+      "exact_match_ratio": 0.1818,
+      "fields": {
+        "board": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "passing_year": {
+          "ground_truth": "2013",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "roll_number": {
+          "ground_truth": "9456789",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "registration_number": {
+          "ground_truth": "MH/2013/9456789",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "9456789",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "KAVITA ANAND JOSHI",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "father_name": {
+          "ground_truth": "ANAND MORESHWAR JOSHI",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "parent_guardian_name": {
+          "ground_truth": "ANAND MORESHWAR JOSHI",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "mother_name": {
+          "ground_truth": "SADHANA ANAND JOSHI",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1995-08-28",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "education_12th_blur_noise",
+      "category": "education_12th",
+      "condition": "blur_noise",
+      "cer": 1.0,
+      "wer": 1.0,
+      "latency_ms": 3104.05,
+      "calibrated_confidence": 0.3,
+      "requires_manual_review": true,
+      "expected_manual_review": true,
+      "exact_match_ratio": 0.0,
+      "fields": {
+        "board": {
+          "ground_truth": "CBSE",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "CBSE",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "passing_year": {
+          "ground_truth": "2013",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "roll_number": {
+          "ground_truth": "9456789",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "registration_number": {
+          "ground_truth": "MH/2013/9456789",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "9456789",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "KAVITA ANAND JOSHI",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "father_name": {
+          "ground_truth": "ANAND MORESHWAR JOSHI",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "parent_guardian_name": {
+          "ground_truth": "ANAND MORESHWAR JOSHI",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "mother_name": {
+          "ground_truth": "SADHANA ANAND JOSHI",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1995-08-28",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "education_12th_compression",
+      "category": "education_12th",
+      "condition": "compression",
+      "cer": 0.241,
+      "wer": 0.4,
+      "latency_ms": 5099.6,
+      "calibrated_confidence": 0.6186,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.6364,
+      "fields": {
+        "board": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "passing_year": {
+          "ground_truth": "2013",
+          "extracted": "2013",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "roll_number": {
+          "ground_truth": "9456789",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "registration_number": {
+          "ground_truth": "MH/2013/9456789",
+          "extracted": "MH/2013",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "document_number": {
+          "ground_truth": "9456789",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "KAVITA ANAND JOSHI",
+          "extracted": "kavita anand joshi",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "father_name": {
+          "ground_truth": "ANAND MORESHWAR JOSHI",
+          "extracted": "anand moreshwar joshi",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "parent_guardian_name": {
+          "ground_truth": "ANAND MORESHWAR JOSHI",
+          "extracted": "ANAND MORESHWAR JOSHI",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "mother_name": {
+          "ground_truth": "SADHANA ANAND JOSHI",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1995-08-28",
+          "extracted": "1995-08-28",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "education_12th_obscured_crease",
+      "category": "education_12th",
+      "condition": "obscured_crease",
+      "cer": 0.247,
+      "wer": 0.3556,
+      "latency_ms": 11739.47,
+      "calibrated_confidence": 0.7737,
+      "requires_manual_review": true,
+      "expected_manual_review": true,
+      "exact_match_ratio": 0.9091,
+      "fields": {
+        "board": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "passing_year": {
+          "ground_truth": "2013",
+          "extracted": "2013",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "roll_number": {
+          "ground_truth": "9456789",
+          "extracted": "9456789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "registration_number": {
+          "ground_truth": "MH/2013/9456789",
+          "extracted": "MH/2013/9456789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "9456789",
+          "extracted": "9456789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "KAVITA ANAND JOSHI",
+          "extracted": "kavita anand joshi",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "father_name": {
+          "ground_truth": "ANAND MORESHWAR JOSHI",
+          "extracted": "anand moreshwar joshi",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "parent_guardian_name": {
+          "ground_truth": "ANAND MORESHWAR JOSHI",
+          "extracted": "ANAND MORESHWAR JOSHI",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "mother_name": {
+          "ground_truth": "SADHANA ANAND JOSHI",
+          "extracted": "sadhana an",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "date_of_birth": {
+          "ground_truth": "1995-08-28",
+          "extracted": "1995-08-28",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "education_12th_bilingual_script",
+      "category": "education_12th",
+      "condition": "bilingual_script",
+      "cer": 0.2199,
+      "wer": 0.3111,
+      "latency_ms": 10064.27,
+      "calibrated_confidence": 0.7624,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 1.0,
+      "fields": {
+        "board": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "issuing_authority": {
+          "ground_truth": "CBSE",
+          "extracted": "CBSE",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "passing_year": {
+          "ground_truth": "2013",
+          "extracted": "2013",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "roll_number": {
+          "ground_truth": "9456789",
+          "extracted": "9456789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "registration_number": {
+          "ground_truth": "MH/2013/9456789",
+          "extracted": "MH/2013/9456789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "9456789",
+          "extracted": "9456789",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "KAVITA ANAND JOSHI",
+          "extracted": "kavita anand joshi",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "father_name": {
+          "ground_truth": "ANAND MORESHWAR JOSHI",
+          "extracted": "anand moreshwar joshi",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "parent_guardian_name": {
+          "ground_truth": "ANAND MORESHWAR JOSHI",
+          "extracted": "ANAND MORESHWAR JOSHI",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "mother_name": {
+          "ground_truth": "SADHANA ANAND JOSHI",
+          "extracted": "sadhana anand joshi",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "date_of_birth": {
+          "ground_truth": "1995-08-28",
+          "extracted": "1995-08-28",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "epf_clean_scan",
+      "category": "epf",
+      "condition": "clean_scan",
+      "cer": 0.1833,
+      "wer": 0.3111,
+      "latency_ms": 10494.14,
+      "calibrated_confidence": 0.7658,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.7778,
+      "fields": {
+        "issuing_authority": {
+          "ground_truth": "EPFO",
+          "extracted": "EPFO",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "uan": {
+          "ground_truth": "100467890123",
+          "extracted": "100467890123",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "100467890123",
+          "extracted": "100467890123",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "member_id": {
+          "ground_truth": "KABAN00345670000023456",
+          "extracted": "KABAN00345670000023456",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "NAVEEN BALASUBRAMANIAN",
+          "extracted": "passbook",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "employer_name": {
+          "ground_truth": "BENGALURU CLOUD LABS PRIVATE LIMITED",
+          "extracted": "BENGALURU CLOUD LABS PRIVATE LIMITED",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "establishment_id": {
+          "ground_truth": "KABAN0034567000",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_joining": {
+          "ground_truth": "01/07/2011",
+          "extracted": "2011-07-01",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "date_of_exit": {
+          "ground_truth": "28/02/2020",
+          "extracted": "2020-02-28",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "epf_photo_shadow",
+      "category": "epf",
+      "condition": "photo_shadow",
+      "cer": 0.9461,
+      "wer": 0.9778,
+      "latency_ms": 2823.54,
+      "calibrated_confidence": 0.6083,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.1111,
+      "fields": {
+        "issuing_authority": {
+          "ground_truth": "EPFO",
+          "extracted": "EPFO",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "uan": {
+          "ground_truth": "100467890123",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "100467890123",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "member_id": {
+          "ground_truth": "KABAN00345670000023456",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "NAVEEN BALASUBRAMANIAN",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "employer_name": {
+          "ground_truth": "BENGALURU CLOUD LABS PRIVATE LIMITED",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "establishment_id": {
+          "ground_truth": "KABAN0034567000",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_joining": {
+          "ground_truth": "01/07/2011",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_exit": {
+          "ground_truth": "28/02/2020",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "epf_skewed_rot",
+      "category": "epf",
+      "condition": "skewed_rot",
+      "cer": 0.1698,
+      "wer": 0.2,
+      "latency_ms": 9008.42,
+      "calibrated_confidence": 0.784,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.7778,
+      "fields": {
+        "issuing_authority": {
+          "ground_truth": "EPFO",
+          "extracted": "EPFO",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "uan": {
+          "ground_truth": "100467890123",
+          "extracted": "100467890123",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "100467890123",
+          "extracted": "100467890123",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "member_id": {
+          "ground_truth": "KABAN00345670000023456",
+          "extracted": "KABAN00345670000023456",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "NAVEEN BALASUBRAMANIAN",
+          "extracted": "passbook",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "employer_name": {
+          "ground_truth": "BENGALURU CLOUD LABS PRIVATE LIMITED",
+          "extracted": "BENGALURU CLOUD LABS PRIVATE LIMITED",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "establishment_id": {
+          "ground_truth": "KABAN0034567000",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_joining": {
+          "ground_truth": "01/07/2011",
+          "extracted": "2011-07-01",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "date_of_exit": {
+          "ground_truth": "28/02/2020",
+          "extracted": "2020-02-28",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "epf_low_resolution",
+      "category": "epf",
+      "condition": "low_resolution",
+      "cer": 0.7251,
+      "wer": 0.8889,
+      "latency_ms": 11911.85,
+      "calibrated_confidence": 0.3,
+      "requires_manual_review": true,
+      "expected_manual_review": true,
+      "exact_match_ratio": 0.1111,
+      "fields": {
+        "issuing_authority": {
+          "ground_truth": "EPFO",
+          "extracted": "EPFO",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "uan": {
+          "ground_truth": "100467890123",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "100467890123",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "member_id": {
+          "ground_truth": "KABAN00345670000023456",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "NAVEEN BALASUBRAMANIAN",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "employer_name": {
+          "ground_truth": "BENGALURU CLOUD LABS PRIVATE LIMITED",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "establishment_id": {
+          "ground_truth": "KABAN0034567000",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_joining": {
+          "ground_truth": "01/07/2011",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_exit": {
+          "ground_truth": "28/02/2020",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "epf_blur_noise",
+      "category": "epf",
+      "condition": "blur_noise",
+      "cer": 1.0,
+      "wer": 1.0,
+      "latency_ms": 4434.74,
+      "calibrated_confidence": 0.3,
+      "requires_manual_review": true,
+      "expected_manual_review": true,
+      "exact_match_ratio": 0.1111,
+      "fields": {
+        "issuing_authority": {
+          "ground_truth": "EPFO",
+          "extracted": "EPFO",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "uan": {
+          "ground_truth": "100467890123",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "100467890123",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "member_id": {
+          "ground_truth": "KABAN00345670000023456",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "NAVEEN BALASUBRAMANIAN",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "employer_name": {
+          "ground_truth": "BENGALURU CLOUD LABS PRIVATE LIMITED",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "establishment_id": {
+          "ground_truth": "KABAN0034567000",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_joining": {
+          "ground_truth": "01/07/2011",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_exit": {
+          "ground_truth": "28/02/2020",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "epf_compression",
+      "category": "epf",
+      "condition": "compression",
+      "cer": 0.2507,
+      "wer": 0.5111,
+      "latency_ms": 17430.15,
+      "calibrated_confidence": 0.4807,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.3333,
+      "fields": {
+        "issuing_authority": {
+          "ground_truth": "EPFO",
+          "extracted": "EPFO",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "uan": {
+          "ground_truth": "100467890123",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "100467890123",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "member_id": {
+          "ground_truth": "KABAN00345670000023456",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "NAVEEN BALASUBRAMANIAN",
+          "extracted": "naveen balasubramantan",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "employer_name": {
+          "ground_truth": "BENGALURU CLOUD LABS PRIVATE LIMITED",
+          "extracted": "BENGALURU CLOUD LABS PRIVATE LIMITED",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "establishment_id": {
+          "ground_truth": "KABAN0034567000",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_joining": {
+          "ground_truth": "01/07/2011",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_exit": {
+          "ground_truth": "28/02/2020",
+          "extracted": "2020-02-28",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "epf_obscured_crease",
+      "category": "epf",
+      "condition": "obscured_crease",
+      "cer": 0.186,
+      "wer": 0.3333,
+      "latency_ms": 12377.43,
+      "calibrated_confidence": 0.7727,
+      "requires_manual_review": true,
+      "expected_manual_review": true,
+      "exact_match_ratio": 0.7778,
+      "fields": {
+        "issuing_authority": {
+          "ground_truth": "EPFO",
+          "extracted": "EPFO",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "uan": {
+          "ground_truth": "100467890123",
+          "extracted": "100467890123",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "100467890123",
+          "extracted": "100467890123",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "member_id": {
+          "ground_truth": "KABAN00345670000023456",
+          "extracted": "KABAN00345670000023456",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "NAVEEN BALASUBRAMANIAN",
+          "extracted": "passbook",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "employer_name": {
+          "ground_truth": "BENGALURU CLOUD LABS PRIVATE LIMITED",
+          "extracted": "BENGALURU CLOUD LABS PRIVATE LIMITED",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "establishment_id": {
+          "ground_truth": "KABAN0034567000",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_joining": {
+          "ground_truth": "01/07/2011",
+          "extracted": "2011-07-01",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "date_of_exit": {
+          "ground_truth": "28/02/2020",
+          "extracted": "2020-02-28",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    },
+    {
+      "sample_id": "epf_bilingual_script",
+      "category": "epf",
+      "condition": "bilingual_script",
+      "cer": 0.1833,
+      "wer": 0.3111,
+      "latency_ms": 6710.6,
+      "calibrated_confidence": 0.7658,
+      "requires_manual_review": true,
+      "expected_manual_review": false,
+      "exact_match_ratio": 0.7778,
+      "fields": {
+        "issuing_authority": {
+          "ground_truth": "EPFO",
+          "extracted": "EPFO",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "uan": {
+          "ground_truth": "100467890123",
+          "extracted": "100467890123",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "document_number": {
+          "ground_truth": "100467890123",
+          "extracted": "100467890123",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "member_id": {
+          "ground_truth": "KABAN00345670000023456",
+          "extracted": "KABAN00345670000023456",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "full_name": {
+          "ground_truth": "NAVEEN BALASUBRAMANIAN",
+          "extracted": "passbook",
+          "exact_match": false,
+          "missing": false,
+          "incorrect": true
+        },
+        "employer_name": {
+          "ground_truth": "BENGALURU CLOUD LABS PRIVATE LIMITED",
+          "extracted": "BENGALURU CLOUD LABS PRIVATE LIMITED",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "establishment_id": {
+          "ground_truth": "KABAN0034567000",
+          "extracted": null,
+          "exact_match": false,
+          "missing": true,
+          "incorrect": false
+        },
+        "date_of_joining": {
+          "ground_truth": "01/07/2011",
+          "extracted": "2011-07-01",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        },
+        "date_of_exit": {
+          "ground_truth": "28/02/2020",
+          "extracted": "2020-02-28",
+          "exact_match": true,
+          "missing": false,
+          "incorrect": false
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "sample_id": "passport_low_resolution",
+  "category": "passport",
+  "condition": "low_resolution",
+  "condition_name": "Low Resolution Downsampling",
+  "expected_manual_review": true,
+  "profile_id": "prof_h3",
+  "image_filename": "passport_low_resolution.png",
+  "ground_truth_fields": {
+    "passport_number": "N6789012",
+    "document_number": "N6789012",
+    "issuing_authority": "Ministry of External Affairs",
+    "surname": "GREWAL",
+    "full_name": "HARPREET KAUR GREWAL",
+    "gender": "Female",
+    "date_of_birth": "1991-05-05",
+    "date_of_issue": "2018-05-10",
+    "expiry_date": "2028-05-09"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nPASSPORT — REPUBLIC OF INDIA\nMinistry of External Affairs\nPassport No: N6789012\nSurname: GREWAL\nGiven Name: HARPREET KAUR\nDOB: 05/05/1991\nP<INDGREWAL<<HARPREET<KAUR<<<<<<<<<<<<<<<<<<\nN67890120IND9105050F2805090<<<<<<<<<<<<<<<00"
+}

@@ -1,36 +1,63 @@
 import re
 from typing import Dict, Any, Optional
 from app.ocr.parsers.base import BaseDocumentParser
+from app.ocr.mrz import MRZParser
 
 class PassportParser(BaseDocumentParser):
     """
     Parser for Indian Passports.
     Passport Number format: 1 letter followed by 7 digits (e.g. Z1234567).
+    Supports dual-zone extraction:
+    1. ICAO Doc 9303 Machine-Readable Zone (MRZ) with 7-3-1 check-digit verification.
+    2. Visual Inspection Zone (VIZ) with regex label anchors.
     """
     def parse(self, raw_text: str) -> Dict[str, Any]:
         fields: Dict[str, Any] = {}
         masked_id: Optional[str] = None
 
-        # 1. Passport Number
-        # Standard: 1 uppercase letter followed by 7 digits (e.g. Z1234567)
-        exact_p = re.search(r"\b([A-Z][0-9]{7})\b", raw_text)
-        if exact_p:
-            p_no = exact_p.group(1)
-            fields["passport_number"] = p_no
-            masked_id = f"{p_no[0]}*****{p_no[-2:]}"
-        else:
-            passport_match = re.search(r"(?:Passport\s*(?:No|Number|No\.)?[.:\s]*)([A-Z0-9]{8})\b", raw_text, re.IGNORECASE)
-            if passport_match:
-                candidate = passport_match.group(1).upper()
-                if not re.match(r"^[A-Z][0-9]{7}$", candidate):
-                    # Only apply character fix if format failed
-                    first_char = candidate[0]
-                    if first_char in "01278":
-                        letter_fix = {"7": "Z", "1": "I", "0": "O", "8": "B", "2": "Z"}.get(first_char, "Z")
-                        candidate = letter_fix + candidate[1:]
-                if re.match(r"^[A-Z][0-9]{7}$", candidate):
-                    fields["passport_number"] = candidate
-                    masked_id = f"{candidate[0]}*****{candidate[-2:]}"
+        # 0. ICAO Doc 9303 MRZ Parsing & Extraction
+        mrz_lines = MRZParser.find_mrz_lines(raw_text)
+        if mrz_lines:
+            mrz_data = MRZParser.parse_td3(mrz_lines[0], mrz_lines[1])
+            if mrz_data.get("passport_number"):
+                fields["passport_number"] = mrz_data["passport_number"]
+                masked_id = f"{fields['passport_number'][0]}*****{fields['passport_number'][-2:]}"
+            if mrz_data.get("full_name"):
+                fields["full_name"] = mrz_data["full_name"]
+            if mrz_data.get("surname"):
+                fields["surname"] = mrz_data["surname"]
+            if mrz_data.get("given_name"):
+                fields["given_name"] = mrz_data["given_name"]
+            if mrz_data.get("date_of_birth"):
+                fields["date_of_birth"] = mrz_data["date_of_birth"].replace("-", "/")
+            if mrz_data.get("gender"):
+                fields["gender"] = mrz_data["gender"]
+            if mrz_data.get("expiry_date"):
+                fields["expiry_date"] = mrz_data["expiry_date"].replace("-", "/")
+            if mrz_data.get("nationality"):
+                fields["nationality"] = mrz_data["nationality"]
+            fields["mrz_verified"] = mrz_data.get("composite_valid", False)
+
+        # 1. Passport Number from VIZ if not found in MRZ
+        if not fields.get("passport_number"):
+            exact_p = re.search(r"\b([A-Z][0-9]{7})\b", raw_text)
+            if exact_p:
+                p_no = exact_p.group(1)
+                fields["passport_number"] = p_no
+                masked_id = f"{p_no[0]}*****{p_no[-2:]}"
+            else:
+                passport_match = re.search(r"(?:Passport\s*(?:No|Number|No\.)?[.:\s]*)([A-Z0-9]{8})\b", raw_text, re.IGNORECASE)
+                if passport_match:
+                    candidate = passport_match.group(1).upper()
+                    if not re.match(r"^[A-Z][0-9]{7}$", candidate):
+                        # Only apply character fix if format failed
+                        first_char = candidate[0]
+                        if first_char in "01278":
+                            letter_fix = {"7": "Z", "1": "I", "0": "O", "8": "B", "2": "Z"}.get(first_char, "Z")
+                            candidate = letter_fix + candidate[1:]
+                    if re.match(r"^[A-Z][0-9]{7}$", candidate):
+                        fields["passport_number"] = candidate
+                        masked_id = f"{candidate[0]}*****{candidate[-2:]}"
 
         # 2. Dates (DOB, Issue, Expiry) - Prioritize explicit label matching
         dob_match = re.search(r"(?:Date\s*of\s*Birth|DOB|Birth\s*Date)[.:\s]*([0-3]?\d[/-][0-1]?\d[/-]\d{4})", raw_text, re.IGNORECASE)

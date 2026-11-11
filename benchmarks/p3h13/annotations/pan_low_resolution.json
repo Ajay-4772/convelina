@@ -1,0 +1,18 @@
+{
+  "sample_id": "pan_low_resolution",
+  "category": "pan",
+  "condition": "low_resolution",
+  "condition_name": "Low Resolution Downsampling",
+  "expected_manual_review": true,
+  "profile_id": "prof_h2",
+  "image_filename": "pan_low_resolution.png",
+  "ground_truth_fields": {
+    "full_name": "MEENAKSHI SOUNDARARAJAN",
+    "father_name": "K. SOUNDARARAJAN",
+    "date_of_birth": "1993-10-22",
+    "pan_number": "CVBMS9012Q",
+    "document_number": "CVBMS9012Q",
+    "issuing_authority": "Income Tax Department"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nINCOME TAX DEPARTMENT\nGOVERNMENT OF INDIA\nName: MEENAKSHI SOUNDARARAJAN\nFather's Name: K. SOUNDARARAJAN\nDate of Birth: 22/10/1993\nPAN: CVBMS9012Q"
+}

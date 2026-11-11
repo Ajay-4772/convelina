@@ -8,7 +8,9 @@ class EPFRecordParser(BaseDocumentParser):
     Key identifiers: 12-digit UAN (Universal Account Number) and Member ID.
     """
     def parse(self, raw_text: str) -> Dict[str, Any]:
-        fields: Dict[str, Any] = {}
+        fields: Dict[str, Any] = {
+            "issuing_authority": "EPFO"
+        }
         masked_id: Optional[str] = None
 
         # 1. UAN (12 digits)
@@ -28,7 +30,7 @@ class EPFRecordParser(BaseDocumentParser):
             fields["member_id"] = member_match.group(1).strip()
 
         # 3. Member Name
-        name_match = re.search(r"(?:Full\s*Name|Member\s*Name|Name\s*of\s*Member|Employee\s*Name|\bMember)[.:\s]+([A-Za-z .]{3,40})", raw_text, re.IGNORECASE)
+        name_match = re.search(r"(?:Full\s*Name|Member\s*Name|Name\s*of\s*Member|Employee\s*Name|\bMember(?!\s*(?:Passbook|ID|Profile)))[.:\s]+([A-Za-z .]{3,40})", raw_text, re.IGNORECASE)
         if not name_match:
             name_match = re.search(r"\bName[.:\s]+([A-Za-z .]{3,40})", raw_text, re.IGNORECASE)
         if name_match:

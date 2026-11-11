@@ -1,0 +1,21 @@
+{
+  "sample_id": "epf_obscured_crease",
+  "category": "epf",
+  "condition": "obscured_crease",
+  "condition_name": "Partially Obscured / Paper Crease",
+  "expected_manual_review": true,
+  "profile_id": "prof_h6",
+  "image_filename": "epf_obscured_crease.png",
+  "ground_truth_fields": {
+    "issuing_authority": "EPFO",
+    "uan": "100467890123",
+    "document_number": "100467890123",
+    "member_id": "KABAN00345670000023456",
+    "full_name": "NAVEEN BALASUBRAMANIAN",
+    "employer_name": "BENGALURU CLOUD LABS PRIVATE LIMITED",
+    "establishment_id": "KABAN0034567000",
+    "date_of_joining": "01/07/2011",
+    "date_of_exit": "28/02/2020"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nEMPLOYEES' PROVIDENT FUND ORGANISATION, INDIA\nMEMBER PASSBOOK & REGISTRATION PARTICULARS\nUniversal Account Number (UAN): 100467890123\nMember ID: KABAN00345670000023456\nMember Name: NAVEEN BALASUBRAMANIAN\nEstablishment: BENGALURU CLOUD LABS PRIVATE LIMITED\nDate of Joining: 01/07/2011\nDate of Exit: 28/02/2020"
+}

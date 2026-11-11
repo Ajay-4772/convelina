@@ -47,22 +47,19 @@ class EducationCertificateParser(BaseDocumentParser):
                 fields["passing_year"] = year_match.group(1)
 
         # 4. Educational Board detection (including multi-line board headers)
-        flat_text = " ".join(raw_text.split())
-        boards = [
-            "CENTRAL BOARD OF SECONDARY EDUCATION",
-            "COUNCIL FOR THE INDIAN SCHOOL CERTIFICATE EXAMINATIONS",
-            "MAHARASHTRA STATE BOARD",
-            "SECONDARY EDUCATION",
-            "HIGHER SECONDARY",
-            "STATE BOARD",
-            "CBSE",
-            "ICSE",
-            "CISCE",
-        ]
-        for b in boards:
-            if re.search(r"\b" + re.escape(b) + r"\b", flat_text, re.IGNORECASE):
-                fields["board"] = b
-                break
+        flat_text = " ".join(raw_text.split()).upper()
+        if "CENTRAL BOARD" in flat_text or "CBSE" in flat_text:
+            fields["board"] = "CBSE"
+            fields["issuing_authority"] = "CBSE"
+        elif "COUNCIL FOR THE INDIAN SCHOOL" in flat_text or "CISCE" in flat_text or "ICSE" in flat_text:
+            fields["board"] = "ICSE"
+            fields["issuing_authority"] = "ICSE"
+        elif "MAHARASHTRA STATE BOARD" in flat_text:
+            fields["board"] = "MAHARASHTRA STATE BOARD"
+            fields["issuing_authority"] = "State Board"
+        elif "STATE BOARD" in flat_text or "SECONDARY EDUCATION" in flat_text:
+            fields["board"] = "State Board"
+            fields["issuing_authority"] = "State Board"
 
         # 5. Candidate Name extraction
         name_match = re.search(r"(?:This\s+is\s+to\s+certify\s+that|Candidate\s*Name|Name\s*of\s*(?:Student|Candidate)|Student\s*Name|Candidate|\bName)[:\s]+([A-Za-z .]{3,40})", raw_text, re.IGNORECASE)

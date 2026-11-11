@@ -1,0 +1,20 @@
+{
+  "sample_id": "aadhaar_clean_scan",
+  "category": "aadhaar",
+  "condition": "clean_scan",
+  "condition_name": "Clean High-Resolution Scan",
+  "expected_manual_review": false,
+  "profile_id": "prof_h1",
+  "image_filename": "aadhaar_clean_scan.png",
+  "ground_truth_fields": {
+    "full_name": "VIKRAMADITYA PRASAD SINGH",
+    "date_of_birth": "1987-07-18",
+    "gender": "Male",
+    "address": "55, Gomti Nagar, Sector 4, Lucknow, Uttar Pradesh",
+    "pincode": "226010",
+    "aadhaar_number": "8901 2345 6789",
+    "document_number": "8901 2345 6789",
+    "issuing_authority": "UIDAI"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nGOVERNMENT OF INDIA\nUnique Identification Authority of India (Sample)\nName: VIKRAMADITYA PRASAD SINGH\nDOB: 18/07/1987\nGender: Male\nAddress: 55, Gomti Nagar, Sector 4, Lucknow, Uttar Pradesh\nAadhaar Number: 8901 2345 6789"
+}

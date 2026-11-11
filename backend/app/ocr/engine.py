@@ -7,6 +7,8 @@ import numpy as np
 import pytesseract
 import pypdf
 
+from app.ocr.preprocessing import default_image_preprocessor, ImagePreprocessor, PreprocessingConfig
+
 logger = logging.getLogger("convelina.ocr")
 
 class BaseOCREngine(ABC):
@@ -70,51 +72,17 @@ class TesseractOCREngine(BaseOCREngine):
 
     def preprocess_image(self, image: Image.Image) -> Image.Image:
         """
-        Preprocesses image for optimal OCR extraction:
-        - Normalizes resolution: upscales small images, downscales oversized images.
-        - Applies automatic deskewing.
-        - Converts to grayscale, enhances contrast, and applies light sharpening.
+        Preprocesses image for optimal OCR extraction using modular ImagePreprocessor:
+        - Multi-scale resolution normalization (Lanczos)
+        - Coarse/fine projection profile deskewing
+        - Pure-NumPy CLAHE contrast equalization
+        - Unsharp mask edge sharpening & median despeckling
         """
         try:
-            working_img = image
-
-            # 1. Normalize resolution
-            if working_img.width < 1000 or working_img.height < 600:
-                scale = min(3.0, max(1.5, 1400.0 / max(working_img.width, 1)))
-                new_dim = (int(working_img.width * scale), int(working_img.height * scale))
-                working_img = working_img.resize(new_dim, Image.Resampling.LANCZOS)
-            elif working_img.width > 2200 or working_img.height > 1800:
-                scale = 1600.0 / float(working_img.width)
-                new_dim = (1600, int(working_img.height * scale))
-                working_img = working_img.resize(new_dim, Image.Resampling.BILINEAR)
-
-            # 2. Deskew
-            working_img = self.deskew_image(working_img)
-
-            # 3. Convert to Grayscale
-            gray = working_img.convert("L")
-
-            # 4. Enhance Contrast
-            enhancer = ImageEnhance.Contrast(gray)
-            enhanced = enhancer.enhance(1.6)
-
-            # 5. Apply subtle sharpening filter
-            sharpened = enhanced.filter(ImageFilter.SHARPEN)
-            return sharpened
+            return default_image_preprocessor.preprocess(image)
         except Exception as e:
-            logger.warning("Image preprocessing failed, using original: %s", str(e))
+            logger.warning("Modular image preprocessing failed, using original: %s", str(e))
             return image
-
-    def _extract_from_image(self, image: Image.Image) -> str:
-        processed = self.preprocess_image(image)
-        for lang_spec in [self.languages, "eng+tam", "eng+hin", "eng"]:
-            try:
-                text = pytesseract.image_to_string(processed, lang=lang_spec, config="--psm 4")
-                if text and text.strip():
-                    return text
-            except pytesseract.TesseractError:
-                continue
-        return pytesseract.image_to_string(processed, lang="eng")
 
     def compute_image_quality_metrics(self, image: Image.Image) -> Dict[str, float]:
         """
@@ -123,62 +91,7 @@ class TesseractOCREngine(BaseOCREngine):
         - Intensity standard deviation (contrast assessment)
         - Resolution adequacy
         """
-        try:
-            gray = image.convert("L")
-            arr = np.array(gray, dtype=np.float32)
-
-            # 1. Laplacian Variance (Sharpness) via discrete 2D convolution
-            # Kernel: [[0, 1, 0], [1, -4, 1], [0, 1, 0]]
-            lap = (
-                np.roll(arr, 1, axis=0) + np.roll(arr, -1, axis=0) +
-                np.roll(arr, 1, axis=1) + np.roll(arr, -1, axis=1) -
-                4.0 * arr
-            )
-            # Clip borders to avoid edge roll artifacts
-            lap_inner = lap[2:-2, 2:-2] if arr.shape[0] > 4 and arr.shape[1] > 4 else lap
-            lap_var = float(np.var(lap_inner))
-
-            # Blur penalty: sharp documents have lap_var > 120. Below 55 indicates significant blur
-            if lap_var < 55.0:
-                blur_penalty = min(0.35, max(0.0, (55.0 - lap_var) / 55.0 * 0.35))
-            else:
-                blur_penalty = 0.0
-
-            # 2. Contrast (Intensity Standard Deviation)
-            intensity_std = float(np.std(arr))
-            # Standard documents have contrast std > 45. Below 35 indicates low contrast or heavy shading
-            if intensity_std < 35.0:
-                contrast_penalty = min(0.25, max(0.0, (35.0 - intensity_std) / 35.0 * 0.25))
-            else:
-                contrast_penalty = 0.0
-
-            # 3. Resolution deficiency
-            w, h = image.size
-            min_dim = min(w, h)
-            if min_dim < 600:
-                res_penalty = min(0.20, max(0.0, (600.0 - min_dim) / 600.0 * 0.20))
-            else:
-                res_penalty = 0.0
-
-            total_penalty = round(blur_penalty + contrast_penalty + res_penalty, 3)
-            return {
-                "laplacian_variance": round(lap_var, 2),
-                "intensity_std": round(intensity_std, 2),
-                "blur_penalty": round(blur_penalty, 3),
-                "contrast_penalty": round(contrast_penalty, 3),
-                "resolution_penalty": round(res_penalty, 3),
-                "total_quality_penalty": total_penalty,
-            }
-        except Exception as e:
-            logger.warning("Quality metric computation failed: %s", str(e))
-            return {
-                "laplacian_variance": 150.0,
-                "intensity_std": 50.0,
-                "blur_penalty": 0.0,
-                "contrast_penalty": 0.0,
-                "resolution_penalty": 0.0,
-                "total_quality_penalty": 0.0,
-            }
+        return default_image_preprocessor.compute_quality_metrics(image)
 
     def _extract_from_image_with_confidence(self, image: Image.Image) -> Tuple[str, float]:
         # Compute image quality metrics on raw input image before enhancement

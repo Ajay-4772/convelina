@@ -1,0 +1,23 @@
+{
+  "sample_id": "education_10th_obscured_crease",
+  "category": "education_10th",
+  "condition": "obscured_crease",
+  "condition_name": "Partially Obscured / Paper Crease",
+  "expected_manual_review": true,
+  "profile_id": "prof_h4",
+  "image_filename": "education_10th_obscured_crease.png",
+  "ground_truth_fields": {
+    "board": "CBSE",
+    "issuing_authority": "CBSE",
+    "passing_year": "2002",
+    "roll_number": "3890124",
+    "registration_number": "WB/2002/3890124",
+    "document_number": "3890124",
+    "full_name": "ARJUN DEB CHAUDHURY",
+    "father_name": "PRANAB KUMAR CHAUDHURY",
+    "parent_guardian_name": "PRANAB KUMAR CHAUDHURY",
+    "mother_name": "SHARMILA CHAUDHURY",
+    "date_of_birth": "1986-12-11"
+  },
+  "ground_truth_text": "SYNTHETIC DEVELOPMENT SAMPLE — NOT AN OFFICIAL GOVERNMENT FORM\nCENTRAL BOARD OF SECONDARY EDUCATION\nSECONDARY SCHOOL EXAMINATION (CLASS X)\nRoll No: 3890124\nRegistration No: WB/2002/3890124\nCandidate Name: ARJUN DEB CHAUDHURY\nFather's Name: PRANAB KUMAR CHAUDHURY\nMother's Name: SHARMILA CHAUDHURY\nDate of Birth: 11/12/1986"
+}

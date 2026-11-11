@@ -52,12 +52,16 @@ CATEGORY_SCHEMAS = {
         "aadhaar_number",
         "address",
         "pincode",
+        "document_number",
+        "issuing_authority",
     ],
     "pan": [
         "full_name",
         "father_name",
         "date_of_birth",
         "pan_number",
+        "document_number",
+        "issuing_authority",
     ],
     "passport": [
         "full_name",
@@ -69,26 +73,34 @@ CATEGORY_SCHEMAS = {
         "father_name",
         "mother_name",
         "address",
+        "document_number",
+        "issuing_authority",
     ],
     "education_10th": [
         "full_name",
         "father_name",
+        "parent_guardian_name",
         "mother_name",
         "date_of_birth",
         "roll_number",
         "registration_number",
         "board",
         "passing_year",
+        "document_number",
+        "issuing_authority",
     ],
     "education_12th": [
         "full_name",
         "father_name",
+        "parent_guardian_name",
         "mother_name",
         "date_of_birth",
         "roll_number",
         "registration_number",
         "board",
         "passing_year",
+        "document_number",
+        "issuing_authority",
     ],
     "epf": [
         "full_name",
@@ -98,15 +110,18 @@ CATEGORY_SCHEMAS = {
         "establishment_id",
         "date_of_joining",
         "date_of_exit",
+        "document_number",
+        "issuing_authority",
     ]
 }
 
 OPTIONAL_FIELDS = {
-    "epf": ["date_of_exit", "establishment_id"],
-    "passport": ["place_of_birth", "father_name", "mother_name", "address", "date_of_issue", "expiry_date"],
-    "aadhaar": ["address", "pincode", "year_of_birth"],
-    "education_10th": ["registration_number", "mother_name"],
-    "education_12th": ["registration_number", "mother_name", "date_of_birth"],
+    "epf": ["date_of_exit", "establishment_id", "document_number", "issuing_authority"],
+    "passport": ["place_of_birth", "father_name", "mother_name", "address", "date_of_issue", "expiry_date", "document_number", "issuing_authority"],
+    "aadhaar": ["address", "pincode", "year_of_birth", "document_number", "issuing_authority"],
+    "pan": ["document_number", "issuing_authority"],
+    "education_10th": ["registration_number", "mother_name", "parent_guardian_name", "document_number", "issuing_authority"],
+    "education_12th": ["registration_number", "mother_name", "date_of_birth", "parent_guardian_name", "document_number", "issuing_authority"],
 }
 
 
@@ -153,7 +168,30 @@ class FieldExtractor:
                 elif f_name == "employer_name":
                     raw_val = parsed_fields.get("establishment_name") or parsed_fields.get("establishment")
                 elif f_name == "aadhaar_number":
-                    raw_val = parsed_fields.get("aadhaar_last_4")
+                    raw_val = parsed_fields.get("aadhaar_number") or parsed_fields.get("aadhaar_last_4")
+                elif f_name == "document_number":
+                    raw_val = (
+                        parsed_fields.get("document_number")
+                        or parsed_fields.get("pan_number")
+                        or parsed_fields.get("passport_number")
+                        or parsed_fields.get("roll_number")
+                        or parsed_fields.get("uan")
+                        or parsed_fields.get("aadhaar_number")
+                        or parsed_fields.get("aadhaar_last_4")
+                    )
+                elif f_name == "parent_guardian_name":
+                    raw_val = parsed_fields.get("parent_guardian_name") or parsed_fields.get("father_name")
+                elif f_name == "issuing_authority":
+                    raw_val = parsed_fields.get("issuing_authority") or parsed_fields.get("board")
+                    if not raw_val:
+                        if doc_type == "aadhaar":
+                            raw_val = "UIDAI"
+                        elif doc_type == "pan":
+                            raw_val = "Income Tax Department"
+                        elif doc_type == "passport":
+                            raw_val = "Ministry of External Affairs"
+                        elif doc_type == "epf":
+                            raw_val = "EPFO"
 
             norm_val = None
             ocr_conf = float(overall_confidence)
