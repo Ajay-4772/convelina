@@ -84,6 +84,17 @@ class TesseractOCREngine(BaseOCREngine):
             logger.warning("Modular image preprocessing failed, using original: %s", str(e))
             return image
 
+    def _extract_from_image(self, image: Image.Image) -> str:
+        processed = self.preprocess_image(image)
+        for lang_spec in [self.languages, "eng+tam", "eng+hin", "eng"]:
+            try:
+                text = pytesseract.image_to_string(processed, lang=lang_spec, config="--psm 4")
+                if text and text.strip():
+                    return text
+            except pytesseract.TesseractError:
+                continue
+        return pytesseract.image_to_string(processed, lang="eng")
+
     def compute_image_quality_metrics(self, image: Image.Image) -> Dict[str, float]:
         """
         Computes objective image quality metrics to calibrate OCR confidence:

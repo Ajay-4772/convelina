@@ -8,9 +8,9 @@ class EPFRecordParser(BaseDocumentParser):
     Key identifiers: 12-digit UAN (Universal Account Number) and Member ID.
     """
     def parse(self, raw_text: str) -> Dict[str, Any]:
-        fields: Dict[str, Any] = {
-            "issuing_authority": "EPFO"
-        }
+        fields: Dict[str, Any] = {}
+        if re.search(r"(?:Provident\s*Fund|EPFO|Universal\s*Account|Member\s*Passbook|\bUAN\b)", raw_text, re.IGNORECASE):
+            fields["issuing_authority"] = "EPFO"
         masked_id: Optional[str] = None
 
         # 1. UAN (12 digits)

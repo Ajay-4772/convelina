@@ -18,18 +18,20 @@ This evaluation benchmarks **Tesseract 5.5.0** against the candidate offline dee
 
 ## 2. Multi-Dimensional Comparison Matrix
 
-| Evaluation Dimension | Tesseract 5.5.0 + Custom Pipeline | PaddleOCR (PP-OCRv4) | EasyOCR (CRAFT + CRNN) |
+| Evaluation Dimension | Tesseract 5.5.0 + Custom Pipeline | PaddleOCR (Native / RapidOCR ONNX) | EasyOCR 1.7.2 (CRAFT + CRNN) |
 | :--- | :--- | :--- | :--- |
-| **Primary License** | **Apache 2.0** (Commercial safe) | **Apache 2.0** (Commercial safe) | **LGPL 3.0** (Copyleft risk for embedded distributions) |
-| **Deep Learning Runtime** | Native C++ LSTM (Zero PyTorch) | PaddlePaddle C++ / Python | PyTorch + TorchVision |
-| **Container Disk Footprint** | **$\approx 120$ MB** (`tesseract-ocr` + traineddata) | $\approx 850$ MB (Paddle wheel + model weights) | $\approx 1,850$ MB (PyTorch CPU + CRAFT weights) |
-| **Runtime Memory (RAM)** | **$80 - 160$ MB** | $450 - 650$ MB | $1,200 - 1,800$ MB |
-| **Cold Start Latency** | **$< 50$ ms** | $\approx 1,800$ ms | $\approx 3,400$ ms |
-| **CPU Inference Latency (p50)**| **$280 - 450$ ms / page** | $420 - 750$ ms / page | $1,800 - 3,200$ ms / page |
-| **CPU Inference Latency (p95)**| **$720$ ms / page** | $1,150$ ms / page | $4,500$ ms / page |
-| **Skew Sensitivity** | High without preprocessing (mitigated by P3H.13 deskew) | Extremely robust (built-in DBNet) | Robust (CRAFT polygon detection) |
-| **Indian Script Support** | Traineddata for 100+ languages (`eng`, `hin`, `tam`, `osd`) | Good Hindi/Devanagari, limited Tamil | Basic Devanagari, slow character set switches |
-| **Deterministic Reproducibility**| **100% Deterministic** across platforms | Heuristic non-max suppression variations | Non-deterministic thread pooling variance |
+| **Primary License** | **Apache 2.0** (Commercial safe) | **Apache 2.0** (Commercial safe) | **Apache 2.0** (PyPI verified; corrected from earlier LGPL note) |
+| **Deep Learning Runtime** | Native C++ LSTM (Zero PyTorch) | PaddlePaddle or ONNXRuntime (`RapidOCR`) | PyTorch + TorchVision |
+| **Container Disk Footprint** | **$\approx 120$ MB** (`tesseract-ocr` + traineddata) | Native ~450+ MB (`paddlex`/`modelscope`) / RapidOCR ONNX **14.2 MB wheel** | ~650 MB – 1.85 GB (PyTorch + OpenCV + CRAFT weights) |
+| **Runtime Memory (RAM)** | **Lowest** (transient CLI) | Native 450–650 MB / **RapidOCR 157.5 MB** (Measured) | **1,898.8 MB** Peak RSS (Measured CPU) |
+| **Cold Start Latency** | **$< 50$ ms** | **6.37 s** (RapidOCR Measured) | **33.19 s** (Measured CPU) |
+| **CPU Inference Latency (p50)**| **6,443 ms** (full preprocessed doc) | **5,523 ms** (RapidOCR Measured) | **25,782 ms** (Measured CPU) |
+| **CPU Inference Latency (p95)**| **15,572 ms** | **8,391 ms** (RapidOCR Measured) | **33,557 ms** (Measured CPU) |
+| **Skew Sensitivity** | Strong with P3H.13 deskew (**79.63%** on `skewed_rot`) | 40.74% without upstream deskew | 33.33% without upstream deskew |
+| **Indian Script Support** | Traineddata for 100+ languages (`eng`, `hin`, `tam`, `osd`) | Requires script-specific PP-OCR models | Separate readers (`ta`, `hi`, `en`) |
+| **Deterministic Reproducibility**| **100% Deterministic** across platforms | Deterministic ONNX inference | Thread-pooling overhead |
+
+*(See [`P3H13_2_OCR_ENGINE_EXPERIMENTS.md`](file:///c:/Users/ajaya/Desktop/consolin/docs/P3H13_2_OCR_ENGINE_EXPERIMENTS.md) for the executed 48-image empirical comparison tables for Tesseract 5.5.0, RapidOCR 1.2.3, and EasyOCR 1.7.2.)*
 
 ---
 
@@ -58,11 +60,11 @@ This evaluation benchmarks **Tesseract 5.5.0** against the candidate offline dee
 
 ### 3.3. EasyOCR (CRAFT + CRNN)
 - **Strengths**:
-  - Excellent visual detection on noisy backgrounds and street signage.
+  - Excellent visual text localization under severe shadow gradients (`79.63%` on `photo_shadow`).
 - **Weaknesses**:
-  - **Licensing Hazard**: Released under **LGPL 3.0**, creating compliance friction for proprietary or government enterprise deployments.
-  - **Severe Resource Overhead**: Requires PyTorch and TorchVision, consuming over 1.2 GB of RAM even in idle states and expanding the container image by 1.85 GB.
-  - **High Latency**: Average CPU inference latency exceeds $2.5$ seconds per page, unacceptable for real-time citizen document verification.
+  - **Licensing**: Released under **Apache 2.0** (PyPI verified; earlier LGPL 3.0 concern did not apply).
+  - **Severe Resource Overhead**: Requires PyTorch and TorchVision, consuming **1,898.8 MB peak RSS** and expanding container deployments by over 1 GB.
+  - **Unacceptable CPU Latency**: Cold start measured at **33.2 s** and average CPU page latency at **25.8 s (p50) / 33.6 s (p95)**, unacceptable for interactive citizen document verification.
 
 ---
 
@@ -70,13 +72,13 @@ This evaluation benchmarks **Tesseract 5.5.0** against the candidate offline dee
 
 ```mermaid
 graph LR
-    subgraph "Rejected Alternatives"
-        A["PaddleOCR<br/>+850MB Image<br/>Build Instability"]
-        B["EasyOCR<br/>LGPL 3.0 Copyleft<br/>+1.85GB PyTorch<br/>2.5s Latency"]
+    subgraph "Evaluated Alternatives"
+        A["RapidOCR (PP-OCR ONNX)<br/>50.69% Exact, 157MB RAM<br/>Top Future Hybrid Candidate"]
+        B["EasyOCR 1.7.2 (CPU)<br/>46.76% Exact, 1.9GB RAM<br/>25.8s Latency (Rejected)"]
     end
-    subgraph "Selected Architecture (P3H.13)"
+    subgraph "Selected Baseline Architecture (P3H.13)"
         C["Modular Preprocessing<br/>(Deskew + CLAHE + Rescale)"]
-        D["Tesseract 5.5.0 (C++ LSTM)<br/>Apache 2.0<br/>120MB Footprint<br/>350ms Latency"]
+        D["Tesseract 5.5.0 (C++ LSTM)<br/>Apache 2.0, 120MB Image<br/>79.63% Skewed / Multilingual"]
         E["ICAO Doc 9303 MRZ Engine<br/>7-3-1 Checksum Validation"]
         C --> D
         D --> E

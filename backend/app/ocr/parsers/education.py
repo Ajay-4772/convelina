@@ -48,9 +48,15 @@ class EducationCertificateParser(BaseDocumentParser):
 
         # 4. Educational Board detection (including multi-line board headers)
         flat_text = " ".join(raw_text.split()).upper()
-        if "CENTRAL BOARD" in flat_text or "CBSE" in flat_text:
+        if "CENTRAL BOARD OF SECONDARY EDUCATION" in flat_text:
+            fields["board"] = "CENTRAL BOARD OF SECONDARY EDUCATION"
+            fields["issuing_authority"] = "CBSE"
+        elif "CENTRAL BOARD" in flat_text or "CBSE" in flat_text:
             fields["board"] = "CBSE"
             fields["issuing_authority"] = "CBSE"
+        elif "COUNCIL FOR THE INDIAN SCHOOL CERTIFICATE EXAMINATIONS" in flat_text:
+            fields["board"] = "COUNCIL FOR THE INDIAN SCHOOL CERTIFICATE EXAMINATIONS"
+            fields["issuing_authority"] = "ICSE"
         elif "COUNCIL FOR THE INDIAN SCHOOL" in flat_text or "CISCE" in flat_text or "ICSE" in flat_text:
             fields["board"] = "ICSE"
             fields["issuing_authority"] = "ICSE"
@@ -62,14 +68,14 @@ class EducationCertificateParser(BaseDocumentParser):
             fields["issuing_authority"] = "State Board"
 
         # 5. Candidate Name extraction
-        name_match = re.search(r"(?:This\s+is\s+to\s+certify\s+that|Candidate\s*Name|Name\s*of\s*(?:Student|Candidate)|Student\s*Name|Candidate|\bName)[:\s]+([A-Za-z .]{3,40})", raw_text, re.IGNORECASE)
+        name_match = re.search(r"(?:This\s+is\s+to\s+certify\s+that|Candidate\s*Name|Name\s*of\s*(?:Student|Candidate)|Student\s*Name|Candidate|\bName)[:=\-\s]+([A-Za-z .]{3,40})", raw_text, re.IGNORECASE)
         if name_match:
             candidate_raw = name_match.group(1).splitlines()[0]
             # Strip trailing indicators like "Born on", "Son of", "Father"
             candidate_clean = re.split(r"\b(?:Born|Son|Daughter|has|passed|Father|Mother|DOB|Roll|Reg|Unique)\b", candidate_raw, flags=re.IGNORECASE)[0]
             cleaned = re.sub(r"[^a-zA-Z .]", "", candidate_clean).strip()
             cleaned = re.sub(r'^(?:(?:Candidate|Student|Name|Shri|Kumari|Master)(?:\s*Name)?|Name\s*of\s*(?:Candidate|Student))[.:\s]+', '', cleaned, flags=re.IGNORECASE).strip()
-            if len(cleaned) >= 3:
+            if len(cleaned) >= 3 and cleaned.lower() not in ("name", "candidate", "student", "candidate name"):
                 fields["full_name"] = cleaned
         else:
             lines = [l.strip() for l in raw_text.splitlines() if l.strip()]

@@ -8,9 +8,9 @@ class PANParser(BaseDocumentParser):
     Format: 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F).
     """
     def parse(self, raw_text: str) -> Dict[str, Any]:
-        fields: Dict[str, Any] = {
-            "issuing_authority": "Income Tax Department"
-        }
+        fields: Dict[str, Any] = {}
+        if re.search(r"(?:Income\s*Tax|Tax\s*Department|Permanent\s*Account)", raw_text, re.IGNORECASE):
+            fields["issuing_authority"] = "Income Tax Department"
         masked_id: Optional[str] = None
 
         # 1. PAN Number extraction with OCR character disambiguation
@@ -36,6 +36,7 @@ class PANParser(BaseDocumentParser):
                 if re.match(r"^[A-Z]{5}[0-9]{4}[A-Z]{1}$", normalized_pan):
                     fields["pan_number"] = normalized_pan
                     fields["document_number"] = normalized_pan
+                    fields["pan_ocr_repaired"] = (normalized_pan != candidate.upper())
                     masked_id = f"{normalized_pan[:2]}***{normalized_pan[5:]}"
                     break
 

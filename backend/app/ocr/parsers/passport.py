@@ -15,11 +15,14 @@ class PassportParser(BaseDocumentParser):
         fields: Dict[str, Any] = {}
         masked_id: Optional[str] = None
 
-        # 0. ICAO Doc 9303 MRZ Parsing & Extraction
+        if re.search(r"(?:External\s*Affairs|Republic\s*of\s*India|Passport|P<IND)", raw_text, re.IGNORECASE):
+            fields["issuing_authority"] = "Ministry of External Affairs"
+
+        # 0. ICAO Doc 9303 MRZ Parsing & Extraction (strict check-digit gating)
         mrz_lines = MRZParser.find_mrz_lines(raw_text)
         if mrz_lines:
             mrz_data = MRZParser.parse_td3(mrz_lines[0], mrz_lines[1])
-            if mrz_data.get("passport_number"):
+            if mrz_data.get("passport_check_valid") and mrz_data.get("passport_number"):
                 fields["passport_number"] = mrz_data["passport_number"]
                 masked_id = f"{fields['passport_number'][0]}*****{fields['passport_number'][-2:]}"
             if mrz_data.get("full_name"):
@@ -28,13 +31,13 @@ class PassportParser(BaseDocumentParser):
                 fields["surname"] = mrz_data["surname"]
             if mrz_data.get("given_name"):
                 fields["given_name"] = mrz_data["given_name"]
-            if mrz_data.get("date_of_birth"):
+            if mrz_data.get("dob_check_valid") and mrz_data.get("date_of_birth"):
                 fields["date_of_birth"] = mrz_data["date_of_birth"].replace("-", "/")
-            if mrz_data.get("gender"):
+            if (mrz_data.get("composite_valid") or mrz_data.get("dob_check_valid")) and mrz_data.get("gender"):
                 fields["gender"] = mrz_data["gender"]
-            if mrz_data.get("expiry_date"):
+            if mrz_data.get("expiry_check_valid") and mrz_data.get("expiry_date"):
                 fields["expiry_date"] = mrz_data["expiry_date"].replace("-", "/")
-            if mrz_data.get("nationality"):
+            if mrz_data.get("passport_check_valid") and mrz_data.get("nationality"):
                 fields["nationality"] = mrz_data["nationality"]
             fields["mrz_verified"] = mrz_data.get("composite_valid", False)
 

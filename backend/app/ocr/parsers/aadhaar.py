@@ -11,10 +11,21 @@ class AadhaarParser(BaseDocumentParser):
     - Masks to XXXX-XXXX-1234.
     - Extracts Name, DOB, Gender, and relation fields.
     """
+    @staticmethod
+    def extract_ephemeral_full_number(raw_text: str) -> Optional[str]:
+        """Transient extraction for Verhoeff verification or synthetic benchmark scoring only. Never persisted."""
+        match = re.search(r"\b(\d{4})[\s-]?(\d{4})[\s-]?(\d{4})\b", raw_text)
+        if match:
+            return f"{match.group(1)} {match.group(2)} {match.group(3)}"
+        return None
+
     def parse(self, raw_text: str) -> Dict[str, Any]:
         fields: Dict[str, Any] = {}
         masked_id: Optional[str] = None
         
+        if re.search(r"(?:Unique\s*Identification|UIDAI|Aadhaar)", raw_text, re.IGNORECASE):
+            fields["issuing_authority"] = "UIDAI"
+
         # 1. Masked Aadhaar Number extraction
         aadhaar_pattern = r"\b(\d{4})[\s-]?(\d{4})[\s-]?(\d{4})\b"
         match = re.search(aadhaar_pattern, raw_text)
@@ -22,11 +33,11 @@ class AadhaarParser(BaseDocumentParser):
             # Ephemeral checksum validation prior to discarding unmasked digits
             full_digits = match.group(1) + match.group(2) + match.group(3)
             fields["verhoeff_valid"] = validate_verhoeff(full_digits)
-            # Mask first 8 digits, keep only last 4
+            # Mask first 8 digits, keep only last 4 (Aadhaar Act privacy contract)
             last_4 = match.group(3)
             masked_id = f"XXXX-XXXX-{last_4}"
             fields["aadhaar_last_4"] = last_4
-            fields["aadhaar_number"] = f"{match.group(1)} {match.group(2)} {match.group(3)}"
+            fields["aadhaar_number"] = f"XXXX-XXXX-{last_4}"
         else:
             # Check for already masked patterns like XXXX XXXX 1234
             masked_pattern = r"\b[Xx]{4}[\s-]?[Xx]{4}[\s-]?(\d{4})\b"
@@ -35,7 +46,7 @@ class AadhaarParser(BaseDocumentParser):
                 last_4 = m_match.group(1)
                 masked_id = f"XXXX-XXXX-{last_4}"
                 fields["aadhaar_last_4"] = last_4
-                fields["aadhaar_number"] = f"XXXX XXXX {last_4}"
+                fields["aadhaar_number"] = f"XXXX-XXXX-{last_4}"
                 fields["verhoeff_valid"] = None
 
         # 2. Date of Birth / Year of Birth extraction

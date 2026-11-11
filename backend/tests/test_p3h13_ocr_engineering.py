@@ -192,7 +192,10 @@ def test_aadhaar_parser_number_and_address_lookahead():
     fields = res.get("fields", {})
     
     assert fields.get("aadhaar_last_4") == "1098"
-    assert fields.get("aadhaar_number") == "9876 5432 1098"
+    assert fields.get("aadhaar_number") == "XXXX-XXXX-1098"
+    assert res.get("masked_id") == "XXXX-XXXX-1098"
+    assert "9876" not in str(fields), "Plaintext first-8 digits must not leak into parsed fields"
+    assert AadhaarParser.extract_ephemeral_full_number(raw_text) == "9876 5432 1098"
     assert fields.get("gender") in ("Male", "MALE")
     # Address should contain Sector 15 and New Delhi, not truncated prematurely
     address = fields.get("address", "")
@@ -237,9 +240,67 @@ def test_education_parser_board_detection():
     fields = res.get("fields", {})
     
     assert fields.get("issuing_authority") in ("CBSE", "Central Board of Secondary Education")
-    assert fields.get("board") == "CBSE"
+    assert fields.get("board") in ("CBSE", "CENTRAL BOARD OF SECONDARY EDUCATION")
+    fe_res = FieldExtractor.extract_category_fields("education_10th", cbse_text, overall_confidence=0.90)
+    assert fe_res.fields_flat.get("board") == "CBSE"
     assert fields.get("roll_number") == "6123456"
     assert fields.get("full_name") == "AMIT VERMA"
+
+
+def test_no_issuing_authority_fabrication_on_noise():
+    """Verify parsers and FieldExtractor never fabricate issuing_authority on unreadable noise."""
+    noise = "### 100% UNREADABLE BLURRY NOISE 000 ###"
+    for cat in ("aadhaar", "pan", "passport", "education_10th", "education_12th", "epf"):
+        res = FieldExtractor.extract_category_fields(cat, noise, overall_confidence=0.30)
+        assert res.fields_flat.get("issuing_authority") is None, f"Fabricated issuing_authority for {cat} on unreadable noise"
+
+
+def test_passport_invalid_mrz_checksum_falls_back_to_viz():
+    """Verify failed MRZ check digit does not overwrite valid VIZ passport number."""
+    raw_text = (
+        "PASSPORT - REPUBLIC OF INDIA\n"
+        "Ministry of External Affairs\n"
+        "Passport No: N6789012\n"
+        "Surname: GREWAL\n"
+        "Given Name: HARPREET KAUR\n"
+        "DOB: 05/05/1991\n"
+        "P<INDGREWAL<<HARPREET<KAUR<<<<<<<<<<<<<<<<<<\n"
+        "N67890120IND9105050F2805090<<<<<<<<<<<<<<<00\n"
+    )
+    parser = PassportParser()
+    res = parser.parse(raw_text)
+    fields = res.get("fields", {})
+    assert fields.get("passport_number") == "N6789012"
+    assert fields.get("date_of_birth") == "05/05/1991"
+    assert fields.get("mrz_verified") is False
+
+
+def test_pan_ocr_repaired_triggers_manual_review():
+    """Verify fallback character substitution (e.g. 0->O) flags repaired PAN for mandatory citizen review."""
+    raw_text = (
+        "INCOME TAX DEPARTMENT\n"
+        "Permanent Account Number: CVBMS90120\n"
+        "Name: MEENAKSHI SOUNDARARAJAN\n"
+        "DOB: 22/10/1993\n"
+    )
+    fe_res = FieldExtractor.extract_category_fields("pan", raw_text, overall_confidence=0.92)
+    pan_item = fe_res.field_extractions["pan_number"]
+    assert pan_item.validation_status == "repaired_needs_review"
+    assert pan_item.review_required is True
+    assert fe_res.requires_manual_review is True
+
+
+def test_education_candidate_name_with_equals_noise():
+    """Verify thresholding artifacts like 'Candidate Name: = ARJUN' extract the name, not 'Name'."""
+    raw_text = (
+        "CENTRAL BOARD OF SECONDARY EDUCATION\n"
+        "SECONDARY SCHOOL EXAMINATION (CLASS X) - 2002\n"
+        "Roll No 3890124\n"
+        "Candidate Name: = ARJUN DEB CHAUDHURY\n"
+        "Date of Birth: 11/12/1986\n"
+    )
+    fe_res = FieldExtractor.extract_category_fields("education_10th", raw_text, overall_confidence=0.90)
+    assert fe_res.fields_flat.get("full_name") == "arjun deb chaudhury"
 
 
 def test_epf_parser_authority_and_dates():

@@ -183,15 +183,6 @@ class FieldExtractor:
                     raw_val = parsed_fields.get("parent_guardian_name") or parsed_fields.get("father_name")
                 elif f_name == "issuing_authority":
                     raw_val = parsed_fields.get("issuing_authority") or parsed_fields.get("board")
-                    if not raw_val:
-                        if doc_type == "aadhaar":
-                            raw_val = "UIDAI"
-                        elif doc_type == "pan":
-                            raw_val = "Income Tax Department"
-                        elif doc_type == "passport":
-                            raw_val = "Ministry of External Affairs"
-                        elif doc_type == "epf":
-                            raw_val = "EPFO"
 
             norm_val = None
             ocr_conf = float(overall_confidence)
@@ -249,6 +240,9 @@ class FieldExtractor:
                 elif f_name == "pan_number":
                     if re.match(r"^[A-Z]{5}[0-9]{4}[A-Z]$", raw_str.upper()):
                         norm_val = raw_str.upper()
+                        if parsed_fields.get("pan_ocr_repaired"):
+                            parser_conf = 0.60
+                            val_status = "repaired_needs_review"
                     else:
                         val_status = "invalid_format"
                         format_validated = False
