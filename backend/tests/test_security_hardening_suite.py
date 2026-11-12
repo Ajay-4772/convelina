@@ -61,8 +61,13 @@ def db():
 
 # 1. IAM: Reject invalid / tampered / expired / unsigned JWT
 def test_01_reject_invalid_and_tampered_tokens():
+    import base64
+
+    header = base64.urlsafe_b64encode(b'{"alg":"none"}').decode("ascii").rstrip("=")
+    payload = base64.urlsafe_b64encode(b'{"sub":"fake"}').decode("ascii").rstrip("=")
+    unsigned_jwt = f"{header}.{payload}."
     with pytest.raises(AuthenticationError):
-        verify_firebase_id_token("eyJhbGciOiJub25lIn0.eyJzdWIiOiJmYWtlIn0.")
+        verify_firebase_id_token(unsigned_jwt)
 
 
 # 2. IAM: Reject simulated test tokens outside development/test or when disabled

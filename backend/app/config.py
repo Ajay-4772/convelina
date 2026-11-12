@@ -1,4 +1,5 @@
 import os
+import tempfile
 from typing import Optional
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -29,8 +30,8 @@ class Settings(BaseSettings):
     PKI_PRIVATE_KEY_PEM: Optional[str] = None
 
     # Document Storage & Upload Security (Module 4 & Phase P3E)
-    STORAGE_TEMP_DIR: str = "/tmp/consolith/temp_docs"
-    STORAGE_TEMP_ATTACHMENTS_DIR: str = "/tmp/consolith/temp_attachments"
+    STORAGE_TEMP_DIR: str = os.path.join(tempfile.gettempdir(), "consolith", "temp_docs")
+    STORAGE_TEMP_ATTACHMENTS_DIR: str = os.path.join(tempfile.gettempdir(), "consolith", "temp_attachments")
     STORAGE_OFFICIAL_FORMS_DIR: str = "/app/data/official_forms"
     MAX_UPLOAD_SIZE_BYTES: int = 10 * 1024 * 1024  # 10 MB limit
     MAX_UPLOAD_PDF_PAGES: int = 25

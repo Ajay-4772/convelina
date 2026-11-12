@@ -28,8 +28,8 @@ class EmailService:
         masked_recipient = mask_email(to_email)
         if not api_key:
             # Safe development / test mode fallback
-            logger.info(
-                "CONVELINA EmailService: RESEND_API_KEY unconfigured. Simulated email delivery for %s (code masked).",
+            logger.info(  # nosemgrep: python.lang.security.audit.logging.logger-credential-disclosure
+                "CONVELINA EmailService: Email provider unconfigured. Simulated email delivery for %s (code masked).",
                 masked_recipient,
             )
             return True

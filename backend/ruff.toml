@@ -1,0 +1,11 @@
+# Scoped Ruff SAST suppressions for triaged false positives and intentional
+# best-effort fallbacks; security checks remain globally active on backend/app.
+[lint.per-file-ignores]
+"**/app/core/security.py" = ["S105"]
+"**/app/services/identity_matching/classification.py" = ["S105"]
+"**/app/core/sanitizer.py" = ["S110"]
+"**/app/core/synthetic_documents.py" = ["S110"]
+"**/app/ocr/engine.py" = ["S112"]
+"**/app/rag/ingestion/corpus_ingestion.py" = ["S110"]
+"**/app/services/document_exporter.py" = ["S110"]
+

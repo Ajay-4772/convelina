@@ -1,0 +1,3 @@
+# Synthetic unsigned alg=none unit-test token ({"alg":"none"}.{"sub":"fake"}.) introduced in d7a383f
+d7a383f0d0104142e94bd25be1e705d7a76b4346:backend/tests/test_security_hardening_suite.py:jwt:65
+

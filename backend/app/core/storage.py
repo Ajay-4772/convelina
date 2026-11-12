@@ -1,5 +1,6 @@
 import hashlib
 import os
+import tempfile
 import uuid
 import logging
 from typing import Tuple, Optional
@@ -354,7 +355,11 @@ def ensure_temp_attachments_dir() -> str:
     """
     Ensures the temporary chat attachments directory exists and returns its absolute path.
     """
-    configured_dir = getattr(settings, "STORAGE_TEMP_ATTACHMENTS_DIR", "/tmp/consolith/temp_attachments")
+    configured_dir = getattr(
+        settings,
+        "STORAGE_TEMP_ATTACHMENTS_DIR",
+        os.path.join(tempfile.gettempdir(), "consolith", "temp_attachments"),
+    )
     abs_dir = os.path.abspath(configured_dir)
     os.makedirs(abs_dir, exist_ok=True)
     return abs_dir

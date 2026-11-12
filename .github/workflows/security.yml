@@ -7,6 +7,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   backend-sast-and-audit:
     runs-on: ubuntu-latest
@@ -17,16 +20,16 @@ jobs:
           python-version: "3.11"
       - name: Install Python security tooling
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip "setuptools>=84.1.0"
           pip install bandit ruff pip-audit semgrep
       - name: Run Ruff security & lint checks
-        run: ruff check backend/app --select F821,S105,S108,S110,S112,S310,S324
+        run: ruff check backend/app --config backend/ruff.toml --select F821,S105,S108,S110,S112,S310,S324
       - name: Run Bandit SAST
         run: bandit -r backend/app --severity-level medium -q
       - name: Run Semgrep SAST
         run: semgrep scan --config p/python --config p/security-audit backend/app --error --quiet
       - name: Run pip-audit on requirements
-        run: pip-audit -r backend/requirements.txt --ignore-vuln "" || true
+        run: pip-audit -r backend/requirements.txt --progress-spinner off
 
   frontend-audit-and-build:
     runs-on: ubuntu-latest
@@ -50,16 +53,18 @@ jobs:
         with:
           fetch-depth: 0
       - name: Run Gitleaks secret detection
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz -o /tmp/gitleaks.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          /tmp/gitleaks detect --source . --no-banner --redact
       - name: Run Trivy filesystem & Dockerfile scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
+        env:
+          TRIVY_MISCONFIG_SCANNERS: dockerfile
         with:
           scan-type: fs
           scan-ref: .
           scanners: vuln,misconfig
-          misconfig-scanners: dockerfile
           severity: HIGH,CRITICAL
           exit-code: "1"
 
