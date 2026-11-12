@@ -144,9 +144,8 @@ class Ed25519CryptoManager:
 
 class DevSigningKeyProvider:
     """
-    Manages private keys for local development and testing environments.
-    In production, this abstraction is backed by an HSM (Hardware Security Module)
-    or cloud secret manager (AWS KMS, GCP Cloud KMS, HashiCorp Vault).
+    Manages private keys for local development and testing environments ONLY.
+    In production/staging, signing keys must come from PKI_PRIVATE_KEY_PEM / HSM / Cloud KMS.
     """
 
     _dev_keys: Dict[str, ed25519.Ed25519PrivateKey] = {}
@@ -163,9 +162,26 @@ class DevSigningKeyProvider:
     def create_or_get_default_dev_key(cls, key_id: str = "consolith-officer-key-2026-v1") -> Tuple[ed25519.Ed25519PrivateKey, str, str]:
         """
         Returns (private_key, public_key_b64, fingerprint).
-        Generates and registers one deterministically if not present.
+        In restricted environments (`production`/`staging`), requires PKI_PRIVATE_KEY_PEM
+        and refuses deterministic hardcoded fallback seeds.
         """
+        from app.config import settings
+        from cryptography.hazmat.primitives import serialization
+
+        env_lower = settings.ENVIRONMENT.lower()
+        if settings.PKI_PRIVATE_KEY_PEM and key_id not in cls._dev_keys:
+            pem_bytes = settings.PKI_PRIVATE_KEY_PEM.replace("\\n", "\n").encode("utf-8")
+            loaded = serialization.load_pem_private_key(pem_bytes, password=None)
+            if not isinstance(loaded, ed25519.Ed25519PrivateKey):
+                raise ValueError("PKI_PRIVATE_KEY_PEM must be a valid Ed25519 private key.")
+            cls.register_dev_key(key_id, loaded)
+
         if key_id not in cls._dev_keys:
+            if env_lower in ("production", "staging") or settings.PKI_SIGNING_BACKEND != "development":
+                raise RuntimeError(
+                    "Security violation: Deterministic development Ed25519 key derivation is forbidden in restricted environments. "
+                    "Configure an HSM/KMS backend or PKI_PRIVATE_KEY_PEM."
+                )
             seed = hashlib.sha256(f"consolith-dev-officer-seed-{key_id}".encode("utf-8")).digest()
             priv = ed25519.Ed25519PrivateKey.from_private_bytes(seed)
             cls.register_dev_key(key_id, priv)

@@ -1,10 +1,9 @@
+import html
 import logging
-import json
-import urllib.request
-import urllib.error
-from typing import Optional
+import httpx
 
 from app.config import settings
+from app.core.sanitizer import mask_email
 
 logger = logging.getLogger(__name__)
 
@@ -26,11 +25,12 @@ class EmailService:
         api_key = settings.RESEND_API_KEY
         from_email = settings.RESEND_FROM_EMAIL
 
+        masked_recipient = mask_email(to_email)
         if not api_key:
             # Safe development / test mode fallback
             logger.info(
-                f"CONVELINA EmailService: RESEND_API_KEY unconfigured. "
-                f"Simulated email delivery for {to_email} (code masked)."
+                "CONVELINA EmailService: RESEND_API_KEY unconfigured. Simulated email delivery for %s (code masked).",
+                masked_recipient,
             )
             return True
 
@@ -66,7 +66,7 @@ class EmailService:
               Thank you for registering. Enter the following 6-digit verification code to confirm your email and proceed with your account setup. This code expires in 5 minutes.
             </div>
             <div class="code-box">
-              <span class="code">{otp_code}</span>
+              <span class="code">{html.escape(str(otp_code))}</span>
             </div>
             <div class="footer">
               This is an automated security email from CONVELINA. If you did not request this verification code, please ignore this message.
@@ -84,27 +84,17 @@ class EmailService:
         }
 
         try:
-            req = urllib.request.Request(
-                url,
-                data=json.dumps(payload).encode("utf-8"),
-                headers=headers,
-                method="POST",
-            )
-            with urllib.request.urlopen(req, timeout=10) as response:
-                if response.status in (200, 201):
-                    logger.info(f"CONVELINA EmailService: Successfully dispatched OTP to {to_email}")
-                    return True
-                else:
-                    logger.error(
-                        f"CONVELINA EmailService: Resend API returned status {response.status} for {to_email}"
-                    )
-                    return False
-        except urllib.error.HTTPError as e:
-            error_body = e.read().decode("utf-8", errors="ignore")
+            response = httpx.post(url, json=payload, headers=headers, timeout=10.0)
+            if response.status_code in (200, 201):
+                logger.info("CONVELINA EmailService: Successfully dispatched OTP to %s", masked_recipient)
+                return True
             logger.error(
-                f"CONVELINA EmailService: Resend API HTTP error {e.code} for {to_email}: {error_body}"
+                "CONVELINA EmailService: Resend API HTTP error %s for %s: %s",
+                response.status_code,
+                masked_recipient,
+                response.text[:300],
             )
             return False
         except Exception as e:
-            logger.error(f"CONVELINA EmailService: Unexpected error dispatching email to {to_email}: {e}")
+            logger.error("CONVELINA EmailService: Unexpected error dispatching email to %s: %s", masked_recipient, e)
             return False

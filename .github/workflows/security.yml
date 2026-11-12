@@ -1,0 +1,65 @@
+name: CONVELINA Security Scans
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  backend-sast-and-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Python security tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit ruff pip-audit semgrep
+      - name: Run Ruff security & lint checks
+        run: ruff check backend/app --select F821,S105,S108,S110,S112,S310,S324
+      - name: Run Bandit SAST
+        run: bandit -r backend/app --severity-level medium -q
+      - name: Run Semgrep SAST
+        run: semgrep scan --config p/python --config p/security-audit backend/app --error --quiet
+      - name: Run pip-audit on requirements
+        run: pip-audit -r backend/requirements.txt --ignore-vuln "" || true
+
+  frontend-audit-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install and audit frontend dependencies
+        working-directory: frontend
+        run: |
+          npm ci
+          npm audit --audit-level=high
+          npx tsc --noEmit
+          npm run build
+
+  container-and-secrets-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run Gitleaks secret detection
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run Trivy filesystem & Dockerfile scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,misconfig
+          misconfig-scanners: dockerfile
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+

@@ -7,6 +7,7 @@ import numpy as np
 import pytesseract
 import pypdf
 
+from app.config import settings
 from app.ocr.preprocessing import default_image_preprocessor, ImagePreprocessor, PreprocessingConfig
 
 logger = logging.getLogger("convelina.ocr")
@@ -176,7 +177,7 @@ class TesseractOCREngine(BaseOCREngine):
         extracted_text_chunks: List[str] = []
         try:
             reader = pypdf.PdfReader(file_path)
-            for page in reader.pages:
+            for page in reader.pages[: settings.MAX_UPLOAD_PDF_PAGES]:
                 t = page.extract_text()
                 if t and t.strip():
                     extracted_text_chunks.append(t.strip())
@@ -228,7 +229,7 @@ class TesseractOCREngine(BaseOCREngine):
         try:
             # Step 1: Direct text extraction from digital PDF
             reader = pypdf.PdfReader(file_path)
-            for page in reader.pages:
+            for page in reader.pages[: settings.MAX_UPLOAD_PDF_PAGES]:
                 t = page.extract_text()
                 if t and t.strip():
                     extracted_text_chunks.append(t.strip())

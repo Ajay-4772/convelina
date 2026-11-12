@@ -361,49 +361,48 @@ class TestP2CLLMGroundedIntelligence:
 
     def test_07_retriever_filters_unverified_sources(self):
         """7. HybridRetriever strictly excludes unverified or inactive sources."""
-        mock_qdrant = MagicMock()
-        
-        hit_verified = MagicMock()
-        hit_verified.id = "hit1"
-        hit_verified.score = 0.9
-        hit_verified.payload = {
-            "source_id": "circ_valid_01",
-            "title": "Valid Circular",
-            "verification_status": "verified",
-            "is_active": True,
-            "content": "Official valid circular instructions",
-        }
+        from app.rag.retrieval.bm25_engine import BM25Engine
 
-        hit_unverified = MagicMock()
-        hit_unverified.id = "hit2"
-        hit_unverified.score = 0.95
-        hit_unverified.payload = {
-            "source_id": "circ_unverified_02",
-            "title": "Unverified Circular",
-            "verification_status": "needs_review",
-            "is_active": True,
-            "content": "Draft instructions not yet vetted",
-        }
+        bm25 = BM25Engine()
+        bm25.index_chunks([
+            {
+                "chunk_id": "hit1",
+                "document_id": "circ_valid_01",
+                "document_title": "Valid Circular",
+                "document_category": "aadhaar",
+                "corpus_classification": "CORE_OPERATIONAL",
+                "verification_status": "verified",
+                "is_active": True,
+                "retrieval_eligibility": "ELIGIBLE",
+                "chunk_text": "Official valid circular instructions",
+            },
+            {
+                "chunk_id": "hit2",
+                "document_id": "circ_unverified_02",
+                "document_title": "Unverified Circular",
+                "document_category": "aadhaar",
+                "corpus_classification": "CORE_OPERATIONAL",
+                "verification_status": "needs_review",
+                "is_active": True,
+                "retrieval_eligibility": "ELIGIBLE",
+                "chunk_text": "Official valid circular draft instructions not yet vetted",
+            },
+            {
+                "chunk_id": "hit3",
+                "document_id": "circ_inactive_03",
+                "document_title": "Inactive Circular",
+                "document_category": "aadhaar",
+                "corpus_classification": "CORE_OPERATIONAL",
+                "verification_status": "verified",
+                "is_active": False,
+                "retrieval_eligibility": "ELIGIBLE",
+                "chunk_text": "Official valid circular old instructions",
+            },
+        ])
 
-        hit_inactive = MagicMock()
-        hit_inactive.id = "hit3"
-        hit_inactive.score = 0.92
-        hit_inactive.payload = {
-            "source_id": "circ_inactive_03",
-            "title": "Inactive Circular",
-            "verification_status": "verified",
-            "is_active": False,
-            "content": "Old instructions",
-        }
-
-        mock_qdrant.search.return_value = [hit_verified, hit_unverified, hit_inactive]
-
-        retriever = HybridRetriever(qdrant=mock_qdrant)
-        retriever.embedding_service = MagicMock()
-        retriever.embedding_service.embed_query.return_value = [0.1] * 1024
-
-        results = retriever.retrieve("official circular instructions", min_score=0.1)
-        source_ids = [r["source_id"] for r in results]
+        retriever = HybridRetriever(qdrant=MagicMock(), bm25=bm25, retrieval_mode="lexical_only")
+        results = retriever.retrieve("official valid circular instructions", min_score=0.1)
+        source_ids = [r["document_id"] for r in results]
 
         assert "circ_valid_01" in source_ids
         assert "circ_unverified_02" not in source_ids
@@ -411,36 +410,35 @@ class TestP2CLLMGroundedIntelligence:
 
     def test_08_retriever_filters_outdated_and_retired_sources(self):
         """8. HybridRetriever strictly rejects outdated and retired sources."""
-        mock_qdrant = MagicMock()
+        from app.rag.retrieval.bm25_engine import BM25Engine
 
-        hit_outdated = MagicMock()
-        hit_outdated.id = "hit_outdated"
-        hit_outdated.score = 0.88
-        hit_outdated.payload = {
-            "source_id": "circ_old_rule",
-            "title": "Old Aadhaar Policy 2018",
-            "verification_status": "outdated",
-            "is_active": True,
-            "content": "Superseded guidelines",
-        }
+        bm25 = BM25Engine()
+        bm25.index_chunks([
+            {
+                "chunk_id": "hit_outdated",
+                "document_id": "circ_old_rule",
+                "document_title": "Old Aadhaar Policy 2018",
+                "document_category": "aadhaar",
+                "corpus_classification": "CORE_OPERATIONAL",
+                "verification_status": "outdated",
+                "is_active": True,
+                "retrieval_eligibility": "ELIGIBLE",
+                "chunk_text": "Aadhaar policy superseded guidelines",
+            },
+            {
+                "chunk_id": "hit_retired",
+                "document_id": "circ_retired_rule",
+                "document_title": "Retired Rule",
+                "document_category": "aadhaar",
+                "corpus_classification": "CORE_OPERATIONAL",
+                "verification_status": "retired",
+                "is_active": True,
+                "retrieval_eligibility": "ELIGIBLE",
+                "chunk_text": "Aadhaar policy retired circular",
+            },
+        ])
 
-        hit_retired = MagicMock()
-        hit_retired.id = "hit_retired"
-        hit_retired.score = 0.89
-        hit_retired.payload = {
-            "source_id": "circ_retired_rule",
-            "title": "Retired Rule",
-            "verification_status": "retired",
-            "is_active": True,
-            "content": "Retired circular",
-        }
-
-        mock_qdrant.search.return_value = [hit_outdated, hit_retired]
-
-        retriever = HybridRetriever(qdrant=mock_qdrant)
-        retriever.embedding_service = MagicMock()
-        retriever.embedding_service.embed_query.return_value = [0.1] * 1024
-
+        retriever = HybridRetriever(qdrant=MagicMock(), bm25=bm25, retrieval_mode="lexical_only")
         results = retriever.retrieve("aadhaar policy", min_score=0.1)
         assert len(results) == 0
 

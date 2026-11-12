@@ -229,13 +229,33 @@ function renderInline(text: string): React.ReactNode {
       const match = seg.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
       if (match) {
         const linkText = match[1];
-        const linkUrl = match[2];
+        const linkUrl = match[2].trim();
+        const isSafeHref = (url: string): boolean => {
+          if (!url) return false;
+          if (url.startsWith("/") && !url.startsWith("//")) return true;
+          try {
+            const parsed = new URL(url);
+            return parsed.protocol === "https:" || parsed.protocol === "http:" || parsed.protocol === "mailto:";
+          } catch {
+            return false;
+          }
+        };
+
+        if (!isSafeHref(linkUrl)) {
+          parts.push(
+            <span key={`l-blocked-${j}`} className="font-medium text-neutral-700" title="Blocked unsafe link protocol">
+              {linkText}
+            </span>
+          );
+          continue;
+        }
+
         parts.push(
           <a
             key={`l-${j}`}
             href={linkUrl}
             target="_blank"
-            rel="noopener noreferrer"
+            rel="noopener noreferrer nofollow"
             className="inline-flex items-center gap-0.5 text-[#0066CC] hover:underline font-medium"
           >
             <span>{linkText}</span>

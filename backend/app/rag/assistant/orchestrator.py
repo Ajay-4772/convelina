@@ -279,15 +279,28 @@ class RAGOrchestrator:
             except Exception as e:
                 logger.warning("Failed to log PII redaction audit event: %s", str(e))
 
+        def _sanitize_structured_payload(val: Any) -> Any:
+            if isinstance(val, str):
+                cleaned, _, _ = sanitize_pii(val, include_address=True)
+                return cleaned
+            if isinstance(val, list):
+                return [_sanitize_structured_payload(item) for item in val]
+            if isinstance(val, dict):
+                return {k: _sanitize_structured_payload(v) for k, v in val.items()}
+            return val
+
+        sanitized_answer_text, _, _ = sanitize_pii(grounded_answer.answer or "", include_address=True)
+        sanitized_structured = _sanitize_structured_payload(grounded_answer.model_dump())
+
         assistant_msg_id = uuid.uuid4()
         assistant_msg = AssistantMessage(
             id=assistant_msg_id,
             conversation_id=conversation.id,
             user_id=user_id,
             role="assistant",
-            content=grounded_answer.answer,
+            content=sanitized_answer_text,
             message_type=message_type or "chat",
-            structured_response=grounded_answer.model_dump(),
+            structured_response=sanitized_structured,
             citations=[c.model_dump() for c in grounded_answer.citations],
             tokens_used=0
         )

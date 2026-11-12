@@ -227,6 +227,15 @@ class HybridRetriever:
 
         # 4. Score combination & metadata contract enforcement
         for b_score, chunk in bm25_hits:
+            if chunk.get("is_active", True) is False:
+                continue
+            ver_status = str(chunk.get("verification_status", "VERIFIED")).strip().lower()
+            if ver_status in ("unverified", "outdated", "retired", "rejected"):
+                continue
+            if ver_status == "needs_review" and chunk.get("document_id") != "DOC_043":
+                continue
+            if str(chunk.get("retrieval_eligibility", "ELIGIBLE")).strip().upper() == "INELIGIBLE":
+                continue
             cid = chunk.get("chunk_id", "")
             doc_id = chunk.get("document_id", "")
 

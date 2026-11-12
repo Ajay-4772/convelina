@@ -15,6 +15,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func
 
 from app.core.database import get_db, set_rls_context
+from app.core.sanitizer import redact_address
+from app.core.security_monitoring import get_security_telemetry
 from app.dependencies.auth import require_admin
 from app.models.user import User
 from app.models.document import Document
@@ -75,7 +77,26 @@ def get_admin_overview_stats(
         "audit": {
             "total_events": total_audit_events,
         },
+        "security": get_security_telemetry(),
     }
+
+
+def _mask_phone(phone: Optional[str]) -> Optional[str]:
+    if not phone:
+        return None
+    digits = "".join(c for c in str(phone) if c.isdigit())
+    if len(digits) <= 4:
+        return "****"
+    return f"{'*' * (len(digits) - 4)}{digits[-4:]}"
+
+
+def _mask_dob(dob: Optional[str]) -> Optional[str]:
+    if not dob:
+        return None
+    s = str(dob).strip()
+    if len(s) >= 4:
+        return f"XX/XX/{s[-4:]}"
+    return "[REDACTED_DOB]"
 
 
 @router.get("/users")
@@ -86,7 +107,7 @@ def list_registered_users(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ):
-    """Allows administrators to search and inspect registered user accounts."""
+    """Allows administrators to search and inspect registered user accounts with minimized PII."""
     set_rls_context(db, current_user.id, current_user.role)
 
     q = db.query(User)
@@ -104,9 +125,9 @@ def list_registered_users(
             "email": u.email,
             "full_name": u.full_name,
             "role": u.role,
-            "phone_number": u.phone_number,
-            "date_of_birth": u.date_of_birth,
-            "address": u.address,
+            "phone_number": _mask_phone(u.phone_number),
+            "date_of_birth": _mask_dob(u.date_of_birth),
+            "address": redact_address(u.address) if u.address else None,
             "created_at": u.created_at.isoformat() if u.created_at else None,
         }
         for u in users

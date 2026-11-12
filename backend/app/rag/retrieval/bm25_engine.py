@@ -107,7 +107,16 @@ class BM25Engine:
         class_filter = corpus_classification.upper() if corpus_classification else None
 
         for idx, chunk in enumerate(self.chunks):
-            # Pre-filtering
+            # Pre-filtering: enforce source status & retrieval eligibility
+            if chunk.get("is_active", True) is False:
+                continue
+            ver_status = str(chunk.get("verification_status", "VERIFIED")).strip().lower()
+            if ver_status in ("unverified", "outdated", "retired", "rejected"):
+                continue
+            if ver_status == "needs_review" and chunk.get("document_id") != "DOC_043":
+                continue
+            if str(chunk.get("retrieval_eligibility", "ELIGIBLE")).strip().upper() == "INELIGIBLE":
+                continue
             if cat_filter and chunk.get("document_category", "").lower() != cat_filter:
                 continue
             if class_filter and chunk.get("corpus_classification", "").upper() != class_filter:

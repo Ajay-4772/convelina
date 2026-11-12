@@ -46,7 +46,7 @@ class DeterministicHashEmbeddingService(BaseEmbeddingService):
         for i, token in enumerate(tokens):
             # Compute multiple independent hash seeds for dense projection
             token_bytes = token.encode("utf-8")
-            h1 = int(hashlib.md5(token_bytes).hexdigest(), 16)
+            h1 = int(hashlib.md5(token_bytes, usedforsecurity=False).hexdigest(), 16)
             h2 = int(hashlib.sha256(token_bytes).hexdigest(), 16)
 
             idx1 = h1 % self.dimension

@@ -1,7 +1,31 @@
+import html
+import re
+
 """
 System Prompts and Boundary Delimiters for CONVELINA Grounded RAG Assistant.
 Implements multi-layer prompt-injection defense and anti-hallucination guardrails.
 """
+
+INJECTION_PATTERNS = [
+    re.compile(r"ignore\s+(all\s+|previous\s+|prior\s+)?instructions", re.IGNORECASE),
+    re.compile(r"reveal\s+(the\s+)?(system\s+prompt|hidden\s+instructions|developer\s+prompt)", re.IGNORECASE),
+    re.compile(r"</?(?:system|user_question|user_case_context|retrieved_official_evidence|conversation_history)>", re.IGNORECASE),
+    re.compile(r"\b(?:jailbreak|DAN\s+mode|override\s+safety|bypass\s+guardrails)\b", re.IGNORECASE),
+]
+
+
+def detect_prompt_injection(text: str) -> bool:
+    """Detects common prompt-injection or XML delimiter breakout patterns."""
+    if not text:
+        return False
+    return any(p.search(text) for p in INJECTION_PATTERNS)
+
+
+def sanitize_untrusted_text(text: str) -> str:
+    """Neutralizes XML/delimiter characters in untrusted text prior to prompt wrapping."""
+    if not text:
+        return ""
+    return html.escape(text, quote=False)
 
 SYSTEM_PROMPT = """You are CONVELINA AI Assistant, a specialized Indian identity-document conflict resolution and government correction assistant.
 
@@ -79,25 +103,30 @@ def format_rag_prompt(
     question: str,
     case_context_str: str,
     evidence_str: str,
-    conversation_history_str: str = ""
+    conversation_history_str: str = "",
+    include_system_prompt: bool = True,
 ) -> str:
-    """Formats prompt with XML boundary delimiters to thwart prompt-injection attacks."""
-    prompt = f"""{SYSTEM_PROMPT}
+    """Formats prompt with escaped XML boundary delimiters to thwart prompt-injection attacks."""
+    safe_case = sanitize_untrusted_text(case_context_str) if case_context_str else "No active case or conflict selected."
+    safe_hist = sanitize_untrusted_text(conversation_history_str) if conversation_history_str else "No prior messages."
+    safe_ev = sanitize_untrusted_text(evidence_str) if evidence_str else "No verified official evidence retrieved above the relevance threshold."
+    safe_q = sanitize_untrusted_text(question)
 
-<user_case_context>
-{case_context_str if case_context_str else "No active case or conflict selected."}
+    header = f"{SYSTEM_PROMPT}\n\n" if include_system_prompt else ""
+    prompt = f"""{header}<user_case_context>
+{safe_case}
 </user_case_context>
 
 <conversation_history>
-{conversation_history_str if conversation_history_str else "No prior messages."}
+{safe_hist}
 </conversation_history>
 
 <retrieved_official_evidence>
-{evidence_str if evidence_str else "No verified official evidence retrieved above the relevance threshold."}
+{safe_ev}
 </retrieved_official_evidence>
 
 <user_question>
-{question}
+{safe_q}
 </user_question>
 
 Generate the grounded JSON response now:"""

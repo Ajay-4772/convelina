@@ -40,19 +40,21 @@ services:
       dockerfile: Dockerfile
     container_name: convelina-backend
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - ./backend:/app
       - ./scripts:/scripts
     environment:
       - PORT=8000
-      - DATABASE_URL=postgresql://consolith_app:consolith_secure_app_pw@postgres:5432/consolith
+      - DATABASE_URL=${DATABASE_URL:-postgresql://consolith_app:consolith_secure_app_pw@postgres:5432/consolith}
       - QDRANT_IN_PROCESS=false
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
-      - TEST_MODE_ALLOW_SIMULATED_TOKENS=true
+      - TEST_MODE_ALLOW_SIMULATED_TOKENS=${TEST_MODE_ALLOW_SIMULATED_TOKENS:-false}
       - CORS_ORIGINS=["http://localhost:3000","http://127.0.0.1:3000","http://frontend:3000"]
     depends_on:
       postgres:
@@ -71,8 +73,10 @@ services:
       dockerfile: Dockerfile
     container_name: convelina-frontend
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
     depends_on:

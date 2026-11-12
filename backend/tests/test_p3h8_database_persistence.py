@@ -73,8 +73,11 @@ def test_runtime_health_diagnostics():
     assert services["postgres"]["status"] == "up"
     assert services["postgres"]["role"] == "consolith_app"
     assert services["database_migrations"]["status"] == "up"
-    assert services["database_migrations"]["applied_count"] >= 21
-    assert "021_citizen_checklist_progress.sql" in services["database_migrations"]["latest_applied"]
+    assert services["database_migrations"]["applied_count"] >= 22
+    assert services["database_migrations"]["latest_applied"] in (
+        "021_citizen_checklist_progress.sql",
+        "022_security_hardening.sql",
+    )
     assert services["qdrant"]["status"] == "up"
     assert services["ocr_engine"]["status"] == "up"
     assert services["storage"]["status"] == "up"

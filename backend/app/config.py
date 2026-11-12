@@ -24,21 +24,37 @@ class Settings(BaseSettings):
 
     # Test Mode / Isolated verification (never enable in production)
     TEST_MODE_ALLOW_SIMULATED_TOKENS: bool = False
+    ADMIN_REQUIRE_MFA: bool = False
+    PKI_SIGNING_BACKEND: str = "development"
+    PKI_PRIVATE_KEY_PEM: Optional[str] = None
 
-    
     # Document Storage & Upload Security (Module 4 & Phase P3E)
     STORAGE_TEMP_DIR: str = "/tmp/consolith/temp_docs"
     STORAGE_TEMP_ATTACHMENTS_DIR: str = "/tmp/consolith/temp_attachments"
     STORAGE_OFFICIAL_FORMS_DIR: str = "/app/data/official_forms"
     MAX_UPLOAD_SIZE_BYTES: int = 10 * 1024 * 1024  # 10 MB limit
+    MAX_UPLOAD_PDF_PAGES: int = 25
+    MAX_IMAGE_DIMENSION: int = 10000
+    MAX_IMAGE_PIXELS: int = 40_000_000
+    TEMP_FILE_TTL_MINUTES: int = 60
     MAX_ATTACHMENTS_PER_MESSAGE: int = 5
     ATTACHMENT_RETENTION_HOURS: int = 24
     ALLOWED_EXTENSIONS: list[str] = [".pdf", ".jpg", ".jpeg", ".png"]
     ALLOWED_MIME_TYPES: list[str] = ["application/pdf", "image/jpeg", "image/png"]
     STORAGE_RETENTION_POLICY: str = "delete_after_ocr"  # "delete_after_ocr" or "retain_temp"
-    
-    # Fernet at-rest sensitive payload encryption key (derived or configured)
+    CLAMAV_HOST: Optional[str] = None
+    CLAMAV_PORT: int = 3310
+
+    # API Rate Limiting & Request Guards
+    API_RATE_LIMIT_ENABLED: bool = True
+    API_RATE_LIMIT_DEFAULT_RPM: int = 240
+    API_RATE_LIMIT_SENSITIVE_RPM: int = 60
+    MAX_JSON_BODY_BYTES: int = 2 * 1024 * 1024
+
+    # Fernet at-rest sensitive payload encryption key & rotation
     ENCRYPTION_KEY: Optional[str] = "consolith_dev_fernet_secret_key_32_bytes_len="
+    ENCRYPTION_KEY_VERSION: str = "v1"
+    ENCRYPTION_PREVIOUS_KEYS: Optional[str] = None
     
     # Resend Email Configuration for OTP Verification
     RESEND_API_KEY: Optional[str] = None
@@ -84,34 +100,35 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_production_security(self) -> "Settings":
-        if self.ENVIRONMENT.lower() == "production":
+        env_lower = self.ENVIRONMENT.lower()
+        if env_lower in ("production", "staging"):
             if self.DEBUG:
-                raise ValueError("Security violation: DEBUG must be set to False in production.")
+                raise ValueError(f"Security violation: DEBUG must be False in {env_lower}.")
             if self.ENCRYPTION_KEY == "consolith_dev_fernet_secret_key_32_bytes_len=":
-                raise ValueError("Security violation: Default development ENCRYPTION_KEY is forbidden in production.")
+                raise ValueError(f"Security violation: Default development ENCRYPTION_KEY is forbidden in {env_lower}.")
             if not self.ENCRYPTION_KEY or len(self.ENCRYPTION_KEY) < 32:
-                raise ValueError("Security violation: A valid 32-byte Fernet ENCRYPTION_KEY is required in production.")
+                raise ValueError(f"Security violation: A valid 32-byte Fernet ENCRYPTION_KEY is required in {env_lower}.")
             try:
                 from cryptography.fernet import Fernet
                 Fernet(self.ENCRYPTION_KEY.encode())
             except Exception:
                 raise ValueError("Security violation: ENCRYPTION_KEY is not a valid url-safe base64-encoded Fernet key.")
             if self.TEST_MODE_ALLOW_SIMULATED_TOKENS:
-                raise ValueError("Security violation: TEST_MODE_ALLOW_SIMULATED_TOKENS must be False in production.")
+                raise ValueError(f"Security violation: TEST_MODE_ALLOW_SIMULATED_TOKENS must be False in {env_lower}.")
             if "consolith_secure_app_pw" in self.DATABASE_URL or "postgres_dev_password" in self.DATABASE_URL:
-                raise ValueError("Security violation: Default development database credentials are forbidden in production.")
+                raise ValueError(f"Security violation: Default development database credentials are forbidden in {env_lower}.")
             from urllib.parse import urlparse
             parsed_db = urlparse(self.DATABASE_URL)
             if parsed_db.username == "postgres":
                 raise ValueError("Security violation: Application runtime must connect via dedicated non-superuser role (e.g. 'consolith_app').")
             if self.STORAGE_RETENTION_POLICY != "delete_after_ocr":
-                raise ValueError("Privacy violation: STORAGE_RETENTION_POLICY must be 'delete_after_ocr' in production per Aadhaar Act privacy compliance.")
+                raise ValueError(f"Privacy violation: STORAGE_RETENTION_POLICY must be 'delete_after_ocr' in {env_lower} per Aadhaar Act privacy compliance.")
             if self.GEMINI_ENABLED and not self.GEMINI_API_KEY:
-                raise ValueError("Security violation: GEMINI_API_KEY must be configured when GEMINI_ENABLED is True in production.")
+                raise ValueError(f"Security violation: GEMINI_API_KEY must be configured when GEMINI_ENABLED is True in {env_lower}.")
             if not self.FIREBASE_PROJECT_ID or self.FIREBASE_PROJECT_ID == "consolith-dev":
-                raise ValueError("Security violation: A valid production FIREBASE_PROJECT_ID is required in production.")
+                raise ValueError(f"Security violation: A valid Firebase project ID is required in {env_lower}.")
             if "*" in self.CORS_ORIGINS:
-                raise ValueError("Security violation: Wildcard CORS origin is forbidden in production.")
+                raise ValueError(f"Security violation: Wildcard CORS origin is forbidden in {env_lower}.")
         return self
 
     model_config = SettingsConfigDict(

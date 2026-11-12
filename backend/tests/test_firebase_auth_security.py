@@ -86,7 +86,7 @@ class MockDBStore:
 mock_store = MockDBStore()
 
 class MockMappingResult:
-    def __init__(self, data: Optional[Dict[str, Any]]):
+    def __init__(self, data: Optional[Any] = None):
         self._data = data
 
     def mappings(self):
@@ -226,7 +226,7 @@ class MockSession:
         # 7. UPDATE users SET ...
         if "UPDATE users" in sql:
             uid = params.get("uid")
-            user = mock_store.users.get(uid)
+            user = mock_store.users.get(uid) if uid is not None else None
             if user:
                 if "name" in params:
                     user.full_name = params["name"]
@@ -249,15 +249,15 @@ class MockSession:
     def add(self, instance):
         if isinstance(instance, User):
             if not instance.id:
-                instance.id = uuid.uuid4()
+                setattr(instance, "id", uuid.uuid4())
             mock_store.users[instance.id] = instance
         elif isinstance(instance, AuditLog):
             if not instance.id:
-                instance.id = uuid.uuid4()
+                setattr(instance, "id", uuid.uuid4())
             mock_store.audit_logs.append(instance)
         elif isinstance(instance, EmailOTP):
             if not instance.id:
-                instance.id = uuid.uuid4()
+                setattr(instance, "id", uuid.uuid4())
             mock_store.otps.append(instance)
 
     def commit(self):
@@ -293,10 +293,15 @@ def get_test_db():
         finally:
             db.close()
 
-def SessionLocal():
+def SessionLocal() -> Any:
     if DB_AVAILABLE:
         return RealSessionLocal()
     return MockSession()
+
+
+def _set_test_rls(db: Any, user_id: Any, role: str) -> None:
+    if DB_AVAILABLE:
+        set_rls_context(db, user_id, role)
 
 client = TestClient(app)
 
@@ -460,19 +465,20 @@ def test_scenario_15_user_accessing_admin_apis():
 def test_scenario_16_cross_user_resource_access_rls():
     db = SessionLocal()
     try:
+        _set_test_rls(db, uuid.uuid4(), "admin")
         user_a = db.query(User).filter(User.firebase_uid == TEST_USER_A_UID).first()
         user_b = db.query(User).filter(User.firebase_uid == TEST_USER_B_UID).first()
         assert user_a is not None and user_b is not None
 
-        set_rls_context(db, user_a.id, user_a.role)
+        _set_test_rls(db, user_a.id, user_a.role)
         doc = Document(
             user_id=user_a.id,
             document_type="pan",
-            file_name="alice_secret_pan.pdf",
-            file_size_bytes=2048,
-            mime_type="application/pdf",
-            storage_path="/tmp/alice_secret_pan.pdf",
+            file_path="ephemeral://alice_secret_pan.pdf",
+            file_hash=uuid.uuid4().hex,
             ocr_status="completed",
+            masked_id="XXXXX1234X",
+            extracted_fields={"name": "Alice Sharma"},
         )
         db.add(doc)
         db.commit()
@@ -516,6 +522,7 @@ def test_scenario_17_prevent_silent_account_takeover():
     # Verify database: Victim's firebase_uid remains untouched!
     db = SessionLocal()
     try:
+        _set_test_rls(db, uuid.uuid4(), "admin")
         user_row = db.query(User).filter(User.email == victim_email).first()
         assert user_row is not None
         assert user_row.firebase_uid == victim_uid
@@ -587,6 +594,7 @@ def test_account_linking_01_email_followed_by_google_same_email():
     # Step 6: Verify Audit Trail Event
     db = SessionLocal()
     try:
+        _set_test_rls(db, uuid.uuid4(), "admin")
         audit = db.query(AuditLog).filter(
             AuditLog.user_id == original_user_id,
             AuditLog.action == "account_provider_linked",
@@ -700,8 +708,9 @@ def test_account_linking_06_two_distinct_users_similar_emails():
     """
     Requirement 6: Two distinct users with similar emails remain strictly isolated.
     """
-    user_alpha_email = "citizen.rajesh.kumar@example.com"
-    user_beta_email = "citizen.rajeshkumar@example.com"
+    sfx = uuid.uuid4().hex[:6]
+    user_alpha_email = f"citizen.rajesh.kumar.{sfx}@example.com"
+    user_beta_email = f"citizen.rajeshkumar.{sfx}@example.com"
 
     uid_alpha = f"fuid_alpha_{uuid.uuid4().hex[:8]}"
     uid_beta = f"fuid_beta_{uuid.uuid4().hex[:8]}"
@@ -743,12 +752,13 @@ def test_account_linking_07_account_linking_expired_token():
 # PART III: ADMINISTRATOR PROVISIONING & ANTI-ESCALATION
 # ==============================================================================
 
-def test_admin_provisioning_01_email_matching_admin_gmail_receives_user_role():
+def test_admin_provisioning_01_email_matching_admin_gmail_receives_user_role(monkeypatch):
     """
     Requirement: Bootstrap ADMIN_GMAIL configuration must NOT silently grant administrator
     privileges to newly registered accounts. All self-signups receive 'user'.
     """
-    admin_gmail = settings.ADMIN_GMAIL or "admin.demo@gmail.com"
+    admin_gmail = f"admin.demo.{uuid.uuid4().hex[:6]}@gmail.com"
+    monkeypatch.setattr(settings, "ADMIN_GMAIL", admin_gmail)
     simulated_uid = f"fuid_adm_cand_{uuid.uuid4().hex[:8]}"
     candidate_token = f"test_token_:{simulated_uid}:{admin_gmail}:Admin Candidate"
 
@@ -796,6 +806,7 @@ def test_admin_provisioning_03_authenticated_admin_can_promote_user():
     # 2. Seed an authenticated admin directly in database
     db = SessionLocal()
     try:
+        _set_test_rls(db, uuid.uuid4(), "admin")
         admin_row = db.query(User).filter(User.firebase_uid == TEST_ADMIN_UID).first()
         if not admin_row:
             admin_user = User(
@@ -809,7 +820,6 @@ def test_admin_provisioning_03_authenticated_admin_can_promote_user():
             )
             db.add(admin_user)
             db.commit()
-            db.refresh(admin_user)
         else:
             admin_row.role = "admin"
             db.commit()
@@ -828,7 +838,9 @@ def test_admin_provisioning_03_authenticated_admin_can_promote_user():
     # 4. Verify in DB and AuditLog
     db = SessionLocal()
     try:
+        _set_test_rls(db, uuid.uuid4(), "admin")
         upd = db.query(User).filter(User.id == user_id).first()
+        assert upd is not None
         assert upd.role == "admin"
 
         audit = db.query(AuditLog).filter(
@@ -847,6 +859,7 @@ def test_admin_provisioning_04_admin_cannot_self_modify_role():
     """
     db = SessionLocal()
     try:
+        _set_test_rls(db, uuid.uuid4(), "admin")
         admin_row = db.query(User).filter(User.firebase_uid == TEST_ADMIN_UID).first()
         assert admin_row is not None
         admin_id = admin_row.id

@@ -134,8 +134,12 @@ async def upload_document(
             detail="Failed to read uploaded file stream.",
         )
 
-    # 4. Deep file validation: magic bytes, size, and corruption checks
-    detected_format, ext = validate_file_content(content, safe_filename)
+    # 4. Deep file validation: magic bytes, size, MIME, malware, and corruption checks
+    detected_format, ext = validate_file_content(
+        content,
+        safe_filename,
+        content_type=getattr(file, "content_type", None),
+    )
 
     # 5. Save to secure temporary directory
     temp_file_path, file_hash = save_temp_document(content, ext)
@@ -279,7 +283,10 @@ def get_document(
     Enforces RLS: If caller is not authorized to view the document, returns 404.
     """
     set_rls_context(db, current_user.id, current_user.role)
-    doc = db.query(Document).filter(Document.id == document_id).first()
+    doc_q = db.query(Document).filter(Document.id == document_id)
+    if current_user.role != "admin":
+        doc_q = doc_q.filter(Document.user_id == current_user.id)
+    doc = doc_q.first()
     if not doc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -316,7 +323,10 @@ def get_document_identity_profile(
     Enforces PostgreSQL Row-Level Security.
     """
     set_rls_context(db, current_user.id, current_user.role)
-    doc = db.query(Document).filter(Document.id == document_id).first()
+    doc_q = db.query(Document).filter(Document.id == document_id)
+    if current_user.role != "admin":
+        doc_q = doc_q.filter(Document.user_id == current_user.id)
+    doc = doc_q.first()
     if not doc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -340,7 +350,10 @@ def confirm_document_fields(
     Audit-logs the confirmation event.
     """
     set_rls_context(db, current_user.id, current_user.role)
-    doc = db.query(Document).filter(Document.id == document_id).first()
+    doc_q = db.query(Document).filter(Document.id == document_id)
+    if current_user.role != "admin":
+        doc_q = doc_q.filter(Document.user_id == current_user.id)
+    doc = doc_q.first()
     if not doc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -410,7 +423,10 @@ def update_document_fields(
     (e.g., if OCR misread an initial, character, or format) under PostgreSQL RLS.
     """
     set_rls_context(db, current_user.id, current_user.role)
-    doc = db.query(Document).filter(Document.id == document_id).first()
+    doc_q = db.query(Document).filter(Document.id == document_id)
+    if current_user.role != "admin":
+        doc_q = doc_q.filter(Document.user_id == current_user.id)
+    doc = doc_q.first()
     if not doc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -475,7 +491,10 @@ def delete_document(
     Enforces RLS: Citizens can only delete their own documents.
     """
     set_rls_context(db, current_user.id, current_user.role)
-    doc = db.query(Document).filter(Document.id == document_id).first()
+    doc_q = db.query(Document).filter(Document.id == document_id)
+    if current_user.role != "admin":
+        doc_q = doc_q.filter(Document.user_id == current_user.id)
+    doc = doc_q.first()
     if not doc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

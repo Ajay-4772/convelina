@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
-from sqlalchemy import Column, String, DateTime, Text, Boolean
+from sqlalchemy import Column, String, DateTime, Text, Boolean, Integer
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.core.database import Base
@@ -48,6 +48,12 @@ class EmailOTP(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String(255), nullable=False, index=True)
     otp_code = Column(String(6), nullable=False)
+    otp_hash = Column(String(128), nullable=True)
+    otp_salt = Column(String(64), nullable=True)
+    attempt_count = Column(Integer, nullable=False, default=0)
+    locked_until = Column(DateTime(timezone=True), nullable=True)
+    verification_token_hash = Column(String(128), nullable=True)
+    request_ip = Column(String(64), nullable=True)
     expires_at = Column(DateTime(timezone=True), nullable=False)
     is_verified = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)

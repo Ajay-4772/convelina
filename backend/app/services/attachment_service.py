@@ -237,7 +237,11 @@ class AttachmentService:
             )
 
         # 6. Deep file inspection: magic bytes, MIME spoofing denial, and image/pdf verification
-        detected_format, ext = validate_file_content(content, safe_filename)
+        detected_format, ext = validate_file_content(
+            content,
+            safe_filename,
+            content_type=getattr(file, "content_type", None),
+        )
         mime_map = {
             "pdf": "application/pdf",
             "jpeg": "image/jpeg",

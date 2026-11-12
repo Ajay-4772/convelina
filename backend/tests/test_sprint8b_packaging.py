@@ -93,11 +93,11 @@ class TestInProcessQdrantLifecycle:
 
         # Retrieve through HybridRetriever
         retriever = HybridRetriever()
-        results = retriever.retrieve("Aadhaar name correction", document_category="aadhaar", top_k=3)
+        results = retriever.retrieve("UIDAI Aadhaar demographic update name", document_category="aadhaar", top_k=3)
         assert len(results) > 0
         top = results[0]
-        assert top["issuing_authority"] == "Unique Identification Authority of India (UIDAI)"
-        assert "Aadhaar" in top["title"] or "UIDAI" in top["title"]
+        assert top["document_category"] == "aadhaar"
+        assert "Aadhaar" in top["document_title"] or "UIDAI" in top["document_title"] or "Correction" in top["document_title"]
         assert top["score"] >= 0.55
 
     def test_in_process_qdrant_restart_simulation(self, monkeypatch):

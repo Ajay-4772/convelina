@@ -194,7 +194,7 @@ def test_upload_api_unauthenticated():
 
 def test_upload_api_authenticated_citizen():
     user_uid = f"up_test_{uuid.uuid4().hex[:8]}"
-    headers = {"Authorization": f"Bearer test_token_{user_uid}:Upload Tester:citizen"}
+    headers = {"Authorization": f"Bearer test_token_:{user_uid}:{user_uid}@test.in:Upload Tester"}
 
     # Provision user first
     prov_resp = client.post(
@@ -240,7 +240,7 @@ def test_upload_api_authenticated_citizen():
 
     # Verify cross-user isolation: Another citizen cannot view this document
     other_uid = f"up_other_{uuid.uuid4().hex[:8]}"
-    other_headers = {"Authorization": f"Bearer test_token_{other_uid}:Other Citizen:citizen"}
+    other_headers = {"Authorization": f"Bearer test_token_:{other_uid}:{other_uid}@test.in:Other Citizen"}
     client.post(
         "/api/v1/auth/provision",
         headers=other_headers,

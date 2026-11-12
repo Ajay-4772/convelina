@@ -4,7 +4,14 @@ import logging
 from typing import Dict, Any, List, Optional
 
 from app.config import settings
-from app.rag.generation.prompt_templates import format_rag_prompt
+from app.core.sanitizer import sanitize_pii
+from app.core.security_monitoring import record_security_event
+from app.rag.generation.prompt_templates import (
+    SYSTEM_PROMPT,
+    detect_prompt_injection,
+    format_rag_prompt,
+    sanitize_untrusted_text,
+)
 from app.rag.generation.output_validator import GroundedOutputValidator
 from app.rag.schemas import GroundedAnswer, SourceCitation, OfficialFormResponse
 
@@ -61,10 +68,12 @@ class GoogleGeminiProvider(BaseLLMProvider):
                 genai.configure(api_key=self.api_key)
                 self.client = genai.GenerativeModel(
                     model_name=self.model_name,
+                    system_instruction=SYSTEM_PROMPT,
                     generation_config={"response_mime_type": "application/json"}
                 )
                 self.raw_client = genai.GenerativeModel(
-                    model_name=self.model_name
+                    model_name=self.model_name,
+                    system_instruction=SYSTEM_PROMPT,
                 )
             except Exception as e:
                 logger.error("Failed to initialize Google Gemini client: %s", str(e), exc_info=True)
@@ -85,11 +94,29 @@ class GoogleGeminiProvider(BaseLLMProvider):
         if not self.raw_client:
             return GEMINI_UNAVAILABLE_MESSAGE
         try:
-            full_prompt = f"System Instruction: {system_instruction}\n\nPrompt:\n{prompt}" if system_instruction else prompt
-            response = self.raw_client.generate_content(
-                full_prompt,
-                request_options={"timeout": float(self.timeout_seconds)}
-            )
+            if detect_prompt_injection(prompt):
+                record_security_event("prompt_injection_detected", component="ai", outcome="flagged")
+            sanitized_prompt, _, _ = sanitize_pii(prompt, include_address=True)
+            safe_prompt = sanitize_untrusted_text(sanitized_prompt)
+            if system_instruction:
+                client = self.raw_client
+                try:
+                    import google.generativeai as genai
+                    client = genai.GenerativeModel(
+                        model_name=self.model_name,
+                        system_instruction=system_instruction,
+                    )
+                except Exception:
+                    safe_prompt = f"<system_instruction>{system_instruction}</system_instruction>\n\n<user_prompt>{safe_prompt}</user_prompt>"
+                response = client.generate_content(
+                    safe_prompt,
+                    request_options={"timeout": float(self.timeout_seconds)}
+                )
+            else:
+                response = self.raw_client.generate_content(
+                    safe_prompt,
+                    request_options={"timeout": float(self.timeout_seconds)}
+                )
             if response and response.text and response.text.strip():
                 return response.text.strip()
             return GEMINI_UNAVAILABLE_MESSAGE
@@ -418,18 +445,27 @@ class GoogleGeminiProvider(BaseLLMProvider):
                 relevant_forms=relevant_forms
             )
 
-        case_context_str = json.dumps(case_context, indent=2)
+        if detect_prompt_injection(question) or any(
+            detect_prompt_injection(m.get("content", "")) for m in conversation_history
+        ):
+            record_security_event("prompt_injection_detected", component="ai", outcome="flagged")
+
+        sanitized_question, _, _ = sanitize_pii(question, include_address=True)
+        case_context_raw = json.dumps(case_context, indent=2)
+        sanitized_case_context, _, _ = sanitize_pii(case_context_raw, include_address=True)
         evidence_str = "\n\n---\n\n".join([
             f"[Source ID: {c.get('source_id')} | Authority: {c.get('issuing_authority')} | URL: {c.get('source_url')}]\n{c.get('content')}"
             for c in retrieved_chunks
         ])
-        history_str = "\n".join([f"{m.get('role', 'user')}: {m.get('content', '')}" for m in conversation_history])
+        history_raw = "\n".join([f"{m.get('role', 'user')}: {m.get('content', '')}" for m in conversation_history])
+        sanitized_history, _, _ = sanitize_pii(history_raw, include_address=True)
 
         prompt = format_rag_prompt(
-            question=question,
-            case_context_str=case_context_str,
+            question=sanitized_question,
+            case_context_str=sanitized_case_context,
             evidence_str=evidence_str,
-            conversation_history_str=history_str
+            conversation_history_str=sanitized_history,
+            include_system_prompt=False,
         )
 
         # 3. Invoke Google Gemini API with retry loop and backoff

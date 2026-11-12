@@ -39,11 +39,17 @@ router = APIRouter(prefix="/api/v1/dev", tags=["Development Explorer"])
 
 
 def verify_dev_mode():
-    """Guards development routes against execution in production."""
-    if settings.ENVIRONMENT.lower() == "production":
+    """Guards development routes against execution outside development or test environments."""
+    env_lower = settings.ENVIRONMENT.lower()
+    if env_lower == "production":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Development Explorer is strictly disabled in production mode.",
+        )
+    if env_lower not in ("development", "test"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Development Explorer is strictly disabled outside development and test environments.",
         )
 
 

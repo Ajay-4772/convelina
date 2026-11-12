@@ -1,16 +1,21 @@
+import hashlib
+import hmac
 import logging
 import re
 import secrets
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Any, List
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Dict, Any, List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from sqlalchemy import text, desc
 
 from app.config import settings
 from app.core.database import get_db, set_rls_context
 from app.core.firebase import is_firebase_configured, get_firebase_init_error
+from app.core.rate_limit import rate_limiter
+from app.core.sanitizer import mask_email
 from app.core.security import verify_firebase_id_token
+from app.core.security_monitoring import record_security_event
 from app.dependencies.auth import (
     get_token_claims,
     require_authenticated_user,
@@ -76,12 +81,52 @@ def auth_health():
     )
 
 
+def _get_client_ip(request: Optional[Request]) -> str:
+    if request is None:
+        return "unknown"
+    forwarded = request.headers.get("x-forwarded-for") if getattr(request, "headers", None) else None
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    if getattr(request, "client", None) and request.client.host:
+        return request.client.host
+    return "unknown"
+
+
+def _set_otp_rls(db: Session, email: str) -> None:
+    """Binds transaction-local app.otp_email context required by scoped email_otps RLS policy."""
+    db.execute(text("SELECT set_config('app.otp_email', :email, true);"), {"email": email})
+
+
+def _hash_otp_code(otp_code: str, salt: str) -> str:
+    """Computes keyed HMAC-SHA256 digest of a one-time passcode using per-record salt."""
+    secret = (settings.ENCRYPTION_KEY or "convelina-otp-fallback").encode("utf-8")
+    payload = f"{salt}:{otp_code}".encode("utf-8")
+    return hmac.new(secret, payload, hashlib.sha256).hexdigest()
+
+
 @router.post("/otp/send", response_model=SendOTPResponse)
-def send_email_otp(req: SendOTPRequest, db: Session = Depends(get_db)):
+def send_email_otp(req: SendOTPRequest, request: Request = None, db: Session = Depends(get_db)):
     """Generates and dispatches a secure 6-digit one-time password for email verification."""
     email = req.email.strip().lower()
     validate_email_address(email)
     now = datetime.now(timezone.utc)
+    client_ip = _get_client_ip(request)
+
+    # 0. Per-IP sliding-window throttling to prevent mass OTP abuse
+    if client_ip != "unknown":
+        allowed_ip, _, retry_after = rate_limiter.check_and_record(
+            f"otp_send_ip:{client_ip}",
+            limit=20,
+            window_seconds=3600,
+        )
+        if not allowed_ip:
+            record_security_event("otp_rate_limited", component="auth", outcome="blocked")
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Too many verification requests from this network. Retry in {retry_after} seconds.",
+            )
+
+    _set_otp_rls(db, email)
 
     # 1. Enforce Resend cooldown
     latest_otp = (
@@ -108,45 +153,77 @@ def send_email_otp(req: SendOTPRequest, db: Session = Depends(get_db)):
         .count()
     )
     if recent_count >= 10:
+        record_security_event("otp_rate_limited", component="auth", outcome="blocked")
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Too many verification requests for this email. Please try again later.",
         )
 
-    # 3. Generate cryptographically secure 6-digit OTP
+    # 3. Generate cryptographically secure 6-digit OTP and keyed salt+hash
     otp_val = str(secrets.randbelow(900000) + 100000)
+    otp_salt = secrets.token_hex(16)
+    otp_hash = _hash_otp_code(otp_val, otp_salt)
     expires_at = now + timedelta(seconds=settings.EMAIL_OTP_EXPIRY_SECONDS)
 
     # 4. Dispatch via EmailService (Resend API or safe fallback)
     EmailService.send_otp_email(email, otp_val)
 
-    # 5. Persist OTP record
+    # 5. Persist hashed OTP record (never store raw OTP plaintext in database)
     otp_record = EmailOTP(
         email=email,
-        otp_code=otp_val,
+        otp_code="******",
+        otp_hash=otp_hash,
+        otp_salt=otp_salt,
+        attempt_count=0,
+        locked_until=None,
+        request_ip=client_ip,
         expires_at=expires_at,
         is_verified=False,
     )
     db.add(otp_record)
     db.commit()
 
-    logger.info(f"CONVELINA Security: Dispatched verification OTP for {email}")
+    logger.info("CONVELINA Security: Dispatched verification OTP for %s", mask_email(email))
     return SendOTPResponse(
         success=True,
-        message=f"A 6-digit verification code has been sent to {email} (valid for {settings.EMAIL_OTP_EXPIRY_SECONDS // 60} minutes).",
+        message=f"A 6-digit verification code has been sent to {mask_email(email)} (valid for {settings.EMAIL_OTP_EXPIRY_SECONDS // 60} minutes).",
         expires_in_seconds=settings.EMAIL_OTP_EXPIRY_SECONDS,
     )
 
 
 @router.post("/otp/verify", response_model=VerifyOTPResponse)
-def verify_email_otp(req: VerifyOTPRequest, db: Session = Depends(get_db)):
-    """Verifies the submitted email OTP against recorded active non-expired tokens."""
+def verify_email_otp(req: VerifyOTPRequest, request: Request = None, db: Session = Depends(get_db)):
+    """Verifies the submitted email OTP against recorded active non-expired hashed tokens."""
     email = req.email.strip().lower()
+    submitted_otp = req.otp_code.strip()
     now = datetime.now(timezone.utc)
+    client_ip = _get_client_ip(request)
+    is_dev_or_test = settings.ENVIRONMENT.lower() in ("development", "test")
 
-    # In test mode with simulated OTP 123456 (strictly forbidden in production)
-    if settings.TEST_MODE_ALLOW_SIMULATED_TOKENS and req.otp_code == "123456" and (
-        email.endswith("@gmail.com") or ".test" in email or ".in" in email or "@example.com" in email
+    if client_ip != "unknown":
+        allowed_ip, _, retry_after = rate_limiter.check_and_record(
+            f"otp_verify_ip:{client_ip}",
+            limit=30,
+            window_seconds=900,
+        )
+        if not allowed_ip:
+            record_security_event("otp_rate_limited", component="auth", outcome="blocked")
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Too many verification attempts. Please retry in {retry_after} seconds.",
+            )
+
+    # Simulated test OTP is strictly restricted to development/test modes
+    if (
+        is_dev_or_test
+        and settings.TEST_MODE_ALLOW_SIMULATED_TOKENS
+        and submitted_otp == "123456"
+        and (
+            email.endswith("@gmail.com")
+            or ".test" in email
+            or ".in" in email
+            or "@example.com" in email
+        )
     ):
         token = secrets.token_hex(16)
         return VerifyOTPResponse(
@@ -156,11 +233,12 @@ def verify_email_otp(req: VerifyOTPRequest, db: Session = Depends(get_db)):
             verification_token=token,
         )
 
+    _set_otp_rls(db, email)
+
     record = (
         db.query(EmailOTP)
         .filter(
             EmailOTP.email == email,
-            EmailOTP.otp_code == req.otp_code.strip(),
             EmailOTP.expires_at > now,
             EmailOTP.is_verified == False,
         )
@@ -169,6 +247,7 @@ def verify_email_otp(req: VerifyOTPRequest, db: Session = Depends(get_db)):
     )
 
     if not record:
+        record_security_event("otp_verification_failed", component="auth", outcome="blocked")
         return VerifyOTPResponse(
             success=False,
             verified=False,
@@ -176,7 +255,45 @@ def verify_email_otp(req: VerifyOTPRequest, db: Session = Depends(get_db)):
             verification_token=None,
         )
 
+    if record.locked_until:
+        locked_tz = timezone.utc if record.locked_until.tzinfo is None else record.locked_until.tzinfo
+        if record.locked_until.replace(tzinfo=locked_tz) > now:
+            record_security_event("otp_lockout_blocked", component="auth", outcome="blocked")
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Verification temporarily locked due to too many invalid attempts. Please request a new OTP later.",
+            )
+
+    if record.otp_hash and record.otp_salt:
+        expected_hash = _hash_otp_code(submitted_otp, record.otp_salt)
+        matches = hmac.compare_digest(expected_hash, record.otp_hash)
+    else:
+        matches = hmac.compare_digest(submitted_otp, record.otp_code or "")
+
+    if not matches:
+        attempts = int(record.attempt_count or 0) + 1
+        record.attempt_count = attempts
+        if attempts >= settings.EMAIL_OTP_MAX_ATTEMPTS:
+            record.locked_until = now + timedelta(minutes=15)
+            record.is_verified = True  # Burn compromised OTP after max failed attempts
+            db.commit()
+            record_security_event("otp_lockout_triggered", component="auth", outcome="blocked")
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Maximum OTP verification attempts exceeded. Please wait and request a new verification code.",
+            )
+        db.commit()
+        record_security_event("otp_verification_failed", component="auth", outcome="blocked")
+        return VerifyOTPResponse(
+            success=False,
+            verified=False,
+            message="Invalid or expired verification code. Please request a new OTP.",
+            verification_token=None,
+        )
+
+    verification_token = secrets.token_hex(16)
     record.is_verified = True
+    record.verification_token_hash = hashlib.sha256(verification_token.encode("utf-8")).hexdigest()
     # Invalidate any other pending unverified OTPs for this email to prevent reuse
     db.query(EmailOTP).filter(
         EmailOTP.email == email,
@@ -185,7 +302,6 @@ def verify_email_otp(req: VerifyOTPRequest, db: Session = Depends(get_db)):
     ).update({"is_verified": True}, synchronize_session=False)
     db.commit()
 
-    verification_token = secrets.token_hex(16)
     return VerifyOTPResponse(
         success=True,
         verified=True,
@@ -298,6 +414,13 @@ def provision_user(
         raise
     except Exception as e:
         db.rollback()
+        err_lower = str(e).lower()
+        if "idx_users_lower_email_unique" in err_lower or "unique constraint" in err_lower:
+            record_security_event("account_takeover_email_conflict", component="auth", outcome="blocked")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="An account with this email address already exists. Please authenticate with your original provider or complete authenticated account linking.",
+            )
         logger.error(f"Error provisioning user {firebase_uid}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -14,9 +14,9 @@ TEST_CITIZEN_UID = f"test_cit_{uuid.uuid4().hex[:8]}"
 TEST_OFFICER_UID = f"test_off_{uuid.uuid4().hex[:8]}"
 TEST_ADMIN_UID = f"test_adm_{uuid.uuid4().hex[:8]}"
 
-CITIZEN_TOKEN = f"test_token_:{TEST_CITIZEN_UID}:citizen@example.test:Test Citizen"
-OFFICER_TOKEN = f"test_token_:{TEST_OFFICER_UID}:officer@example.test:Test Officer"
-ADMIN_TOKEN = f"test_token_:{TEST_ADMIN_UID}:admin@example.test:Test Admin"
+CITIZEN_TOKEN = f"test_token_:{TEST_CITIZEN_UID}:{TEST_CITIZEN_UID}@example.test:Test Citizen"
+OFFICER_TOKEN = f"test_token_:{TEST_OFFICER_UID}:{TEST_OFFICER_UID}@example.test:Test Officer"
+ADMIN_TOKEN = f"test_token_:{TEST_ADMIN_UID}:{TEST_ADMIN_UID}@example.test:Test Admin"
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_test_environment():

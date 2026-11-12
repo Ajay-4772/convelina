@@ -120,7 +120,10 @@ def get_conflict(
     Retrieves a single conflict record by ID with ownership enforcement via RLS.
     """
     set_rls_context(db, current_user.id, current_user.role)
-    record = db.query(Conflict).filter(Conflict.id == conflict_id).first()
+    q = db.query(Conflict).filter(Conflict.id == conflict_id)
+    if current_user.role != "admin":
+        q = q.filter(Conflict.user_id == current_user.id)
+    record = q.first()
 
     if not record:
         raise HTTPException(
@@ -151,7 +154,10 @@ def update_conflict_review(
         )
 
     set_rls_context(db, current_user.id, current_user.role)
-    record = db.query(Conflict).filter(Conflict.id == conflict_id).first()
+    q = db.query(Conflict).filter(Conflict.id == conflict_id)
+    if current_user.role != "admin":
+        q = q.filter(Conflict.user_id == current_user.id)
+    record = q.first()
 
     if not record:
         raise HTTPException(

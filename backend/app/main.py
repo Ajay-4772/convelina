@@ -1,6 +1,10 @@
+import asyncio
 import logging
+import os
 import time
+import uuid
 from contextlib import asynccontextmanager
+from typing import Any, Dict
 import httpx
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,9 +14,12 @@ from qdrant_client import QdrantClient
 
 logger = logging.getLogger("convelina.api")
 
-from app.core.database import engine as db_engine
+from app.core.database import engine as db_engine, SessionLocal, set_rls_context
 from app.config import settings
 from app.core.firebase import initialize_firebase, is_firebase_configured
+from app.core.rate_limit import rate_limiter
+from app.core.sanitizer import PrivacyRedactingLogFilter
+from app.core.security_monitoring import get_security_telemetry, record_security_event
 from app.routers.auth import router as auth_router
 from app.routers.documents import router as documents_router
 from app.routers.conflicts import router as conflicts_router
@@ -23,8 +30,65 @@ from app.routers.admin import router as admin_router
 from app.routers.pki import router as pki_router
 from app.routers.repository import router as repository_router
 
+
+def _install_privacy_log_filter() -> None:
+    """Attaches PII redaction filter once to the root logger and handlers."""
+    root_logger = logging.getLogger()
+    if not any(isinstance(f, PrivacyRedactingLogFilter) for f in root_logger.filters):
+        redactor = PrivacyRedactingLogFilter()
+        root_logger.addFilter(redactor)
+        for handler in root_logger.handlers:
+            handler.addFilter(redactor)
+
+
+def _sweep_stale_temp_files() -> int:
+    """Deletes orphaned files in STORAGE_TEMP_DIR older than TEMP_FILE_TTL_MINUTES."""
+    temp_dir = settings.STORAGE_TEMP_DIR
+    if not os.path.isdir(temp_dir):
+        return 0
+    ttl_seconds = max(int(getattr(settings, "TEMP_FILE_TTL_MINUTES", 60)) * 60, 60)
+    cutoff = time.time() - ttl_seconds
+    removed = 0
+    for root, _, files in os.walk(temp_dir):
+        for fname in files:
+            fpath = os.path.join(root, fname)
+            try:
+                if os.path.getmtime(fpath) < cutoff:
+                    os.remove(fpath)
+                    removed += 1
+            except OSError:
+                pass
+    return removed
+
+
+async def _retention_cleanup_loop() -> None:
+    """Periodically purges expired temporary attachments and stale OCR scratch files."""
+    while True:
+        try:
+            removed_files = _sweep_stale_temp_files()
+            from app.services.attachment_service import AttachmentService
+            db = SessionLocal()
+            try:
+                set_rls_context(db, uuid.UUID(int=0), "admin")
+                expired_count = AttachmentService.cleanup_expired_attachments(db)
+                if removed_files or expired_count:
+                    logger.info(
+                        "Retention cleanup completed: removed_files=%d, expired_attachments=%d",
+                        removed_files,
+                        expired_count,
+                    )
+            finally:
+                db.close()
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logger.warning("Retention cleanup iteration failed: %s", e)
+        await asyncio.sleep(900)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _install_privacy_log_filter()
     # Startup: Initialize Firebase Admin SDK
     initialize_firebase()
     # Startup: Ensure Qdrant knowledge base and collections are indexed
@@ -33,19 +97,77 @@ async def lifespan(app: FastAPI):
         ensure_knowledge_indexed()
     except Exception as e:
         logger.error("Failed to initialize Qdrant knowledge index on startup: %s", e)
-    yield
+    cleanup_task = asyncio.create_task(_retention_cleanup_loop())
+    try:
+        yield
+    finally:
+        cleanup_task.cancel()
+        try:
+            await cleanup_task
+        except asyncio.CancelledError:
+            pass
 
-is_prod = settings.ENVIRONMENT.lower() == "production"
+env_lower = settings.ENVIRONMENT.lower()
+is_prod = env_lower == "production"
+is_dev_or_test = env_lower in ("development", "test")
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="Backend API for CONVELINA: Modular AI-Powered Business Management & Verification Platform",
     version="1.0.0",
     lifespan=lifespan,
-    docs_url=None if is_prod and not settings.DEBUG else "/docs",
-    redoc_url=None if is_prod and not settings.DEBUG else "/redoc",
-    openapi_url=None if is_prod and not settings.DEBUG else "/openapi.json",
+    docs_url=None if not is_dev_or_test and not settings.DEBUG else "/docs",
+    redoc_url=None if not is_dev_or_test and not settings.DEBUG else "/redoc",
+    openapi_url=None if not is_dev_or_test and not settings.DEBUG else "/openapi.json",
 )
+
+
+# Request Hardening Middleware: JSON payload size limit & sliding-window IP rate limit
+@app.middleware("http")
+async def enforce_request_hardening(request, call_next):
+    path = request.url.path
+    if request.method != "OPTIONS" and path not in ("/", "/health"):
+        content_type = (request.headers.get("content-type") or "").lower()
+        content_length = request.headers.get("content-length")
+        if "application/json" in content_type and content_length:
+            try:
+                if int(content_length) > settings.MAX_JSON_BODY_BYTES:
+                    record_security_event("payload_size_exceeded", component="api", outcome="blocked")
+                    return JSONResponse(
+                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                        content={"detail": "JSON payload exceeds maximum allowed size."},
+                    )
+            except ValueError:
+                pass
+
+        if getattr(settings, "API_RATE_LIMIT_ENABLED", True):
+            forwarded = request.headers.get("x-forwarded-for")
+            client_ip = (
+                forwarded.split(",")[0].strip()
+                if forwarded
+                else (request.client.host if request.client else "unknown")
+            )
+            enforce_in_testclient = bool(request.headers.get("x-enforce-rate-limit"))
+            if client_ip != "testclient" or enforce_in_testclient:
+                limit_rpm = (
+                    settings.API_RATE_LIMIT_SENSITIVE_RPM
+                    if path.startswith("/api/v1/auth/") or path.startswith("/api/v1/admin/")
+                    else settings.API_RATE_LIMIT_DEFAULT_RPM
+                )
+                allowed, _, retry_after = rate_limiter.check_and_record(
+                    f"api_ip:{client_ip}:{path.startswith('/api/v1/auth/') or path.startswith('/api/v1/admin/')}",
+                    limit=limit_rpm,
+                    window_seconds=60,
+                )
+                if not allowed:
+                    record_security_event("api_rate_limited", component="api", outcome="blocked")
+                    return JSONResponse(
+                        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                        headers={"Retry-After": str(retry_after)},
+                        content={"detail": "API rate limit exceeded. Please slow down and try again shortly."},
+                    )
+
+    return await call_next(request)
 
 # Security Headers Middleware
 @app.middleware("http")
@@ -92,8 +214,8 @@ app.include_router(admin_router)
 app.include_router(pki_router)
 app.include_router(repository_router)
 
-# Development Explorer router (available only in non-production environments)
-if not is_prod:
+# Development Explorer router (strictly limited to development and test environments)
+if is_dev_or_test:
     from app.routers.dev import router as dev_router
     app.include_router(dev_router)
 
@@ -110,24 +232,25 @@ def read_root():
 
 @app.get("/health")
 def health_check():
-    health_status = {
+    services: Dict[str, Dict[str, Any]] = {
+        "fastapi": {"status": "up", "version": "1.0.0"},
+        "postgres": {"status": "unknown"},
+        "database_migrations": {"status": "unknown"},
+        "qdrant": {"status": "unknown"},
+        "ocr_engine": {"status": "unknown"},
+        "storage": {"status": "unknown"},
+        "firebase_auth": {
+            "status": "configured" if is_firebase_configured() else "unconfigured"
+        },
+        "gemini": {
+            "status": "enabled" if settings.GEMINI_ENABLED else "disabled",
+            "model": settings.GEMINI_MODEL if settings.GEMINI_ENABLED else None,
+        },
+    }
+    health_status: Dict[str, Any] = {
         "status": "healthy",
         "timestamp": time.time(),
-        "services": {
-            "fastapi": {"status": "up", "version": "1.0.0"},
-            "postgres": {"status": "unknown"},
-            "database_migrations": {"status": "unknown"},
-            "qdrant": {"status": "unknown"},
-            "ocr_engine": {"status": "unknown"},
-            "storage": {"status": "unknown"},
-            "firebase_auth": {
-                "status": "configured" if is_firebase_configured() else "unconfigured"
-            },
-            "gemini": {
-                "status": "enabled" if settings.GEMINI_ENABLED else "disabled",
-                "model": settings.GEMINI_MODEL if settings.GEMINI_ENABLED else None,
-            },
-        },
+        "services": services,
     }
 
     # 1. Check PostgreSQL & Migration State (via dedicated non-superuser consolith_app pool)
@@ -220,5 +343,11 @@ def health_check():
         }
         health_status["status"] = "degraded"
 
+    health_status["services"]["malware_scanner"] = {
+        "status": "configured" if getattr(settings, "CLAMAV_HOST", None) else "unavailable",
+        "clamav_configured": bool(getattr(settings, "CLAMAV_HOST", None)),
+    }
+
     http_code = status.HTTP_200_OK if health_status["status"] == "healthy" else status.HTTP_503_SERVICE_UNAVAILABLE
+    health_status["security_telemetry"] = get_security_telemetry()
     return JSONResponse(status_code=http_code, content=health_status)

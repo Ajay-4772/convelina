@@ -722,7 +722,7 @@ PART II — OFFICIAL ENGLISH ORIGINAL (ஆங்கில வடிவம்)
             if len(token.strip()) < 3:
                 continue
             if token not in translated_content:
-                logger.warning("Protected token '%s' missing from translated output!", token)
+                logger.warning("A protected identity token failed exact preservation check during bilingual translation.")
                 return False
         return True
 
