@@ -19,6 +19,7 @@ import uuid
 import pytest
 from datetime import datetime, timezone
 from fastapi import status
+from fastapi.routing import iter_route_contexts
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -213,22 +214,45 @@ def test_qdrant_dimension_and_metric_validation():
 def test_route_registry_count_integrity():
     """
     Verifies that FastAPI registers exactly 118 endpoints in development (115 production + 3 dev).
+    Cross-checks mounted routes via FastAPI's iter_route_contexts (handling _IncludedRouter
+    wrappers in FastAPI >= 0.162) against the generated OpenAPI schema.
     Verifies that only 2 roles exist (USER and ADMIN) and zero officer/verifier endpoints.
     """
     routes = []
-    for r in app.routes:
-        methods = list(r.methods - {"HEAD", "OPTIONS"}) if hasattr(r, "methods") else []
-        for m in methods:
-            routes.append((m, r.path))
-            
+    for ctx in iter_route_contexts(app.routes):
+        methods = list((ctx.methods or set()) - {"HEAD", "OPTIONS"})
+        if ctx.path:
+            for m in methods:
+                routes.append((m.upper(), ctx.path))
+
     assert len(routes) == 118
 
-    # Filter out /dev routes to confirm 115 production routes
+    # Filter out /dev routes to confirm 115 production routes and 3 dev routes
     prod_routes = [r for r in routes if not r[1].startswith("/api/v1/dev")]
+    dev_routes = [r for r in routes if r[1].startswith("/api/v1/dev")]
     assert len(prod_routes) == 115
+    assert len(dev_routes) == 3
 
-    # Scan paths for forbidden roles
-    for m, path in routes:
+    # Cross-check against OpenAPI schema to ensure all expected API endpoints are mounted
+    openapi_paths = app.openapi().get("paths", {})
+    openapi_ops = {
+        (method.upper(), path)
+        for path, ops in openapi_paths.items()
+        for method in ops
+        if method.lower() in {"get", "post", "put", "patch", "delete"}
+    }
+    registered_ops = set(routes)
+    assert openapi_ops.issubset(registered_ops)
+    assert len(openapi_ops) == 114
+    assert registered_ops - openapi_ops == {
+        ("GET", "/docs"),
+        ("GET", "/docs/oauth2-redirect"),
+        ("GET", "/openapi.json"),
+        ("GET", "/redoc"),
+    }
+
+    # Scan paths for forbidden roles across both mounted routes and OpenAPI schema
+    for _, path in registered_ops | openapi_ops:
         path_lower = path.lower()
         assert "/officer/" not in path_lower
         assert "/verifier/" not in path_lower
