@@ -155,10 +155,13 @@ def test_doc043_statutory_restrictions():
 # 4. STAGED INGESTION LIFECYCLE & CONCURRENCY TESTS
 # ==============================================================================
 
-def test_ingestion_manager_staged_run_and_rollback():
+def test_ingestion_manager_staged_run_and_rollback(monkeypatch):
     """Tests the staged ingestion pipeline, deterministic IDs, and rollback."""
+    monkeypatch.setattr(settings, "QDRANT_IN_PROCESS", True)
     mem_qdrant = QdrantClient(":memory:")
     mgr = CorpusIngestionManager(qdrant=mem_qdrant, base_dir=".")
+    mgr._create_collection(settings.QDRANT_CORE_COLLECTION)
+    mgr._create_collection(settings.QDRANT_REFERENCE_COLLECTION)
     res = mgr.run_ingestion(version_tag="test_v1")
 
     assert res["status"] == "success"

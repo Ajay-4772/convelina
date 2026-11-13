@@ -409,8 +409,22 @@ Section 3:
             title="Multi-page Administrative Representation",
             content=multi_page_content,
         )
-        assert len(pdf_bytes) > 8000
+        assert isinstance(pdf_bytes, bytes)
         assert pdf_bytes.startswith(b"%PDF-")
+        assert b"%%EOF" in pdf_bytes
+        assert len(pdf_bytes) > 2500
+
+        # Structural inspection using pypdf: verify multi-page pagination and full content extraction
+        import pypdf
+        reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
+        assert len(reader.pages) >= 2, f"Expected multi-page PDF (>= 2 pages), got {len(reader.pages)}"
+
+        extracted_text = " ".join([page.extract_text() or "" for page in reader.pages])
+        assert "Multi-page Administrative Representation" in extracted_text
+        assert "Section 1:" in extracted_text
+        assert "Section 2:" in extracted_text
+        assert "Section 3:" in extracted_text
+        assert "detailed legal representation explaining administrative circumstances" in extracted_text
 
     def test_13_pdf_docx_substantive_content_consistency(self):
         """13. Invariant: PDF and DOCX contain equivalent substantive content and identifiers."""

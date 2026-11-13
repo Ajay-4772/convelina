@@ -492,8 +492,13 @@ class CorpusIngestionManager:
             logger.info("Step 5: Activating new collections...")
             _INGESTION_STATE["jobs"][job_id]["status"] = "activating"
 
-            # In Qdrant, if in-process/memory, copy into primary named collections as well
-            if settings.QDRANT_IN_PROCESS or settings.QDRANT_LOCATION:
+            # In Qdrant, if in-process/memory or local client, copy into primary named collections as well
+            is_local = (
+                bool(settings.QDRANT_IN_PROCESS)
+                or bool(settings.QDRANT_LOCATION)
+                or type(getattr(self.qdrant, "_client", None)).__name__ in ("QdrantLocal", "InMemoryAsyncQdrantClient", "InMemoryQdrantClient")
+            )
+            if is_local:
                 self._create_collection(settings.QDRANT_CORE_COLLECTION)
                 self._create_collection(settings.QDRANT_REFERENCE_COLLECTION)
                 self.qdrant.upsert(collection_name=settings.QDRANT_CORE_COLLECTION, points=core_points)
