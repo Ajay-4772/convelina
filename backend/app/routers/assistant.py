@@ -1,8 +1,11 @@
+import base64
 import logging
 import uuid
-from typing import List, Optional
+from datetime import datetime, timezone
+from typing import List, Optional, Tuple
 from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File, Form
 from fastapi.responses import FileResponse
+from sqlalchemy import or_, and_
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db, set_rls_context
@@ -276,7 +279,8 @@ def list_conversations(
 
     convs = query.order_by(
         AssistantConversation.is_pinned.desc(),
-        AssistantConversation.updated_at.desc()
+        AssistantConversation.updated_at.desc(),
+        AssistantConversation.id.desc()
     ).all()
 
     return ConversationListResponse(
@@ -408,13 +412,55 @@ def update_conversation(
     db.commit()
     return res
 
+def encode_cursor(created_at: datetime, message_id: str) -> str:
+    """Encodes a message created_at timestamp and unique UUID tie-breaker into an opaque URL-safe cursor."""
+    payload = f"{created_at.isoformat()}|{message_id}"
+    return base64.urlsafe_b64encode(payload.encode("utf-8")).decode("utf-8")
+
+
+def decode_cursor(cursor_str: str) -> Tuple[datetime, uuid.UUID]:
+    """
+    Decodes and validates an opaque cursor into (created_at, message_uuid).
+    Raises HTTPException 400 if the cursor is malformed, invalid base64, has invalid timestamp, or invalid UUID.
+    """
+    try:
+        raw = base64.urlsafe_b64decode(cursor_str.encode("utf-8")).decode("utf-8")
+        parts = raw.split("|", 1)
+        if len(parts) != 2:
+            raise ValueError("Cursor must contain timestamp and message id separated by pipe")
+        dt_str, msg_id_str = parts
+        dt = datetime.fromisoformat(dt_str)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        msg_uuid = uuid.UUID(msg_id_str)
+        return dt, msg_uuid
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning(f"Invalid pagination cursor attempted: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid pagination cursor format"
+        )
+
+
 @router.get("/conversations/{conversation_id}/messages", response_model=MessageListResponse)
 def get_conversation_messages(
     conversation_id: str,
+    limit: int = Query(default=50, ge=1, le=100, description="Maximum number of messages to return per page (1-100)"),
+    before: Optional[str] = Query(default=None, description="Opaque cursor to fetch messages older than this cursor"),
+    cursor: Optional[str] = Query(default=None, description="Alias for 'before' pagination cursor"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Retrieves all messages for a specific conversation belonging to the citizen."""
+    """
+    Retrieves messages for a specific conversation belonging to the citizen using stable,
+    cursor-based pagination.
+
+    Messages are returned in ascending chronological order [oldest ... newest] within the page.
+    When paginating backward into chat history, pass 'before' (or 'cursor') set to the 'next_cursor'
+    received from the previous page.
+    """
     set_rls_context(db, current_user.id, current_user.role)
     try:
         conv_uuid = uuid.UUID(conversation_id)
@@ -428,14 +474,78 @@ def get_conversation_messages(
     if not conv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
 
-    messages = db.query(AssistantMessage).filter(
+    effective_before = before or cursor
+    cursor_dt: Optional[datetime] = None
+    cursor_uuid: Optional[uuid.UUID] = None
+
+    if effective_before:
+        cursor_dt, cursor_uuid = decode_cursor(effective_before)
+        cursor_msg = db.query(AssistantMessage).filter(
+            AssistantMessage.id == cursor_uuid,
+            AssistantMessage.conversation_id == conv_uuid,
+            AssistantMessage.user_id == current_user.id
+        ).first()
+        if not cursor_msg:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid pagination cursor: message not found in this conversation"
+            )
+        cursor_dt = cursor_msg.created_at
+
+    total = db.query(AssistantMessage).filter(
         AssistantMessage.conversation_id == conv_uuid,
         AssistantMessage.user_id == current_user.id
-    ).order_by(AssistantMessage.created_at.asc()).all()
+    ).count()
+
+    query = db.query(AssistantMessage).filter(
+        AssistantMessage.conversation_id == conv_uuid,
+        AssistantMessage.user_id == current_user.id
+    )
+
+    if cursor_dt and cursor_uuid:
+        query = query.filter(
+            or_(
+                AssistantMessage.created_at < cursor_dt,
+                and_(
+                    AssistantMessage.created_at == cursor_dt,
+                    AssistantMessage.id < cursor_uuid
+                )
+            )
+        )
+
+    # Order newest first to fetch the immediately preceding page of older messages
+    query = query.order_by(
+        AssistantMessage.created_at.desc(),
+        AssistantMessage.id.desc()
+    )
+
+    raw_messages = query.limit(limit + 1).all()
+
+    has_more = len(raw_messages) > limit
+    if has_more:
+        page_messages = raw_messages[:limit]
+    else:
+        page_messages = raw_messages
+
+    next_cursor = None
+    if has_more and len(page_messages) > 0:
+        oldest_msg = page_messages[-1]
+        next_cursor = encode_cursor(oldest_msg.created_at, str(oldest_msg.id))
+
+    # Reverse to ascending chronological order so the frontend renders from top to bottom
+    page_messages.reverse()
+
+    prev_cursor = None
+    if len(page_messages) > 0:
+        newest_msg = page_messages[-1]
+        prev_cursor = encode_cursor(newest_msg.created_at, str(newest_msg.id))
 
     return MessageListResponse(
-        total=len(messages),
-        messages=[MessageHistoryItem(**m.to_dict()) for m in messages]
+        total=total,
+        messages=[MessageHistoryItem(**m.to_dict()) for m in page_messages],
+        has_more=has_more,
+        next_cursor=next_cursor,
+        prev_cursor=prev_cursor
     )
 
 @router.delete("/conversations/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -467,7 +577,7 @@ def delete_conversation(
     ).all()
     for att in attachments:
         if att.storage_ref:
-            delete_temp_attachment(att.storage_ref)
+            delete_temp_attachment(str(att.storage_ref))
 
     db.query(MessageAttachment).filter(MessageAttachment.conversation_id == conv_uuid).delete()
     db.query(AssistantMessage).filter(AssistantMessage.conversation_id == conv_uuid).delete()
@@ -544,12 +654,12 @@ def preview_attachment_endpoint(
         "X-Content-Type-Options": "nosniff",
         "Content-Disposition": f'inline; filename="{attachment.file_name}"',
         "X-Convelina-Attachment-ID": str(attachment.id),
-        "X-Convelina-OCR-Status": attachment.ocr_status,
+        "X-Convelina-OCR-Status": str(attachment.ocr_status or "pending"),
     }
 
     return FileResponse(
         path=file_path,
-        media_type=attachment.mime_type,
+        media_type=str(attachment.mime_type) if attachment.mime_type else "application/octet-stream",
         headers=headers
     )
 

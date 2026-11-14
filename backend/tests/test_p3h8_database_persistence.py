@@ -77,6 +77,7 @@ def test_runtime_health_diagnostics():
     assert services["database_migrations"]["latest_applied"] in (
         "021_citizen_checklist_progress.sql",
         "022_security_hardening.sql",
+        "023_assistant_message_pagination_index.sql",
     )
     assert services["qdrant"]["status"] == "up"
     assert services["ocr_engine"]["status"] == "up"

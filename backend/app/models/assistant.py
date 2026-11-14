@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
-from sqlalchemy import Column, String, DateTime, ForeignKey, Text, Integer, Boolean, Float
+from sqlalchemy import Column, String, DateTime, ForeignKey, Text, Integer, Boolean, Float, Index
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 
@@ -48,6 +48,9 @@ class AssistantConversation(Base):
 
 class AssistantMessage(Base):
     __tablename__ = "assistant_messages"
+    __table_args__ = (
+        Index("idx_assistant_msg_pagination", "conversation_id", "created_at", "id"),
+    )
 
     id: Any = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     conversation_id: Any = Column(UUID(as_uuid=True), ForeignKey("assistant_conversations.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -83,50 +86,50 @@ class AssistantMessage(Base):
 class MessageAttachment(Base):
     __tablename__ = "message_attachments"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    message_id = Column(UUID(as_uuid=True), ForeignKey("assistant_messages.id", ondelete="CASCADE"), nullable=True, index=True)
-    conversation_id = Column(UUID(as_uuid=True), ForeignKey("assistant_conversations.id", ondelete="CASCADE"), nullable=True, index=True)
-    conflict_id = Column(UUID(as_uuid=True), ForeignKey("conflicts.id", ondelete="SET NULL"), nullable=True, index=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    file_name = Column(String(255), nullable=False)
-    mime_type = Column(String(100), nullable=False)
-    file_size_bytes = Column(Integer, nullable=False)
-    storage_ref = Column(String(512), nullable=False)
-    sha256_hash = Column(String(64), nullable=True)
-    extracted_text = Column(Text, nullable=True)
-    extracted_fields = Column(JSONB, nullable=False, default=dict)
-    ocr_confidence = Column(Float, nullable=True)
-    ocr_status = Column(String(30), nullable=False, default="pending")
-    status = Column(String(30), nullable=False, default="UPLOADED")
-    error_message = Column(Text, nullable=True)
-    is_temporary = Column(Boolean, nullable=False, default=True)
-    expires_at = Column(DateTime(timezone=True), nullable=False)
-    deleted_at = Column(DateTime(timezone=True), nullable=True)
-    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    id: Any = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    message_id: Any = Column(UUID(as_uuid=True), ForeignKey("assistant_messages.id", ondelete="CASCADE"), nullable=True, index=True)
+    conversation_id: Any = Column(UUID(as_uuid=True), ForeignKey("assistant_conversations.id", ondelete="CASCADE"), nullable=True, index=True)
+    conflict_id: Any = Column(UUID(as_uuid=True), ForeignKey("conflicts.id", ondelete="SET NULL"), nullable=True, index=True)
+    user_id: Any = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    file_name: Any = Column(String(255), nullable=False)
+    mime_type: Any = Column(String(100), nullable=False)
+    file_size_bytes: Any = Column(Integer, nullable=False)
+    storage_ref: Any = Column(String(512), nullable=False)
+    sha256_hash: Any = Column(String(64), nullable=True)
+    extracted_text: Any = Column(Text, nullable=True)
+    extracted_fields: Any = Column(JSONB, nullable=False, default=dict)
+    ocr_confidence: Any = Column(Float, nullable=True)
+    ocr_status: Any = Column(String(30), nullable=False, default="pending")
+    status: Any = Column(String(30), nullable=False, default="UPLOADED")
+    error_message: Any = Column(Text, nullable=True)
+    is_temporary: Any = Column(Boolean, nullable=False, default=True)
+    expires_at: Any = Column(DateTime(timezone=True), nullable=False)
+    deleted_at: Any = Column(DateTime(timezone=True), nullable=True)
+    created_at: Any = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
     message = relationship("AssistantMessage", back_populates="attachments")
     conversation = relationship("AssistantConversation", backref="attachments")
     conflict = relationship("Conflict", backref="attachments")
     user = relationship("User")
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "id": str(self.id),
             "message_id": str(self.message_id) if self.message_id else None,
             "conversation_id": str(self.conversation_id) if self.conversation_id else None,
             "conflict_id": str(self.conflict_id) if self.conflict_id else None,
             "user_id": str(self.user_id),
-            "file_name": self.file_name,
-            "mime_type": self.mime_type,
-            "file_size_bytes": self.file_size_bytes,
-            "storage_ref": self.storage_ref,
-            "sha256_hash": self.sha256_hash,
-            "extracted_text": self.extracted_text,
-            "extracted_fields": self.extracted_fields or {},
+            "file_name": str(self.file_name) if self.file_name is not None else "",
+            "mime_type": str(self.mime_type) if self.mime_type is not None else "",
+            "file_size_bytes": int(self.file_size_bytes) if self.file_size_bytes is not None else 0,
+            "storage_ref": str(self.storage_ref) if self.storage_ref is not None else "",
+            "sha256_hash": str(self.sha256_hash) if self.sha256_hash else None,
+            "extracted_text": str(self.extracted_text) if self.extracted_text else None,
+            "extracted_fields": dict(self.extracted_fields) if isinstance(self.extracted_fields, dict) else {},
             "ocr_confidence": float(self.ocr_confidence) if self.ocr_confidence is not None else None,
-            "ocr_status": self.ocr_status or "pending",
-            "status": self.status or "UPLOADED",
-            "error_message": self.error_message,
+            "ocr_status": str(self.ocr_status or "pending"),
+            "status": str(self.status or "UPLOADED"),
+            "error_message": str(self.error_message) if self.error_message else None,
             "is_temporary": bool(self.is_temporary),
             "expires_at": self.expires_at.isoformat() if self.expires_at else None,
             "deleted_at": self.deleted_at.isoformat() if self.deleted_at else None,

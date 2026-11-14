@@ -337,6 +337,9 @@ class MessageHistoryItem(BaseModel):
 class MessageListResponse(BaseModel):
     total: int
     messages: List[MessageHistoryItem]
+    has_more: bool = False
+    next_cursor: Optional[str] = None
+    prev_cursor: Optional[str] = None
 
 class ConversationSearchMatch(BaseModel):
     conversation: ConversationResponse
@@ -598,6 +601,7 @@ class RepositoryResourceItem(BaseModel):
     download_available: bool = True
     download_url: Optional[str] = None
     preview_url: Optional[str] = None
+    key_information_required: List[str] = Field(default_factory=list)
     related_procedures: List[str] = Field(default_factory=list)
     disclaimer: Optional[str] = None
 

@@ -4,10 +4,10 @@ import React from "react";
 import { useParams } from "next/navigation";
 import AssistantWorkspace from "../../../../components/assistant/AssistantWorkspace";
 
-export default function IndividualConversationPage() {
+export default function ConversationPage() {
   const params = useParams();
-  const conversationId = params?.conversationId as string;
+  const rawId = params?.conversationId;
+  const conversationId = Array.isArray(rawId) ? rawId[0] : (rawId as string | undefined);
 
   return <AssistantWorkspace initialConversationId={conversationId} />;
 }
-

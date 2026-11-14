@@ -48,6 +48,8 @@ services:
     volumes:
       - ./backend:/app
       - ./scripts:/scripts
+      - ./forms:/app/forms:ro
+      - ./benchmarks:/benchmarks:ro
     environment:
       - PORT=8000
       - DATABASE_URL=${DATABASE_URL:-postgresql://consolith_app:consolith_secure_app_pw@postgres:5432/consolith}

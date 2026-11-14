@@ -5,9 +5,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Sparkles,
-  Send,
-  Plus,
-  Trash2,
   FileText,
   ExternalLink,
   Download,
@@ -15,25 +12,18 @@ import {
   AlertCircle,
   CheckCircle2,
   RefreshCw,
-  MessageSquare,
   Shield,
-  ArrowRight,
   ChevronDown,
   ChevronUp,
-  ChevronLeft,
-  ChevronRight,
+  Loader2,
   PanelLeft,
   Copy,
   Check,
   X,
-  Edit2,
   Unlink,
   ArrowLeft,
   Eye,
-  FileCheck,
-  ShieldCheck,
   Image as ImageIcon,
-  Code,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -66,7 +56,18 @@ import MarkdownRenderer from "./MarkdownRenderer";
 import OfficialFormCard from "./OfficialFormCard";
 import CorrectionDraftCard from "./CorrectionDraftCard";
 import AdministrativeDraftingModal from "../drafting/AdministrativeDraftingModal";
-import ClaudeSunburst from "./ClaudeSunburst";
+import Logo from "../ui/Logo";
+
+function AssistantAvatar() {
+  return (
+    <div
+      className="w-7 h-7 rounded-lg bg-white border border-[#E5E5E0] flex items-center justify-center shrink-0 mt-0.5 shadow-2xs"
+      aria-hidden="true"
+    >
+      <Logo size={16} showText={false} href="" />
+    </div>
+  );
+}
 
 interface AssistantWorkspaceProps {
   initialConversationId?: string;
@@ -85,11 +86,18 @@ export default function AssistantWorkspace({
   const [activeConvId, setActiveConvId] = useState<string | undefined>(
     initialConversationId
   );
+
+  // Synchronize active conversation ID when initialConversationId prop changes
+  // (e.g. browser back/forward, route navigation, or deep link changes)
+  useEffect(() => {
+    setActiveConvId(initialConversationId);
+  }, [initialConversationId]);
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [loadingConvs, setLoadingConvs] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [inputQuery, setInputQuery] = useState("");
   const [sending, setSending] = useState(false);
+  const isSubmittingRef = useRef(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Layout & Modals State
@@ -137,7 +145,14 @@ export default function AssistantWorkspace({
   const [selectedDraft, setSelectedDraft] = useState<CorrectionDraftItem | null>(null);
   const [userDocuments, setUserDocuments] = useState<DocumentItem[]>([]);
 
+  // P3A.3 Cursor-based Pagination State
+  const [hasMoreOlder, setHasMoreOlder] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [olderLoadError, setOlderLoadError] = useState<string | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -162,7 +177,7 @@ export default function AssistantWorkspace({
       const next = !prev;
       try {
         localStorage.setItem("convelina_sidebar_open", String(next));
-      } catch {}
+      } catch { }
       return next;
     });
   };
@@ -204,14 +219,18 @@ export default function AssistantWorkspace({
     loadConversations();
   }, [loadConversations]);
 
-  // 4. Load messages for active conversation
+  // 4. Load messages for active conversation (Initial latest page)
   const loadMessages = useCallback(
     async (convId: string) => {
       if (!idToken) return;
       try {
         setLoadingMessages(true);
-        const msgs = await fetchConversationMessages(idToken, convId);
+        setOlderLoadError(null);
+        const res = await fetchConversationMessages(idToken, convId, { limit: 30 });
+        const msgs = res.messages;
         setMessages(msgs);
+        setHasMoreOlder(res.has_more);
+        setNextCursor(res.next_cursor);
 
         // Update active language and provider status from latest message if present
         if (msgs.length > 0) {
@@ -226,6 +245,11 @@ export default function AssistantWorkspace({
         setTimeout(scrollToBottom, 100);
       } catch (err: any) {
         console.warn("Could not load messages:", err);
+        setErrorMessage(
+          err.message?.includes("404") || err.message?.includes("not found")
+            ? "Conversation not found or access denied."
+            : "Failed to load conversation messages. Please try again."
+        );
       } finally {
         setLoadingMessages(false);
       }
@@ -233,18 +257,65 @@ export default function AssistantWorkspace({
     [idToken]
   );
 
+  // Load older messages (P3A.3 Backward Cursor Pagination)
+  const loadOlderMessages = async () => {
+    if (!idToken || !activeConvId || loadingOlder || !hasMoreOlder || !nextCursor) return;
+    const container = messagesContainerRef.current;
+    const prevScrollHeight = container ? container.scrollHeight : 0;
+    const prevScrollTop = container ? container.scrollTop : 0;
+
+    try {
+      setLoadingOlder(true);
+      setOlderLoadError(null);
+      const res = await fetchConversationMessages(idToken, activeConvId, {
+        before: nextCursor,
+        limit: 30,
+      });
+
+      setMessages((prev) => {
+        const existingIds = new Set(prev.map((m) => m.id));
+        const olderUnique = res.messages.filter((m) => !existingIds.has(m.id));
+        return [...olderUnique, ...prev];
+      });
+
+      setHasMoreOlder(res.has_more);
+      setNextCursor(res.next_cursor);
+
+      // Preserve exact scroll position when older messages are prepended
+      requestAnimationFrame(() => {
+        if (container) {
+          const newScrollHeight = container.scrollHeight;
+          container.scrollTop = prevScrollTop + (newScrollHeight - prevScrollHeight);
+        }
+      });
+    } catch (err: any) {
+      console.warn("Could not load older messages:", err);
+      setOlderLoadError("Could not load older messages. Click to retry.");
+    } finally {
+      setLoadingOlder(false);
+    }
+  };
+
   useEffect(() => {
     if (activeConvId) {
       loadMessages(activeConvId);
-      // Sync active conversation language preference
+    } else {
+      setMessages([]);
+      setHasMoreOlder(false);
+      setNextCursor(null);
+      setOlderLoadError(null);
+    }
+  }, [activeConvId, loadMessages]);
+
+  // Sync active conversation language preference when conversations list loads
+  useEffect(() => {
+    if (activeConvId && conversations.length > 0) {
       const active = conversations.find((c) => c.id === activeConvId);
       if (active?.response_language) {
         setResponseLanguage(active.response_language);
       }
-    } else {
-      setMessages([]);
     }
-  }, [activeConvId, loadMessages, conversations]);
+  }, [activeConvId, conversations]);
 
   // Load citizen's detected conflicts for switching / linking
   useEffect(() => {
@@ -522,16 +593,20 @@ export default function AssistantWorkspace({
   // 13. Handle Message Submission
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (isSubmittingRef.current || sending) return;
+
     const query = inputQuery.trim();
     const currentAttachments = [...stagedAttachments];
-    if ((!query && currentAttachments.length === 0) || sending) return;
+    if (!query && currentAttachments.length === 0) return;
+
+    isSubmittingRef.current = true;
+    setSending(true);
 
     const effectiveQuery = query || "Please examine and explain this attached document.";
 
     setInputQuery("");
     setStagedAttachments([]);
     setErrorMessage(null);
-    setSending(true);
 
     // Optimistically add user message with attachments
     const tempUserMsg: MessageItem = {
@@ -558,6 +633,8 @@ export default function AssistantWorkspace({
       if (!activeConvId && returnedConvId) {
         setActiveConvId(returnedConvId);
         router.replace(`/app/assistant/${returnedConvId}`);
+        await loadConversations();
+      } else {
         await loadConversations();
       }
 
@@ -613,18 +690,16 @@ export default function AssistantWorkspace({
       setTimeout(scrollToBottom, 100);
     } catch (err: any) {
       console.error("Assistant chat error:", err);
+      // Restore user query and attachments so citizen input is not lost
+      setInputQuery(query);
+      setStagedAttachments(currentAttachments);
+      // Remove optimistic temporary message so failed/unpersisted message is not shown as delivered
+      setMessages((prev) => prev.filter((m) => m.id !== tempUserMsg.id));
       setErrorMessage(
         err.message || "Assistant service is not currently available. Please try again later."
       );
-      const fallbackMsg: MessageItem = {
-        id: "err-" + Date.now(),
-        conversation_id: activeConvId || "error",
-        role: "assistant",
-        content: "Assistant service is not currently available. Please try again later.",
-        created_at: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, fallbackMsg]);
     } finally {
+      isSubmittingRef.current = false;
       setSending(false);
     }
   };
@@ -667,106 +742,59 @@ export default function AssistantWorkspace({
 
       {/* 2. Main Conversational Canvas */}
       <main className="flex-1 flex flex-col h-screen min-w-0 bg-[#FAF9F5] relative overflow-hidden">
-        {/* Top Minimal Canvas Header (Matches Claude Screenshot 1 & 3) */}
-        <header className="h-11 px-3 border-b border-[#E5E5E0]/60 flex items-center justify-between bg-[#FAF9F5] select-none z-20 shrink-0">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={toggleSidebar}
-              className="p-1.5 text-[#73726E] hover:text-[#1F1E1D] hover:bg-[#EBE9E4] rounded-lg transition-colors"
-              title="Toggle sidebar (Ctrl+B)"
-              aria-label="Toggle sidebar"
-            >
-              <PanelLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => router.back()}
-              className="p-1.5 text-[#999893] hover:text-[#1F1E1D] hover:bg-[#EBE9E4] rounded-lg transition-colors"
-              title="Back"
-              aria-label="Back"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => router.forward()}
-              className="p-1.5 text-[#999893] hover:text-[#1F1E1D] hover:bg-[#EBE9E4] rounded-lg transition-colors"
-              title="Forward"
-              aria-label="Forward"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-            <div className="hidden sm:flex items-center ml-1.5 pl-1.5 border-l border-[#E5E5E0] gap-1">
+        {/* Minimalist Top Bar (CONVELINA) */}
+        <header className="h-12 px-4 flex items-center justify-between bg-[#FAF9F5] select-none z-20 shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            {!sidebarOpen && (
               <button
+                onClick={toggleSidebar}
+                className="p-1.5 text-[#73726E] hover:text-[#1F1E1D] hover:bg-[#EBE9E4] rounded-lg transition-colors"
+                title="Show chat history (Ctrl+B)"
+                aria-label="Toggle sidebar"
                 type="button"
-                className="p-1 text-[#1F1E1D] bg-[#EBE9E4] rounded-md transition-colors"
-                title="Conversational Workspace"
               >
-                <MessageSquare className="w-3.5 h-3.5" />
+                <PanelLeft className="w-4 h-4" />
               </button>
-              <Link
-                href="/app/inconsistencies"
-                className="p-1 text-[#73726E] hover:text-[#1F1E1D] hover:bg-[#EBE9E4] rounded-md transition-colors"
-                title="Code & Inconsistencies"
-              >
-                <Code className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Center: Free plan · Upgrade (Matches Claude Screenshot 1 & 3) */}
-          <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#EBE9E4]/60 hover:bg-[#EBE9E4] border border-[#E5E5E0]/70 text-xs font-sans text-[#73726E] transition-colors">
-            <span>Free plan</span>
-            <span className="text-[#999893]">·</span>
+            )}
             <Link
-              href="/app/profile"
-              className="text-[#1F1E1D] hover:underline font-medium"
+              href="/app"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-sans text-[#73726E] hover:text-[#1F1E1D] hover:bg-[#EBE9E4] transition-colors shrink-0"
+              title="Back to Citizen Workspace"
             >
-              Upgrade
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Workspace</span>
             </Link>
           </div>
 
-          {/* Right: Citizen Smiling Avatar & Desktop Controls (Claude Screenshot 1 & 3) */}
-          <div className="flex items-center gap-3">
-            <Link
-              href="/app/profile"
-              className="p-1 text-[#4A4946] hover:text-[#1F1E1D] hover:bg-[#EBE9E4] rounded-lg transition-colors"
-              title={`Citizen Account: ${citizenDisplayName}`}
-              aria-label="User Profile"
-            >
-              <svg
-                className="w-5 h-5 text-[#4A4946]"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="12" cy="12" r="9" />
-                <path d="M9 10h.01" />
-                <path d="M15 10h.01" />
-                <path d="M9.5 15a3.5 3.5 0 0 0 5 0" />
-              </svg>
-            </Link>
-            <div className="hidden sm:flex items-center gap-2.5 text-[#999893] select-none text-xs">
-              <span className="hover:text-[#1F1E1D] cursor-pointer">−</span>
-              <span className="hover:text-[#1F1E1D] cursor-pointer text-[10px]">□</span>
-              <span className="hover:text-[#1F1E1D] cursor-pointer">✕</span>
-            </div>
-          </div>
+          {activeConv?.title && (
+            <span className="hidden sm:block text-xs font-sans font-medium text-[#5E5E5E] truncate max-w-md px-4">
+              {activeConv.title}
+            </span>
+          )}
+
+          <div className="w-20 shrink-0" />
         </header>
 
-        {/* Welcome Intro Canvas (Exact match to Claude Screenshot 1 & 3) */}
-        {messages.length === 0 ? (
+        {/* Centered Welcome State */}
+        {loadingMessages && messages.length === 0 && activeConvId ? (
+          <div className="flex-1 flex flex-col items-center justify-center space-y-3 select-none">
+            <RefreshCw className="w-5 h-5 animate-spin text-[#73726E]" />
+            <span className="text-xs text-[#73726E] font-sans">Loading conversation...</span>
+          </div>
+        ) : messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center -mt-10 sm:-mt-14 px-4 py-8 max-w-2xl mx-auto w-full space-y-6 animate-in fade-in duration-200">
-            {/* Central Terracotta Sunburst Brand Mark & Serif Greeting */}
-            <div className="flex items-center justify-center gap-3 select-none">
-              <ClaudeSunburst className="w-8 h-8 sm:w-9 sm:h-9 shrink-0" size={34} />
-              <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-[#1F1E1D] font-normal tracking-tight">
-                {getGreetingTime()}, {citizenDisplayName}
-              </h1>
+            <div className="flex flex-col items-center text-center gap-3 select-none">
+              <div className="flex items-center justify-center gap-3">
+                <Logo size={30} showText={false} href="" />
+                <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl text-[#1F1E1D] font-normal tracking-tight">
+                  Good {getGreetingTime().toLowerCase()}, {citizenDisplayName}
+                </h1>
+              </div>
+              <p className="text-xs sm:text-sm text-[#73726E] font-sans max-w-md">
+                Ask CONVELINA about document discrepancies, correction procedures, or prescribed statutory forms.
+              </p>
             </div>
 
-            {/* Error Message Alert Banner */}
             {errorMessage && (
               <div className="w-full p-3.5 bg-[#FCE8E6] border border-[#F5C2C7] rounded-xl flex items-center justify-between text-xs text-[#BA1A1A]">
                 <div className="flex items-center gap-2">
@@ -783,7 +811,7 @@ export default function AssistantWorkspace({
               </div>
             )}
 
-            {/* Central Floating Composer Card (Screenshot 1 & 3: Hero) */}
+            {/* Centered Chat Box */}
             <div className="w-full">
               <AssistantComposer
                 variant="hero"
@@ -802,73 +830,44 @@ export default function AssistantWorkspace({
               />
             </div>
 
-            {/* 4 Suggested Action Prompt Pills below Composer */}
-            <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2 text-left pt-1">
+            {/* Subtle Quick-Start Prompt Pills */}
+            <div className="w-full flex flex-wrap items-center justify-center gap-2 pt-1">
               <button
                 type="button"
                 onClick={() =>
                   setInputQuery("Explain my document discrepancy and the official procedure to resolve it.")
                 }
-                className="p-3 bg-white border border-[#E5E5E0] hover:border-[#1F1E1D] rounded-xl text-xs text-[#1F1E1D] transition-colors leading-relaxed shadow-sm hover:shadow"
+                className="px-3.5 py-1.5 bg-white/80 border border-[#E5E5E0] hover:border-[#1F1E1D] rounded-full text-xs text-[#4A4946] hover:text-[#1F1E1D] transition-colors shadow-2xs"
               >
-                <span className="font-medium block text-xs mb-0.5 text-[#1F1E1D]">
-                  Explain my document discrepancy
-                </span>
-                <span className="text-[11px] text-[#73726E]">
-                  Deterministic legal precedence and risk review
-                </span>
+                Explain my discrepancy
               </button>
-
               <button
                 type="button"
                 onClick={() =>
                   setInputQuery("Find an official correction form for Aadhaar or PAN update.")
                 }
-                className="p-3 bg-white border border-[#E5E5E0] hover:border-[#1F1E1D] rounded-xl text-xs text-[#1F1E1D] transition-colors leading-relaxed shadow-sm hover:shadow"
+                className="px-3.5 py-1.5 bg-white/80 border border-[#E5E5E0] hover:border-[#1F1E1D] rounded-full text-xs text-[#4A4946] hover:text-[#1F1E1D] transition-colors shadow-2xs"
               >
-                <span className="font-medium block text-xs mb-0.5 text-[#1F1E1D]">
-                  Find an official correction form
-                </span>
-                <span className="text-[11px] text-[#73726E]">
-                  Prescribed statutory forms and download links
-                </span>
+                Find an official correction form
               </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setInputQuery("Help me understand why my passport or EPF application was rejected.")
-                }
-                className="p-3 bg-white border border-[#E5E5E0] hover:border-[#1F1E1D] rounded-xl text-xs text-[#1F1E1D] transition-colors leading-relaxed shadow-sm hover:shadow"
-              >
-                <span className="font-medium block text-xs mb-0.5 text-[#1F1E1D]">
-                  Understand an application rejection
-                </span>
-                <span className="text-[11px] text-[#73726E]">
-                  Reconciliation guidance for spelling or DOB mismatches
-                </span>
-              </button>
-
               <button
                 type="button"
                 onClick={() =>
                   setInputQuery("Draft a formal name correction letter to the competent statutory authority.")
                 }
-                className="p-3 bg-white border border-[#E5E5E0] hover:border-[#1F1E1D] rounded-xl text-xs text-[#1F1E1D] transition-colors leading-relaxed shadow-sm hover:shadow"
+                className="px-3.5 py-1.5 bg-white/80 border border-[#E5E5E0] hover:border-[#1F1E1D] rounded-full text-xs text-[#4A4946] hover:text-[#1F1E1D] transition-colors shadow-2xs"
               >
-                <span className="font-medium block text-xs mb-0.5 text-[#1F1E1D]">
-                  Draft a formal correction letter
-                </span>
-                <span className="text-[11px] text-[#73726E]">
-                  Standard statutory petition and affidavit formats
-                </span>
+                Draft a correction letter
               </button>
             </div>
           </div>
         ) : (
           <div className="flex-1 flex flex-col min-h-0">
             {/* Scrollable Message Area */}
-            <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+            <div
+              ref={messagesContainerRef}
+              className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6"
+            >
               {/* Active Discrepancy Context Banner (Phase P2A / P3C) */}
               {resolutionContext && (
                 <div className="w-full max-w-3xl mx-auto bg-white border border-[#1F1E1D] rounded-2xl shadow-sm overflow-hidden mb-6">
@@ -939,7 +938,7 @@ export default function AssistantWorkspace({
                         className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-sans font-medium bg-[#1F1E1D] hover:bg-black text-white rounded-lg transition-colors shadow-xs"
                         title="Draft administrative correction letter or statutory petition"
                       >
-                        <FileText className="w-3 h-3 text-[#C96442]" />
+                        <FileText className="w-3 h-3 text-white" />
                         <span className="hidden sm:inline">Draft Letter</span>
                       </button>
 
@@ -1112,6 +1111,46 @@ export default function AssistantWorkspace({
                 </div>
               )}
 
+              {/* P3A.3 Pagination: Load Older Messages Trigger */}
+              {hasMoreOlder && (
+                <div className="w-full max-w-3xl mx-auto flex items-center justify-center py-2">
+                  {loadingOlder ? (
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FAF9F5] border border-[#E5E5E0] text-xs text-[#73726E]">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#1F1E1D]" />
+                      <span>Loading earlier conversation history...</span>
+                    </div>
+                  ) : olderLoadError ? (
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FCE8E6] border border-[#F5C2C7] text-xs text-[#BA1A1A]">
+                      <span>{olderLoadError}</span>
+                      <button
+                        type="button"
+                        onClick={loadOlderMessages}
+                        className="underline font-semibold hover:text-black ml-1 cursor-pointer"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={loadOlderMessages}
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium text-[#4A4946] hover:text-[#1F1E1D] bg-white border border-[#E5E5E0] hover:border-[#1F1E1D] rounded-full shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+                      title="Load earlier messages"
+                      aria-label="Load older messages"
+                    >
+                      <ChevronUp className="w-3.5 h-3.5 text-[#73726E]" />
+                      <span>Load older messages</span>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {!hasMoreOlder && messages.length > 20 && (
+                <div className="w-full max-w-3xl mx-auto flex items-center justify-center py-2 text-[11px] text-[#A0A09B]">
+                  <span>Beginning of conversation history</span>
+                </div>
+              )}
+
               {/* Dialogue Turns */}
               {messages.map((msg) => (
                 <div key={msg.id} className="w-full max-w-3xl mx-auto">
@@ -1142,11 +1181,10 @@ export default function AssistantWorkspace({
                               </span>
                               {att.ocr_confidence !== undefined && att.ocr_confidence !== null && (
                                 <span
-                                  className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${
-                                    att.ocr_confidence >= 0.6
+                                  className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${att.ocr_confidence >= 0.6
                                       ? "bg-[#E6F4EA] text-[#0D652D]"
                                       : "bg-[#FCE8E6] text-[#C5221F]"
-                                  }`}
+                                    }`}
                                 >
                                   {Math.round(att.ocr_confidence * 100)}%
                                 </span>
@@ -1169,9 +1207,7 @@ export default function AssistantWorkspace({
                   ) : (
                     /* Assistant Turn */
                     <div className="flex items-start gap-3.5">
-                      <div className="w-7 h-7 rounded-full bg-[#1F1E1D] text-white flex items-center justify-center font-serif text-xs font-bold shrink-0 mt-0.5">
-                        <span className="text-[#C96442] text-xs">✳</span>
-                      </div>
+                      <AssistantAvatar />
                       <div className="flex-1 space-y-3.5 min-w-0">
                         {/* Provider Status Pill */}
                         {msg.structured_response && (
@@ -1206,108 +1242,108 @@ export default function AssistantWorkspace({
                         {((msg.structured_response?.citations && msg.structured_response.citations.length > 0) ||
                           (msg.citations && msg.citations.length > 0) ||
                           (msg.grounded_sources && msg.grounded_sources.length > 0)) && (
-                          <div className="p-3.5 bg-white border border-[#E5E5E0] rounded-2xl space-y-2.5 shadow-sm">
-                            <div className="text-[10px] uppercase tracking-wider font-semibold text-[#73726E] font-sans flex items-center justify-between">
-                              <span className="flex items-center gap-1.5">
-                                <Shield className="w-3 h-3 text-[#0D652D]" />
-                                <span>Verified Statutory Sources</span>
-                              </span>
-                              <span className="text-[9px] font-mono text-[#0D652D] bg-[#E6F4EA] px-1.5 py-0.5 rounded font-medium">
-                                VERIFIED
-                              </span>
-                            </div>
-                            <div className="divide-y divide-[#E5E5E0]/60">
-                              {(
-                                msg.structured_response?.citations ||
-                                msg.citations ||
-                                msg.grounded_sources ||
-                                []
-                              ).map((src: any, idx: number) => (
-                                <div key={idx} className="py-2 text-xs font-sans space-y-0.5">
-                                  <div className="flex items-center justify-between gap-2">
-                                    <span className="font-medium text-[#1F1E1D] truncate">
-                                      {src.title}
-                                    </span>
-                                    <span className="text-[10px] bg-[#FAF9F5] px-1.5 py-0.5 rounded border border-[#E5E5E0] text-[#73726E] shrink-0">
-                                      {src.authority}
-                                    </span>
+                            <div className="p-3.5 bg-white border border-[#E5E5E0] rounded-2xl space-y-2.5 shadow-sm">
+                              <div className="text-[10px] uppercase tracking-wider font-semibold text-[#73726E] font-sans flex items-center justify-between">
+                                <span className="flex items-center gap-1.5">
+                                  <Shield className="w-3 h-3 text-[#0D652D]" />
+                                  <span>Verified Statutory Sources</span>
+                                </span>
+                                <span className="text-[9px] font-mono text-[#0D652D] bg-[#E6F4EA] px-1.5 py-0.5 rounded font-medium">
+                                  VERIFIED
+                                </span>
+                              </div>
+                              <div className="divide-y divide-[#E5E5E0]/60">
+                                {(
+                                  msg.structured_response?.citations ||
+                                  msg.citations ||
+                                  msg.grounded_sources ||
+                                  []
+                                ).map((src: any, idx: number) => (
+                                  <div key={idx} className="py-2 text-xs font-sans space-y-0.5">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <span className="font-medium text-[#1F1E1D] truncate">
+                                        {src.title}
+                                      </span>
+                                      <span className="text-[10px] bg-[#FAF9F5] px-1.5 py-0.5 rounded border border-[#E5E5E0] text-[#73726E] shrink-0">
+                                        {src.authority}
+                                      </span>
+                                    </div>
+                                    {src.url ? (
+                                      <a
+                                        href={src.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-[11px] text-[#0066CC] hover:underline pt-0.5"
+                                      >
+                                        <span>Official Portal / Circular</span>
+                                        <ExternalLink className="w-3 h-3" />
+                                      </a>
+                                    ) : src.citation ? (
+                                      <p className="text-[11px] text-[#73726E] italic leading-tight">
+                                        {src.citation}
+                                      </p>
+                                    ) : null}
                                   </div>
-                                  {src.url ? (
-                                    <a
-                                      href={src.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-1 text-[11px] text-[#0066CC] hover:underline pt-0.5"
-                                    >
-                                      <span>Official Portal / Circular</span>
-                                      <ExternalLink className="w-3 h-3" />
-                                    </a>
-                                  ) : src.citation ? (
-                                    <p className="text-[11px] text-[#73726E] italic leading-tight">
-                                      {src.citation}
-                                    </p>
-                                  ) : null}
-                                </div>
-                              ))}
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
 
                         {/* Prescribed Official Forms Cards (Phase P3D) */}
                         {((msg.structured_response?.relevant_forms &&
                           msg.structured_response.relevant_forms.length > 0) ||
                           (msg.recommended_forms && msg.recommended_forms.length > 0)) && (
-                          <div className="space-y-2.5 pt-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] uppercase tracking-wider font-semibold text-[#73726E] font-sans flex items-center gap-1.5">
-                                <FileText className="w-3.5 h-3.5 text-[#1F1E1D]" />
-                                <span>Official Statutory Prescribed Forms:</span>
-                              </span>
-                              <span className="text-[10px] font-mono text-[#0D652D] bg-[#E6F4EA] border border-[#CEEAD6] px-2 py-0.5 rounded-full font-medium">
-                                VERIFIED GOVERNMENT SPECIFICATION
-                              </span>
+                            <div className="space-y-2.5 pt-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] uppercase tracking-wider font-semibold text-[#73726E] font-sans flex items-center gap-1.5">
+                                  <FileText className="w-3.5 h-3.5 text-[#1F1E1D]" />
+                                  <span>Official Statutory Prescribed Forms:</span>
+                                </span>
+                                <span className="text-[10px] font-mono text-[#0D652D] bg-[#E6F4EA] border border-[#CEEAD6] px-2 py-0.5 rounded-full font-medium">
+                                  VERIFIED GOVERNMENT SPECIFICATION
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-1 gap-3">
+                                {(
+                                  msg.structured_response?.relevant_forms ||
+                                  msg.recommended_forms ||
+                                  []
+                                ).map((form: any, idx: number) => {
+                                  const fid = form.form_id || form.id || `form-${idx}`;
+                                  return (
+                                    <OfficialFormCard
+                                      key={fid}
+                                      form={form}
+                                      onPreview={handlePreviewForm}
+                                      onDownload={handleDownloadForm}
+                                      previewing={
+                                        previewLoading &&
+                                        (previewForm?.form_id === fid || previewForm?.id === fid)
+                                      }
+                                      downloading={downloadingFormId === fid}
+                                    />
+                                  );
+                                })}
+                              </div>
                             </div>
-                            <div className="grid grid-cols-1 gap-3">
-                              {(
-                                msg.structured_response?.relevant_forms ||
-                                msg.recommended_forms ||
-                                []
-                              ).map((form: any, idx: number) => {
-                                const fid = form.form_id || form.id || `form-${idx}`;
-                                return (
-                                  <OfficialFormCard
-                                    key={fid}
-                                    form={form}
-                                    onPreview={handlePreviewForm}
-                                    onDownload={handleDownloadForm}
-                                    previewing={
-                                      previewLoading &&
-                                      (previewForm?.form_id === fid || previewForm?.id === fid)
-                                    }
-                                    downloading={downloadingFormId === fid}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
+                          )}
 
                         {/* Explicit Statutory Notice if No Verified Form Available (Phase P3D) */}
                         {(msg.structured_response?.no_verified_form_available ||
                           msg.content.includes("NO VERIFIED OFFICIAL FORM CURRENTLY AVAILABLE") ||
                           msg.content.includes("NO_VERIFIED_FORM_AVAILABLE")) && (
-                          <div className="p-3.5 bg-[#FEF7E0] border border-[#FEEFC3] rounded-2xl text-xs text-[#B06000] flex items-start gap-2.5 shadow-sm">
-                            <AlertCircle className="w-4 h-4 text-[#E37400] shrink-0 mt-0.5" />
-                            <div className="space-y-1">
-                              <span className="font-semibold block uppercase tracking-wide text-[10px] text-[#E37400]">
-                                Statutory Notice • No Verified Form Available
-                              </span>
-                              <p className="text-[11px] leading-relaxed text-[#73726E]">
-                                CONVELINA only retrieves authentic government forms that have been verified by administrators. No official form matching this specific discrepancy has been verified in the statutory catalog. Please consult the official issuing authority portal directly.
-                              </p>
+                            <div className="p-3.5 bg-[#FEF7E0] border border-[#FEEFC3] rounded-2xl text-xs text-[#B06000] flex items-start gap-2.5 shadow-sm">
+                              <AlertCircle className="w-4 h-4 text-[#E37400] shrink-0 mt-0.5" />
+                              <div className="space-y-1">
+                                <span className="font-semibold block uppercase tracking-wide text-[10px] text-[#E37400]">
+                                  Statutory Notice • No Verified Form Available
+                                </span>
+                                <p className="text-[11px] leading-relaxed text-[#73726E]">
+                                  CONVELINA only retrieves authentic government forms that have been verified by administrators. No official form matching this specific discrepancy has been verified in the statutory catalog. Please consult the official issuing authority portal directly.
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
 
                         {/* AI-Generated Supporting Draft Notice (Phase P3D Distinction) */}
                         {(msg.structured_response?.letter_draft ||
@@ -1316,20 +1352,20 @@ export default function AssistantWorkspace({
                           msg.content.includes("Dear Sir/Madam") ||
                           msg.content.includes("FORMAL PETITION") ||
                           msg.content.includes("AFFIDAVIT DRAFT")) && (
-                          <div className="p-2.5 bg-[#FAF9F5] border border-[#E5E5E0] rounded-xl flex items-center justify-between gap-2 text-xs flex-wrap">
-                            <div className="flex items-center gap-2">
-                              <span className="px-2 py-0.5 rounded bg-zinc-800 text-white font-mono text-[9px] uppercase tracking-wider font-semibold">
-                                AI-GENERATED SUPPORTING DRAFT • NOT AN OFFICIAL FORM
-                              </span>
-                              <span className="text-[11px] text-[#73726E] hidden sm:inline">
-                                Verification, physical print, and citizen signature required before submission.
+                            <div className="p-2.5 bg-[#FAF9F5] border border-[#E5E5E0] rounded-xl flex items-center justify-between gap-2 text-xs flex-wrap">
+                              <div className="flex items-center gap-2">
+                                <span className="px-2 py-0.5 rounded bg-zinc-800 text-white font-mono text-[9px] uppercase tracking-wider font-semibold">
+                                  AI-GENERATED SUPPORTING DRAFT • NOT AN OFFICIAL FORM
+                                </span>
+                                <span className="text-[11px] text-[#73726E] hidden sm:inline">
+                                  Verification, physical print, and citizen signature required before submission.
+                                </span>
+                              </div>
+                              <span className="text-[10px] font-mono text-[#999893]">
+                                Advisory Draft Notice
                               </span>
                             </div>
-                            <span className="text-[10px] font-mono text-[#999893]">
-                              Advisory Draft Notice
-                            </span>
-                          </div>
-                        )}
+                          )}
 
                         {/* Personalized Administrative Correction Draft Card (Phase P3G) */}
                         {msg.structured_response?.correction_draft && (
@@ -1381,34 +1417,32 @@ export default function AssistantWorkspace({
                               className="inline-flex items-center gap-1 px-2 py-0.5 rounded hover:bg-[#EBE9E4] text-[#73726E] hover:text-[#1F1E1D] transition-colors"
                               title="Copy message to clipboard"
                             >
-                            {copiedMsgId === msg.id ? (
-                              <>
-                                <Check className="w-3 h-3 text-[#0D652D]" />
-                                <span className="text-[#0D652D]">Copied</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3 h-3" />
-                                <span>Copy</span>
-                              </>
-                            )}
-                          </button>
+                              {copiedMsgId === msg.id ? (
+                                <>
+                                  <Check className="w-3 h-3 text-[#0D652D]" />
+                                  <span className="text-[#0D652D]">Copied</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3" />
+                                  <span>Copy</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
                 </div>
               ))}
 
               {/* Sending Indicator */}
               {sending && (
                 <div className="w-full max-w-3xl mx-auto flex items-start gap-3.5">
-                  <div className="w-7 h-7 rounded-full bg-[#1F1E1D] text-white flex items-center justify-center font-serif text-xs font-bold shrink-0 mt-0.5">
-                    <span className="text-[#C96442]">✳</span>
-                  </div>
+                  <AssistantAvatar />
                   <div className="flex items-center gap-2 text-xs text-[#73726E] font-sans py-1">
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#C96442]" />
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#1F1E1D]" />
                     <span>Retrieving statutory precedents and validating citations...</span>
                   </div>
                 </div>
@@ -1434,7 +1468,7 @@ export default function AssistantWorkspace({
               </div>
             )}
 
-            {/* Floating Message Composer Fixed at Canvas Bottom (Matches Claude Screenshot 2: Pill) */}
+            {/* Active Conversation Bottom Composer */}
             <AssistantComposer
               variant="pill"
               inputQuery={inputQuery}
@@ -1650,7 +1684,7 @@ export default function AssistantWorkspace({
               <div className="w-full bg-[#FAF9F5] rounded-xl border border-[#E5E5E0] overflow-hidden min-h-[380px] flex items-center justify-center relative">
                 {previewLoading ? (
                   <div className="flex flex-col items-center gap-2 p-8 text-[#73726E] text-xs">
-                    <RefreshCw className="w-6 h-6 animate-spin text-[#C96442]" />
+                    <RefreshCw className="w-6 h-6 animate-spin text-[#1F1E1D]" />
                     <span>Streaming authentic government document...</span>
                   </div>
                 ) : previewError ? (
@@ -1739,19 +1773,18 @@ export default function AssistantWorkspace({
                       {previewAttachment.file_name}
                     </h3>
                     <span
-                      className={`px-2 py-0.5 rounded-full font-mono text-[10px] font-medium border ${
-                        previewAttachment.ocr_confidence !== undefined &&
-                        previewAttachment.ocr_confidence !== null &&
-                        previewAttachment.ocr_confidence >= 0.6
+                      className={`px-2 py-0.5 rounded-full font-mono text-[10px] font-medium border ${previewAttachment.ocr_confidence !== undefined &&
+                          previewAttachment.ocr_confidence !== null &&
+                          previewAttachment.ocr_confidence >= 0.6
                           ? "bg-[#E6F4EA] border-[#CEEAD6] text-[#0D652D]"
                           : "bg-[#FEF7E0] border-[#FEEFC3] text-[#B06000]"
-                      }`}
+                        }`}
                     >
                       {previewAttachment.ocr_status === "completed"
                         ? `OCR Extracted (${Math.round((previewAttachment.ocr_confidence ?? 0) * 100)}% Confidence)`
                         : previewAttachment.ocr_status === "low_confidence"
-                        ? `Low Confidence (${Math.round((previewAttachment.ocr_confidence ?? 0) * 100)}%)`
-                        : "OCR Processing"}
+                          ? `Low Confidence (${Math.round((previewAttachment.ocr_confidence ?? 0) * 100)}%)`
+                          : "OCR Processing"}
                     </span>
                   </div>
                   <div className="text-xs text-[#73726E] font-sans truncate">
@@ -1859,7 +1892,7 @@ export default function AssistantWorkspace({
               <div className="w-full bg-[#FAF9F5] rounded-xl border border-[#E5E5E0] overflow-hidden min-h-[380px] flex items-center justify-center relative">
                 {previewAttachmentLoading ? (
                   <div className="flex flex-col items-center gap-2 p-8 text-[#73726E] text-xs">
-                    <RefreshCw className="w-6 h-6 animate-spin text-[#C96442]" />
+                    <RefreshCw className="w-6 h-6 animate-spin text-[#1F1E1D]" />
                     <span>Streaming encrypted document...</span>
                   </div>
                 ) : previewAttachmentError ? (

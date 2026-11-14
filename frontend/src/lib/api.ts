@@ -835,14 +835,42 @@ export async function createConversation(
   return await res.json();
 }
 
-export async function fetchConversationMessages(token: string | null, conversationId: string): Promise<MessageItem[]> {
-  const url = `${getApiUrl()}/api/v1/assistant/conversations/${conversationId}/messages`;
+export interface FetchMessagesOptions {
+  limit?: number;
+  before?: string | null;
+}
+
+export interface PaginatedMessagesResult {
+  total: number;
+  messages: MessageItem[];
+  has_more: boolean;
+  next_cursor: string | null;
+  prev_cursor: string | null;
+}
+
+export async function fetchConversationMessages(
+  token: string | null,
+  conversationId: string,
+  options?: FetchMessagesOptions
+): Promise<PaginatedMessagesResult> {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set("limit", options.limit.toString());
+  if (options?.before) params.set("before", options.before);
+
+  const qs = params.toString();
+  const url = `${getApiUrl()}/api/v1/assistant/conversations/${conversationId}/messages${qs ? `?${qs}` : ""}`;
   const res = await fetch(url, { headers: getAuthHeaders(token) });
   if (!res.ok) {
     throw new Error(`Failed to load messages: HTTP ${res.status}`);
   }
   const data = await res.json();
-  return data.messages || [];
+  return {
+    total: typeof data.total === "number" ? data.total : (data.messages?.length || 0),
+    messages: data.messages || [],
+    has_more: Boolean(data.has_more),
+    next_cursor: data.next_cursor || null,
+    prev_cursor: data.prev_cursor || null,
+  };
 }
 
 export async function fetchResolutionContext(
@@ -1371,6 +1399,7 @@ export interface RepositoryResourceItem {
   download_available: boolean;
   download_url?: string | null;
   preview_url?: string | null;
+  key_information_required?: string[];
   related_procedures?: string[];
   disclaimer?: string | null;
 }
